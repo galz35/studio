@@ -33,6 +33,8 @@ import type {
   RegistroPsicosocial,
   SeguimientoGenerado
 } from '@/lib/types/domain';
+import type { SolicitudCitaPayload } from '@/lib/types/solicitud';
+
 
 // --- Paciente Services ---
 
@@ -86,6 +88,27 @@ export const solicitarCita = (idPaciente: number, motivoConsulta: string, resume
 
         resolve(nuevoCaso);
     }, 500);
+  });
+};
+
+export const guardarSolicitudCita = (idPaciente: number, payload: SolicitudCitaPayload): Promise<{ok: boolean, caso: CasoClinico}> => {
+  return new Promise(resolve => {
+    setTimeout(() => {
+        const nuevoCaso: CasoClinico = {
+            idCaso: mockCasos.length + 1,
+            codigoCaso: `CC-2024-${String(mockCasos.length + 1).padStart(3, '0')}`,
+            idPaciente,
+            fechaCreacion: new Date().toISOString().split('T')[0],
+            estadoCaso: 'Abierto',
+            nivelSemaforo: payload.Triage || 'A',
+            motivoConsulta: payload.DatosExtraJSON.Sintomas.join(', '),
+            resumenClinicoUsuario: payload.Comentario || '',
+            diagnosticoUsuario: 'Autodiagnóstico por solicitud',
+        };
+        mockCasos.push(nuevoCaso);
+        console.log("Nueva solicitud guardada como Caso Clínico:", nuevoCaso);
+        resolve({ ok: true, caso: nuevoCaso });
+    }, 800);
   });
 };
 

@@ -81,7 +81,7 @@ export interface CitaMedica {
   idMedico: number;
   fechaCita: string; // YYYY-MM-DD
   horaCita: string; // HH:mm
-  canalOrigen: 'CHEQUEO' | 'RRHH' | 'OTRO';
+  canalOrigen: 'CHEQUEO' | 'RRHH' | 'OTRO' | 'SOLICITUD';
   estadoCita: 'PROGRAMADA' | 'EN_ATENCION' | 'FINALIZADA' | 'CANCELADA';
   motivoResumen: string;
   nivelSemaforoPaciente: 'V' | 'A' | 'R';
@@ -152,4 +152,17 @@ export interface EmpleadoEmp2024 {
   correoJefe: string;
   carnetJefe: string;
   pais: Pais;
+}
+
+export interface SeguimientoPaciente {
+  idSeguimiento: number;
+  idCaso: number;
+  idPaciente: number;
+  fechaProgramada: string;
+  fechaReal?: string;
+  tipoSeguimiento: 'LLAMADA' | 'TEAMS' | 'PRESENCIAL';
+  estadoSeguimiento: 'PENDIENTE' | 'EN_PROCESO' | 'RESUELTO' | 'CANCELADO';
+  nivelSemaforo: 'V' | 'A' | 'R';
+  usuarioResponsable: string;
+  notasSeguimiento: string;
 }
