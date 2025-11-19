@@ -74,8 +74,7 @@ export default function AtencionCitaPage() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-2">Atención Médica</h1>
-      <p className="text-muted-foreground mb-6">Paciente: {data.paciente.nombreCompleto}</p>
+      <h1 className="text-3xl font-bold mb-6">Atención Médica</h1>
 
       <AtencionCitaWizard citaData={data} />
     </div>
