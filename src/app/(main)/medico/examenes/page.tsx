@@ -16,16 +16,21 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
+  DialogClose
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/hooks/use-toast';
 
 type ExamenConPaciente = ExamenMedico & { paciente: Paciente };
 
 export default function ExamenesMedicosPage() {
   const { pais } = useAuth();
+  const { toast } = useToast();
   const [examenes, setExamenes] = useState<ExamenConPaciente[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedExamen, setSelectedExamen] = useState<ExamenConPaciente | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     api.getExamenesMedicos({ pais }).then(res => {
@@ -37,6 +42,8 @@ export default function ExamenesMedicosPage() {
   const handleRegisterResult = (idExamen: number, resultado: string) => {
     // Mock update
     setExamenes(prev => prev.map(ex => ex.idExamen === idExamen ? { ...ex, estadoExamen: 'ENTREGADO', resultadoResumen: resultado, fechaResultado: new Date().toISOString().split('T')[0] } : ex));
+    toast({ title: 'Resultado Registrado', description: 'El resultado del examen se ha guardado.' });
+    setIsModalOpen(false);
     setSelectedExamen(null);
   };
 
@@ -59,13 +66,9 @@ export default function ExamenesMedicosPage() {
       header: 'Acciones',
       cell: (row: ExamenConPaciente) => (
         <div className="flex gap-2">
-            <Dialog onOpenChange={(open) => !open && setSelectedExamen(null)}>
-                <DialogTrigger asChild>
-                     <Button variant="ghost" size="icon" onClick={() => setSelectedExamen(row)}>
-                        {row.estadoExamen === 'PENDIENTE' ? <FilePenLine className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </Button>
-                </DialogTrigger>
-            </Dialog>
+            <Button variant="ghost" size="icon" onClick={() => { setSelectedExamen(row); setIsModalOpen(true); }}>
+                {row.estadoExamen === 'PENDIENTE' ? <FilePenLine className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </Button>
         </div>
       ),
     },
@@ -84,33 +87,41 @@ export default function ExamenesMedicosPage() {
       </Card>
       
       {selectedExamen && (
-        <Dialog open={!!selectedExamen} onOpenChange={(open) => !open && setSelectedExamen(null)}>
+        <Dialog open={isModalOpen} onOpenChange={(open) => { if (!open) setSelectedExamen(null); setIsModalOpen(open); }}>
              <DialogContent>
                 <DialogHeader>
                     <DialogTitle>{selectedExamen.estadoExamen === 'PENDIENTE' ? 'Registrar Resultado' : 'Ver Resultado'}</DialogTitle>
                 </DialogHeader>
-                <div className="space-y-4 py-4">
-                    <p><strong>Paciente:</strong> {selectedExamen.paciente.nombreCompleto}</p>
-                    <p><strong>Tipo de Examen:</strong> {selectedExamen.tipoExamen}</p>
-                    <p><strong>Fecha Solicitud:</strong> {selectedExamen.fechaSolicitud}</p>
-                    <form onSubmit={(e) => {
-                        e.preventDefault();
+                <form id="examen-form" onSubmit={(e) => {
+                    e.preventDefault();
+                    if (selectedExamen.estadoExamen === 'PENDIENTE') {
                         const formData = new FormData(e.currentTarget);
                         const resultado = formData.get('resultado') as string;
                         handleRegisterResult(selectedExamen.idExamen, resultado);
-                    }}>
+                    } else {
+                        setIsModalOpen(false);
+                    }
+                }}>
+                    <div className="space-y-4 py-4">
+                        <p><strong>Paciente:</strong> {selectedExamen.paciente.nombreCompleto}</p>
+                        <p><strong>Tipo de Examen:</strong> {selectedExamen.tipoExamen}</p>
+                        <p><strong>Fecha Solicitud:</strong> {selectedExamen.fechaSolicitud}</p>
                         <Textarea 
                             name="resultado"
                             rows={5}
                             placeholder="Ingrese el resumen del resultado..."
                             defaultValue={selectedExamen.resultadoResumen}
                             readOnly={selectedExamen.estadoExamen === 'ENTREGADO'}
+                            required={selectedExamen.estadoExamen === 'PENDIENTE'}
                         />
+                    </div>
+                    <DialogFooter>
+                        <DialogClose asChild><Button type="button" variant="ghost">Cerrar</Button></DialogClose>
                         {selectedExamen.estadoExamen === 'PENDIENTE' && (
-                            <Button type="submit" className="mt-4">Guardar Resultado</Button>
+                            <Button type="submit">Guardar Resultado</Button>
                         )}
-                    </form>
-                </div>
+                    </DialogFooter>
+                </form>
             </DialogContent>
         </Dialog>
       )}
