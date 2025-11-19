@@ -11,7 +11,7 @@ import {
   medicos as mockMedicos,
   usuarios as mockUsuarios,
   empleadosEmp2024 as mockEmpleados
-} from '@/lib/mock';
+} from '@/lib/mock/index';
 
 import type { 
   Paciente, 
