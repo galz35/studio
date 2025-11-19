@@ -41,10 +41,14 @@ const NavItem = ({ href, icon: Icon, label, isCollapsed }: NavItemProps) => {
       <Link href={href}>
         <Button
           variant={isActive ? "secondary" : "ghost"}
-          className={cn("w-full justify-start h-10", isCollapsed ? "px-2" : "px-3")}
+          className={cn(
+            "w-full justify-start h-10 text-sidebar-foreground hover:bg-sidebar-accent", 
+            isCollapsed ? "px-2" : "px-3",
+            isActive && "bg-sidebar-accent text-sidebar-primary-foreground"
+          )}
           aria-label={label}
         >
-          <Icon className="h-5 w-5" />
+          <Icon className={cn("h-5 w-5", isActive ? "text-primary" : "")} />
           {!isCollapsed && <span className="ml-3">{label}</span>}
         </Button>
       </Link>
@@ -100,18 +104,18 @@ export function Sidebar({ isCollapsed, toggleSidebar }: { isCollapsed: boolean, 
   return (
     <aside
       className={cn(
-        "bg-sidebar text-sidebar-foreground flex-col border-r border-sidebar-border transition-all duration-300 ease-in-out",
+        "bg-[#212529] text-sidebar-foreground flex-col border-r border-gray-700 transition-all duration-300 ease-in-out",
         isMobile ? "fixed z-40 h-full" : "relative",
         isCollapsed ? "w-16" : "w-64",
-        isMobile && !isCollapsed ? 'hidden' : 'flex'
+        isMobile && isCollapsed ? 'hidden' : 'flex'
       )}
     >
-      <div className={cn("flex h-16 items-center border-b border-sidebar-border", isCollapsed ? 'justify-center' : 'px-4')}>
+      <div className={cn("flex h-16 items-center border-b border-gray-700", isCollapsed ? 'justify-center' : 'px-4')}>
          <Link href="/" className="flex items-center gap-2">
             <HeartPulse className="h-7 w-7 text-primary" />
             {!isCollapsed && (
-            <h1 className="text-xl font-bold text-sidebar-foreground">
-                Claro <span className="font-extrabold text-primary">B</span>
+            <h1 className="text-xl font-bold text-white">
+                Médica<span className="font-light">Corp</span>
             </h1>
             )}
         </Link>

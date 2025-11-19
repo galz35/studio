@@ -21,7 +21,9 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   }, [isAuthenticated, loading, router]);
   
   useEffect(() => {
-    setSidebarCollapsed(isMobile);
+    if (isMobile) {
+      setSidebarCollapsed(true);
+    }
   }, [isMobile]);
 
   const toggleSidebar = () => {
@@ -37,14 +39,14 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   }
 
   return (
-    <div className="flex min-h-screen w-full">
+    <div className="flex min-h-screen w-full bg-gray-50">
       <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
       <div className="flex flex-1 flex-col">
         <Topbar toggleSidebar={toggleSidebar} />
-        <main className="flex-1 overflow-y-auto bg-background p-4 md:p-6 lg:p-8">
-            <div className={cn("transition-all duration-300 ease-in-out", isMobile ? 'ml-0' : (isSidebarCollapsed ? "md:ml-16" : "md:ml-64"))}>
-                 {children}
-            </div>
+        <main className={cn("flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 transition-all duration-300 ease-in-out", 
+          isMobile ? 'ml-0' : (isSidebarCollapsed ? "ml-16" : "ml-64")
+        )}>
+           {children}
         </main>
       </div>
     </div>

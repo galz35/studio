@@ -37,7 +37,7 @@ export function Topbar({ toggleSidebar }: { toggleSidebar: () => void }) {
   };
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-card px-4 md:px-6">
+    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-white px-4 md:px-6">
       <Button variant="ghost" size="icon" className="md:hidden" onClick={toggleSidebar}>
         <PanelLeft className="h-6 w-6" />
         <span className="sr-only">Toggle Sidebar</span>
