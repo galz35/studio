@@ -112,7 +112,9 @@ export interface AtencionMedica {
 
 export interface VacunaAplicada {
   idVacunaRegistro: number;
-  idAtencion: number;
+  idPaciente: number;
+  idMedico: number;
+  idAtencion?: number; // Optional: can be registered outside a consultation
   tipoVacuna: string; // Influenza, COVID, Hepatitis, etc.
   dosis: string; // 1ra dosis, refuerzo, etc.
   fechaAplicacion: string;

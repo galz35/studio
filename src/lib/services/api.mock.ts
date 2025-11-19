@@ -28,7 +28,10 @@ import type {
   UsuarioAplicacion,
   EmpleadoEmp2024,
   Rol,
-  Pais
+  Pais,
+  VacunaAplicada,
+  RegistroPsicosocial,
+  SeguimientoGenerado,
 } from '@/lib/types/domain';
 import type { SolicitudCitaPayload } from '@/lib/types/solicitud';
 
@@ -57,6 +60,11 @@ export const getCitasPorPaciente = (idPaciente: number): Promise<CitaMedica[]> =
 export const getExamenesPorPaciente = (idPaciente: number): Promise<ExamenMedico[]> => {
     const examenes = mockExamenes.filter(ex => ex.idPaciente === idPaciente);
     return Promise.resolve(examenes.sort((a,b) => new Date(b.fechaSolicitud).getTime() - new Date(a.fechaSolicitud).getTime()));
+}
+
+export const getVacunasPorPaciente = (idPaciente: number): Promise<VacunaAplicada[]> => {
+    const vacunas = mockVacunas.filter(v => v.idPaciente === idPaciente);
+    return Promise.resolve(vacunas.sort((a,b) => new Date(b.fechaAplicacion).getTime() - new Date(a.fechaAplicacion).getTime()));
 }
 
 export const crearChequeo = (input: Omit<ChequeoBienestar, 'idChequeo' | 'fechaRegistro'>): Promise<ChequeoBienestar> => {
@@ -340,6 +348,15 @@ export const getSeguimientos = (filters?: { estado?: string, tipo?: string, pais
     }
 
     return Promise.resolve(seguimientosConDetalle.sort((a,b) => new Date(b.fechaProgramada).getTime() - new Date(a.fechaProgramada).getTime()));
+}
+
+export const registrarVacuna = (input: Omit<VacunaAplicada, 'idVacunaRegistro'>): Promise<VacunaAplicada> => {
+    const nuevaVacuna: VacunaAplicada = {
+        ...input,
+        idVacunaRegistro: mockVacunas.length + 1,
+    };
+    mockVacunas.push(nuevaVacuna);
+    return Promise.resolve(nuevaVacuna);
 }
 
 

@@ -18,6 +18,7 @@ import {
   Stethoscope,
   X,
   BookOpen,
+  Syringe,
 } from "lucide-react";
 
 import { useAuth } from "@/hooks/use-auth";
@@ -78,6 +79,7 @@ const pacienteMenu = [
   { href: "/paciente/mis-citas", icon: Calendar, label: "Mis Citas" },
   { href: "/paciente/historial-chequeos", icon: ClipboardList, label: "Mis Chequeos" },
   { href: "/paciente/mis-examenes", icon: FlaskConical, label: "Mis Exámenes" },
+  { href: "/paciente/mis-vacunas", icon: Syringe, label: "Mis Vacunas" },
 ];
 
 const medicoMenu = [
@@ -87,6 +89,7 @@ const medicoMenu = [
   { href: "/medico/pacientes-casos", icon: BookUser, label: "Pacientes y Casos" },
   { href: "/medico/examenes", icon: FlaskConical, label: "Exámenes" },
   { href: "/medico/seguimientos", icon: Repeat, label: "Seguimientos" },
+  { href: "/medico/registro-vacunas", icon: Syringe, label: "Registro de Vacunas" },
   { href: "/medico/reportes", icon: BarChart3, label: "Reportes" },
 ];
 
