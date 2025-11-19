@@ -4,7 +4,7 @@ import React, { createContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import type { UsuarioAplicacion, Rol, Pais } from '@/lib/types/domain';
 import { usuarios as mockUsuarios } from '@/lib/mock/usuarios.mock';
-import { empleadosEmp2024 } from '@/lib/mock/empleadosEmp2024.mock';
+import { toast } from '@/hooks/use-toast';
 
 interface AuthContextType {
   usuarioActual: UsuarioAplicacion | null;
@@ -68,12 +68,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const loginFake = (carnet: string) => {
-    // Find the first matching user profile for the given carnet
     let user = mockUsuarios.find(u => u.carnet.toLowerCase() === carnet.toLowerCase());
     
     if (!user) {
-        console.error("Carnet no encontrado en la base de datos de usuarios.");
-        // Ideally show a toast error here
+        toast({
+            variant: "destructive",
+            title: "Error de Autenticación",
+            description: "El carnet ingresado no fue encontrado. Por favor, verifique e intente de nuevo.",
+        });
         return;
     }
     
@@ -98,7 +100,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             localStorage.setItem('usuarioActual', JSON.stringify(userWithCountry));
             router.push(getDashboardUrl(newRole));
         } else {
-            // If the user doesn't have a pre-defined profile for that role, create a temporary one
             const tempUser: UsuarioAplicacion = {
                 ...usuarioActual,
                 rol: newRole,
