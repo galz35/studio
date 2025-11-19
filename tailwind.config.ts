@@ -18,6 +18,7 @@ export default {
     extend: {
       fontFamily: {
         sans: ['var(--font-inter)', 'sans-serif'],
+        cursive: ['var(--font-dancing-script)', 'cursive'],
       },
       colors: {
         border: 'hsl(var(--border))',

@@ -2,9 +2,10 @@ import type { Metadata } from "next";
 import { AuthProvider } from "@/lib/context/AuthContext";
 import { Toaster } from "@/components/ui/toaster";
 import "./globals.css";
-import { Inter } from "next/font/google";
+import { Inter, Dancing_Script } from "next/font/google";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+const dancingScript = Dancing_Script({ subsets: ["latin"], variable: "--font-dancing-script" });
 
 export const metadata: Metadata = {
   title: "Clar❤ Mi Salud",
@@ -18,7 +19,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es">
-      <body className={inter.className}>
+      <body className={`${inter.variable} ${dancingScript.variable}`}>
         <AuthProvider>
           {children}
           <Toaster />

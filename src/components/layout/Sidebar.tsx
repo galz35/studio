@@ -135,10 +135,10 @@ export function Sidebar({ isCollapsed, toggleSidebar }: { isCollapsed: boolean, 
       <div className={cn("flex h-16 items-center border-b border-white/10", isCollapsed && !isMobile ? 'justify-center' : 'px-4 justify-between')}>
          <Link href="/" className="flex items-center gap-1.5">
             {(!isCollapsed || isMobile) ? (
-              <div className="flex items-baseline gap-1 text-xl text-white">
-                <h1>Clar</h1>
-                <HeartPulse className="h-5 w-5"/>
-                <h1 className="font-bold">Mi Salud</h1>
+              <div className="flex items-center font-cursive text-2xl text-white">
+                <span>Clar</span>
+                <HeartPulse className="relative -bottom-1 mx-[-1px] h-6 w-6"/>
+                <span className="font-bold">Mi Salud</span>
               </div>
             ) : (
                <HeartPulse className="h-7 w-7 text-white" />
