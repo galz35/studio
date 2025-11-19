@@ -11,6 +11,12 @@ nextWeek.setDate(today.getDate() + 7);
 
 const formatDate = (date: Date) => date.toISOString().split('T')[0];
 
+const d = (days: number) => {
+    const date = new Date();
+    date.setDate(date.getDate() + days);
+    return formatDate(date);
+}
+
 export const citas: CitaMedica[] = [
   {
     idCita: 1,
@@ -90,6 +96,62 @@ export const citas: CitaMedica[] = [
     canalOrigen: "SOLICITUD",
     estadoCita: "PROGRAMADA",
     motivoResumen: "Dolor de espalda bajo",
+    nivelSemaforoPaciente: 'A',
+  },
+  // Added data for calendar
+  {
+    idCita: 8,
+    idPaciente: 2,
+    idMedico: 1,
+    fechaCita: d(-5),
+    horaCita: "11:00",
+    canalOrigen: "SOLICITUD",
+    estadoCita: "FINALIZADA",
+    motivoResumen: "Control post-gripal",
+    nivelSemaforoPaciente: 'V',
+  },
+  {
+    idCita: 9,
+    idPaciente: 3,
+    idMedico: 2,
+    fechaCita: d(-4),
+    horaCita: "14:30",
+    canalOrigen: "CHEQUEO",
+    estadoCita: "FINALIZADA",
+    motivoResumen: "Revisión de resultados de laboratorio",
+    nivelSemaforoPaciente: 'A',
+  },
+  {
+    idCita: 10,
+    idPaciente: 1,
+    idMedico: 1,
+    fechaCita: d(3),
+    horaCita: "16:00",
+    canalOrigen: "RRHH",
+    estadoCita: "PROGRAMADA",
+    motivoResumen: "Certificado médico",
+    nivelSemaforoPaciente: 'V',
+  },
+  {
+    idCita: 11,
+    idPaciente: 2,
+    idMedico: 2,
+    fechaCita: d(5),
+    horaCita: "09:30",
+    canalOrigen: "SOLICITUD",
+    estadoCita: "PROGRAMADA",
+    motivoResumen: "Evaluación ergonómica",
+    nivelSemaforoPaciente: 'V',
+  },
+  {
+    idCita: 12,
+    idPaciente: 3,
+    idMedico: 1,
+    fechaCita: d(9),
+    horaCita: "11:30",
+    canalOrigen: "CHEQUEO",
+    estadoCita: "PROGRAMADA",
+    motivoResumen: "Malestar estomacal recurrente",
     nivelSemaforoPaciente: 'A',
   }
 ];

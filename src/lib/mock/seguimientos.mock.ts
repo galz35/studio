@@ -1,5 +1,11 @@
 import type { SeguimientoPaciente } from "@/lib/types/domain";
 
+const d = (days: number) => {
+    const date = new Date();
+    date.setDate(date.getDate() + days);
+    return date.toISOString().split('T')[0];
+}
+
 export const seguimientos: SeguimientoPaciente[] = [
   {
     idSeguimiento: 1,
@@ -67,5 +73,39 @@ export const seguimientos: SeguimientoPaciente[] = [
     nivelSemaforo: "R",
     usuarioResponsable: "Dra. Isabel Castillo",
     notasSeguimiento: "Llamada inicial realizada. Paciente aún con malestar. Se indicó mantener reposo y se volverá a llamar en 2 días.",
+  },
+  // Added data for calendar
+  {
+    idSeguimiento: 7,
+    idCaso: 5,
+    idPaciente: 3,
+    fechaProgramada: d(-3),
+    tipoSeguimiento: "LLAMADA",
+    estadoSeguimiento: "PENDIENTE",
+    nivelSemaforo: "A",
+    usuarioResponsable: "Dra. Isabel Castillo",
+    notasSeguimiento: "Recordar a paciente sobre cita dermatológica y preguntar por evolución.",
+  },
+  {
+    idSeguimiento: 8,
+    idCaso: 1,
+    idPaciente: 2,
+    fechaProgramada: d(2),
+    tipoSeguimiento: "TEAMS",
+    estadoSeguimiento: "PENDIENTE",
+    nivelSemaforo: "R",
+    usuarioResponsable: "Dr. Carlos Herrera",
+    notasSeguimiento: "Seguimiento de cefalea. Verificar si hay mejoría con nuevo tratamiento.",
+  },
+  {
+    idSeguimiento: 9,
+    idCaso: 2,
+    idPaciente: 3,
+    fechaProgramada: d(10),
+    tipoSeguimiento: "PRESENCIAL",
+    estadoSeguimiento: "PENDIENTE",
+    nivelSemaforo: "A",
+    usuarioResponsable: "Dra. Isabel Castillo",
+    notasSeguimiento: "Control de fatiga y resultados de laboratorio.",
   }
 ];
