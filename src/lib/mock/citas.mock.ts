@@ -5,6 +5,9 @@ const tomorrow = new Date(today);
 tomorrow.setDate(today.getDate() + 1);
 const yesterday = new Date(today);
 yesterday.setDate(today.getDate() - 1);
+const nextWeek = new Date(today);
+nextWeek.setDate(today.getDate() + 7);
+
 
 const formatDate = (date: Date) => date.toISOString().split('T')[0];
 
@@ -67,4 +70,26 @@ export const citas: CitaMedica[] = [
     motivoResumen: "Paciente canceló por imprevisto laboral.",
     nivelSemaforoPaciente: 'A',
   },
+  {
+    idCita: 6,
+    idPaciente: 3,
+    idMedico: 1,
+    fechaCita: formatDate(nextWeek),
+    horaCita: "09:00",
+    canalOrigen: "SOLICITUD",
+    estadoCita: "CONFIRMADA",
+    motivoResumen: "Revisión de lunar.",
+    nivelSemaforoPaciente: 'V',
+  },
+  {
+    idCita: 7,
+    idPaciente: 1,
+    idMedico: 1,
+    fechaCita: formatDate(today),
+    horaCita: "08:30",
+    canalOrigen: "SOLICITUD",
+    estadoCita: "PROGRAMADA",
+    motivoResumen: "Dolor de espalda bajo",
+    nivelSemaforoPaciente: 'A',
+  }
 ];

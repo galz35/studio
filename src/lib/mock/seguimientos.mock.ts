@@ -35,4 +35,15 @@ export const seguimientos: SeguimientoPaciente[] = [
     usuarioResponsable: "Dra. Isabel Castillo",
     notasSeguimiento: "Paciente reporta mejoría con el antihistamínico. Se cierra el seguimiento.",
   },
+  {
+    idSeguimiento: 4,
+    idCaso: 1,
+    idPaciente: 2,
+    fechaProgramada: "2024-08-15",
+    tipoSeguimiento: "PRESENCIAL",
+    estadoSeguimiento: "PENDIENTE",
+    nivelSemaforo: "A",
+    usuarioResponsable: "Dr. Carlos Herrera",
+    notasSeguimiento: "Cita de control para reevaluar tratamiento de migraña. Verificar adherencia a terapia de sueño."
+  }
 ];

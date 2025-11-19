@@ -66,4 +66,21 @@ export const chequeos: ChequeoBienestar[] = [
     nivelSemaforo: "V",
     estadoChequeo: "Completado",
   },
+  {
+    idChequeo: 5,
+    idPaciente: 2,
+    fechaRegistro: "2024-07-30T08:45:00",
+    estadoAnimo: "Normal",
+    ruta: "Teletrabajo",
+    modalidadTrabajo: "Remoto",
+    aptoLaboral: true,
+    alergiasActivas: true,
+    alergiasDescripcion: "Polvo",
+    calidadSueno: "Regular",
+    consumoAgua: "Entre 1 y 2 litros",
+    yaConsultoMedico: false,
+    nivelSemaforo: "A",
+    estadoChequeo: "Completado",
+    comentarioGeneral: "Sigo con algo de malestar pero mejorando."
+  }
 ];
