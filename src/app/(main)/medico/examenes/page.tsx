@@ -90,12 +90,12 @@ export default function ExamenesMedicosPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
         <h1 className="text-3xl font-bold">Gestión de Exámenes Médicos</h1>
-        <div className="flex gap-2">
+        <div className="flex flex-col md:flex-row gap-2">
            <Dialog>
             <DialogTrigger asChild>
-                <Button variant="outline"><FilePenLine/> Registrar Resultado Manual</Button>
+                <Button variant="outline" className='w-full md:w-auto'><FilePenLine/> Registrar Resultado Manual</Button>
             </DialogTrigger>
             <DialogContent>
                 <DialogHeader><DialogTitle>Registro Manual de Resultado</DialogTitle></DialogHeader>
@@ -104,7 +104,7 @@ export default function ExamenesMedicosPage() {
            </Dialog>
            <Dialog open={isBulkModalOpen} onOpenChange={setIsBulkModalOpen}>
             <DialogTrigger asChild>
-                <Button><UploadCloud/> Carga Masiva (Excel)</Button>
+                <Button className='w-full md:w-auto'><UploadCloud/> Carga Masiva (Excel)</Button>
             </DialogTrigger>
             <DialogContent>
                 <DialogHeader><DialogTitle>Carga Masiva de Resultados desde Excel</DialogTitle></DialogHeader>
