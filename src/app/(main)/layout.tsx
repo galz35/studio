@@ -1,0 +1,52 @@
+"use client";
+
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Sidebar } from "@/components/layout/Sidebar";
+import { Topbar } from "@/components/layout/Topbar";
+import { useAuth } from "@/hooks/use-auth";
+import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
+
+export default function MainLayout({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, loading } = useAuth();
+  const router = useRouter();
+  const isMobile = useIsMobile();
+  const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  useEffect(() => {
+    if (!loading && !isAuthenticated) {
+      router.push("/login");
+    }
+  }, [isAuthenticated, loading, router]);
+  
+  useEffect(() => {
+    setSidebarCollapsed(isMobile);
+  }, [isMobile]);
+
+  const toggleSidebar = () => {
+    setSidebarCollapsed(!isSidebarCollapsed);
+  };
+  
+  if (loading || !isAuthenticated) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        Cargando...
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex min-h-screen w-full">
+      <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
+      <div className="flex flex-1 flex-col">
+        <Topbar toggleSidebar={toggleSidebar} />
+        <main className="flex-1 overflow-y-auto bg-background p-4 md:p-6 lg:p-8">
+            <div className={cn("transition-all duration-300 ease-in-out", isMobile ? 'ml-0' : (isSidebarCollapsed ? "md:ml-16" : "md:ml-64"))}>
+                 {children}
+            </div>
+        </main>
+      </div>
+    </div>
+  );
+}

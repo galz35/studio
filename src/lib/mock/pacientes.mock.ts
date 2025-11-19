@@ -1,0 +1,43 @@
+import type { Paciente } from "@/lib/types/domain";
+
+export const pacientes: Paciente[] = [
+  {
+    idPaciente: 1,
+    carnet: "P001",
+    nombreCompleto: "Ana Sofía Pérez",
+    fechaNacimiento: "1995-03-15",
+    sexo: "F",
+    telefono: "8888-1111",
+    correo: "ana.perez@corp.com",
+    gerencia: "Marketing",
+    area: "Marketing Digital",
+    estadoPaciente: "A",
+    nivelSemaforo: "V",
+  },
+  {
+    idPaciente: 2,
+    carnet: "P002",
+    nombreCompleto: "Luis Fernando García",
+    fechaNacimiento: "1998-07-22",
+    sexo: "M",
+    telefono: "8888-2222",
+    correo: "luis.garcia@corp.com",
+    gerencia: "Tecnología",
+    area: "Desarrollo de Software",
+    estadoPaciente: "A",
+    nivelSemaforo: "R",
+  },
+  {
+    idPaciente: 3,
+    carnet: "P003",
+    nombreCompleto: "Mariana López",
+    fechaNacimiento: "1992-11-01",
+    sexo: "F",
+    telefono: "8888-3333",
+    correo: "mariana.lopez@corp.com",
+    gerencia: "Finanzas",
+    area: "Contabilidad",
+    estadoPaciente: "A",
+    nivelSemaforo: "A",
+  },
+];
