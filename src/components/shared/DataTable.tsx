@@ -19,35 +19,40 @@ interface Column<T> {
   cell?: (row: T) => React.ReactNode;
 }
 
-interface DataTableProps<T> {
+interface DataTableProps<T extends { [key: string]: any }> {
   columns: Column<T>[];
   data: T[];
-  filterColumn?: keyof T;
+  filterColumn?: string; // Can be a nested key like 'paciente.nombreCompleto'
   filterPlaceholder?: string;
 }
+
+// Helper function to get nested property
+const getNestedValue = (obj: any, path: string): any => {
+  return path.split('.').reduce((o, i) => (o ? o[i] : undefined), obj);
+};
+
 
 export function DataTable<T extends { [key: string]: any }>({ columns, data, filterColumn, filterPlaceholder }: DataTableProps<T>) {
   const [filter, setFilter] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  const filteredData = data.filter(item => {
-    if (!filterColumn || !filter) return true;
-    
-    // Handle nested properties in filterColumn, e.g., 'paciente.nombreCompleto'
-    const filterValue = String(filterColumn).split('.').reduce((o, i) => (o ? o[i] : undefined), item);
-    
-    // Also search in other columns
-    const searchableRow = columns.map(col => {
-      const value = typeof col.accessor === 'function' 
-        ? col.accessor(item) 
-        : item[col.accessor as keyof T];
-      return String(value).toLowerCase();
-    }).join(' ');
+ const filteredData = data.filter(item => {
+    if (!filter) return true;
+    const lowercasedFilter = filter.toLowerCase();
 
-    return searchableRow.includes(filter.toLowerCase());
+    // Check all columns for a match
+    return columns.some(col => {
+      let value;
+      if (typeof col.accessor === 'function') {
+        value = col.accessor(item);
+      } else {
+        // Handle nested paths for accessor key
+        value = getNestedValue(item, col.accessor as string);
+      }
+      return String(value).toLowerCase().includes(lowercasedFilter);
+    });
   });
-
 
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
   const paginatedData = filteredData.slice(
@@ -75,31 +80,33 @@ export function DataTable<T extends { [key: string]: any }>({ columns, data, fil
       <div className="grid gap-4 md:hidden">
         {paginatedData.length > 0 ? (
           paginatedData.map((row, rowIndex) => (
-            <Card key={rowIndex} className="p-4">
-              <CardContent className="space-y-3 p-0">
+            <Card key={rowIndex}>
+              <CardContent className="space-y-3 p-4">
                 {columns.map((col, colIndex) => {
+                  // Don't render the "actions" column as a label-value pair
+                  if (String(col.accessor) === 'actions' || col.header.toLowerCase() === 'acciones') {
+                    return null;
+                  }
+
                   const cellContent = col.cell
                     ? col.cell(row)
                     : typeof col.accessor === 'function'
                     ? col.accessor(row)
-                    : String(row[col.accessor as keyof T] ?? '');
-
-                  // Don't render an empty row for actions
-                  if (col.header.toLowerCase() === 'acciones' && typeof cellContent === 'object') {
-                    return (
-                       <div key={colIndex} className="flex justify-end pt-2">
-                          {cellContent}
-                       </div>
-                    );
-                  }
+                    : String(getNestedValue(row, col.accessor as string) ?? '');
 
                   return (
                     <div key={colIndex} className="flex justify-between items-start text-sm">
                       <span className="font-semibold text-muted-foreground mr-2">{col.header}:</span>
-                      <span className="text-right">{cellContent}</span>
+                      <div className="text-right">{cellContent}</div>
                     </div>
                   );
                 })}
+                 {/* Render actions at the bottom of the card */}
+                 {columns.find(c => String(c.accessor) === 'actions' || c.header.toLowerCase() === 'acciones') && (
+                    <div className="flex justify-end border-t pt-3 mt-3">
+                      {columns.find(c => String(c.accessor) === 'actions' || c.header.toLowerCase() === 'acciones')!.cell!(row)}
+                    </div>
+                 )}
               </CardContent>
             </Card>
           ))
@@ -130,7 +137,7 @@ export function DataTable<T extends { [key: string]: any }>({ columns, data, fil
                         ? col.cell(row)
                         : typeof col.accessor === 'function'
                         ? col.accessor(row)
-                        : String(row[col.accessor as keyof T] ?? '')}
+                        : String(getNestedValue(row, col.accessor as string) ?? '')}
                     </TableCell>
                   ))}
                 </TableRow>

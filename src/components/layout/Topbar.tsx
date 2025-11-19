@@ -43,6 +43,7 @@ export function Topbar({ toggleSidebar }: { toggleSidebar: () => void }) {
         <span className="sr-only">Toggle Sidebar</span>
       </Button>
       <div className="flex-1">
+         {/* This button is for desktop to collapse/expand the sidebar */}
          <Button variant="ghost" size="icon" className="hidden md:inline-flex" onClick={toggleSidebar}>
             <PanelLeft className="h-6 w-6" />
             <span className="sr-only">Toggle Sidebar</span>

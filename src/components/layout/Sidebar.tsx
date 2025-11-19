@@ -9,22 +9,21 @@ import {
   Calendar,
   Users,
   Settings,
-  ShieldCheck,
   FlaskConical,
   Repeat,
   BookUser,
-  PanelLeft,
   CalendarPlus,
   BarChart3,
   CalendarDays,
-  Stethoscope
+  Stethoscope,
+  X,
 } from "lucide-react";
 
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 
 interface NavItemProps {
@@ -39,24 +38,22 @@ const NavItem = ({ href, icon: Icon, label, isCollapsed }: NavItemProps) => {
   const isActive = pathname.startsWith(href);
 
   const linkContent = (
-      <Button
-        variant="ghost"
+      <div
         className={cn(
-          "w-full h-12 justify-start text-white/80 hover:bg-white/10 hover:text-white",
+          "flex items-center w-full h-12 justify-start text-white/80 rounded-md hover:bg-white/10 hover:text-white transition-colors",
           isCollapsed ? "px-3.5" : "px-4",
           isActive && "bg-white/20 text-white"
         )}
-        aria-label={label}
       >
         <Icon className="h-5 w-5 flex-shrink-0" />
         {!isCollapsed && <span className="ml-3 font-medium">{label}</span>}
-      </Button>
+      </div>
   );
 
   return (
     <li>
         {isCollapsed ? (
-            <TooltipProvider>
+            <TooltipProvider delayDuration={0}>
                 <Tooltip>
                     <TooltipTrigger asChild>
                          <Link href={href}>{linkContent}</Link>
@@ -121,24 +118,29 @@ export function Sidebar({ isCollapsed, toggleSidebar }: { isCollapsed: boolean, 
   return (
     <aside
       className={cn(
-        "bg-primary text-primary-foreground flex-col border-r border-primary-foreground/10 transition-all duration-300 ease-in-out hidden md:flex",
-        isCollapsed ? "w-20" : "w-64"
+        "bg-primary text-primary-foreground flex h-full flex-col border-r border-primary-foreground/10 transition-all duration-300 ease-in-out",
+        isCollapsed && !isMobile ? "w-20" : "w-64"
       )}
     >
-      <div className={cn("flex h-16 items-center border-b border-white/10", isCollapsed ? 'justify-center' : 'px-4')}>
+      <div className={cn("flex h-16 items-center border-b border-white/10", isCollapsed && !isMobile ? 'justify-center' : 'px-4 justify-between')}>
          <Link href="/" className="flex items-center gap-2">
             <HeartPulse className="h-7 w-7 text-white" />
-            {!isCollapsed && (
+            {(!isCollapsed || isMobile) && (
             <h1 className="text-xl text-white">
                 Claro <span className="font-bold">Mi Salud</span>
             </h1>
             )}
         </Link>
+        {isMobile && (
+          <Button variant="ghost" size="icon" onClick={toggleSidebar} className="text-white hover:bg-white/10">
+            <X className="h-6 w-6"/>
+          </Button>
+        )}
       </div>
       <nav className="flex-1 overflow-y-auto p-2">
         <ul className="space-y-1">
           {menuItems.map((item) => (
-            <NavItem key={item.href} {...item} isCollapsed={isCollapsed} />
+            <NavItem key={item.href} {...item} isCollapsed={isCollapsed && !isMobile} />
           ))}
         </ul>
       </nav>

@@ -36,12 +36,13 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       setSidebarOpen(!isSidebarOpen);
     } else {
       setSidebarCollapsed(!isSidebarCollapsed);
+      setSidebarOpen(true); // Ensure sidebar opens if it was collapsed
     }
   };
   
   if (loading || !isAuthenticated) {
     return (
-      <div className="flex h-screen items-center justify-center bg-gray-50">
+      <div className="flex h-screen items-center justify-center bg-background">
         Cargando...
       </div>
     );
@@ -49,25 +50,34 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <div className="flex min-h-screen w-full bg-background">
-      {isMobile && isSidebarOpen && (
-         <div className="fixed inset-0 z-30 bg-black/60" onClick={toggleSidebar} />
-      )}
-      <div className={cn(
-          "fixed top-0 left-0 h-full z-40 bg-primary text-primary-foreground flex-col border-r border-primary-foreground/10 transition-transform duration-300 ease-in-out md:hidden",
-          isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-      )}>
+       {/* Mobile Sidebar */}
+      <div 
+        className={cn(
+            "fixed inset-y-0 left-0 z-50 h-full w-64 bg-primary text-primary-foreground flex-col border-r border-primary-foreground/10 transition-transform duration-300 ease-in-out md:hidden",
+            isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+        )}
+      >
         <Sidebar isCollapsed={false} toggleSidebar={toggleSidebar} />
       </div>
+      
+      {isMobile && isSidebarOpen && (
+         <div className="fixed inset-0 z-40 bg-black/60" onClick={toggleSidebar} />
+      )}
 
-      <div className="hidden md:flex">
+      {/* Desktop Sidebar */}
+      <div className={cn(
+        "hidden md:flex transition-all duration-300 ease-in-out",
+        isSidebarCollapsed ? "w-20" : "w-64"
+      )}>
          <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
       </div>
 
-      <div className="flex flex-1 flex-col">
+      <div className={cn(
+        "flex flex-1 flex-col transition-all duration-300 ease-in-out",
+        isMobile ? 'w-full' : (isSidebarCollapsed ? "ml-20" : "ml-64")
+      )}>
         <Topbar toggleSidebar={toggleSidebar} />
-        <main className={cn("flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 transition-all duration-300 ease-in-out", 
-          isMobile ? '' : (isSidebarCollapsed ? "md:ml-20" : "md:ml-64")
-        )}>
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
            {children}
         </main>
       </div>
