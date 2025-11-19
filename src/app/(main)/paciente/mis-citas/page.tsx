@@ -81,7 +81,9 @@ export default function MisCitasPage() {
             <div className='space-y-1'>
               <p className='text-lg'><strong>Fecha:</strong> {proximaCita.fechaCita} a las {proximaCita.horaCita}</p>
               <p><strong>Médico:</strong> {medicos.find(m => m.idMedico === proximaCita.idMedico)?.nombreCompleto}</p>
-              <p><strong>Estado:</strong> <Badge className={cn("border-transparent", getStatusClass(proximaCita.estadoCita))}>{proximaCita.estadoCita}</Badge></p>
+              <div className="flex items-center gap-2">
+                <strong>Estado:</strong> <Badge className={cn("border-transparent", getStatusClass(proximaCita.estadoCita))}>{proximaCita.estadoCita}</Badge>
+              </div>
             </div>
           ) : (
             <p className='text-muted-foreground'>No tiene citas próximas agendadas.</p>
