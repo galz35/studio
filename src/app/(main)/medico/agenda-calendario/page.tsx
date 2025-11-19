@@ -1,15 +1,16 @@
 "use client";
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import * as api from '@/lib/services/api.mock';
-import { CitaMedica, Paciente, SeguimientoPaciente, CasoClinico } from '@/lib/types/domain';
+import { CitaMedica, SeguimientoPaciente } from '@/lib/types/domain';
 import { Card, CardContent } from '@/components/ui/card';
-import { Calendar } from '@/components/ui/calendar';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
-import { DayPicker } from 'react-day-picker';
+import { DayPicker, type DayProps } from 'react-day-picker';
+import 'react-day-picker/dist/style.css';
+
 
 type CalendarEventType = 'cita' | 'atencion' | 'seguimiento';
 
@@ -22,6 +23,15 @@ interface CalendarEvent {
   data: CitaMedica | SeguimientoPaciente;
 }
 
+const EventBadge = ({ event }: { event: CalendarEvent }) => {
+    const typeClasses: Record<CalendarEventType, string> = {
+      cita: 'bg-blue-100 text-blue-800 border-blue-200',
+      seguimiento: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+      atencion: 'bg-gray-100 text-gray-600 border-gray-200',
+    };
+    return <Badge className={cn("mb-1 block truncate p-1 text-xs font-normal", typeClasses[event.type])}>{event.title}</Badge>;
+};
+
 export default function AgendaCalendarioPage() {
   const { usuarioActual, pais } = useAuth();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
@@ -32,12 +42,12 @@ export default function AgendaCalendarioPage() {
     if (usuarioActual?.idMedico) {
       Promise.all([
         api.getCitasPorMedico(usuarioActual.idMedico, { pais }),
-        api.getSeguimientos({ pais }) // Assuming getSeguimientos can be filtered by doctor implicitly or needs a filter
+        api.getSeguimientos({ pais })
       ]).then(([citasRes, seguimientosRes]) => {
         
         const citasEvents = citasRes.map((cita): CalendarEvent => ({
           id: `cita-${cita.idCita}`,
-          date: new Date(cita.fechaCita + 'T00:00:00Z'), // Use UTC to avoid timezone issues
+          date: new Date(cita.fechaCita),
           type: cita.estadoCita === 'FINALIZADA' ? 'atencion' : 'cita',
           title: `${cita.horaCita} - ${cita.paciente.nombreCompleto}`,
           description: cita.motivoResumen,
@@ -48,7 +58,7 @@ export default function AgendaCalendarioPage() {
           .filter(s => s.estadoSeguimiento === 'PENDIENTE')
           .map((seg): CalendarEvent => ({
             id: `seg-${seg.idSeguimiento}`,
-            date: new Date(seg.fechaProgramada + 'T00:00:00Z'), // Use UTC
+            date: new Date(seg.fechaProgramada),
             type: 'seguimiento',
             title: `Seguimiento: ${seg.paciente.nombreCompleto}`,
             description: seg.notasSeguimiento,
@@ -57,68 +67,67 @@ export default function AgendaCalendarioPage() {
 
         setEvents([...citasEvents, ...seguimientosEvents]);
         setLoading(false);
+      }).catch(err => {
+        console.error("Failed to load calendar data:", err);
+        setLoading(false);
       });
+    } else {
+        setLoading(false);
     }
   }, [usuarioActual, pais]);
 
   const eventsByDay = useMemo(() => {
-    const map = new Map<string, CalendarEvent[]>();
-    events.forEach(event => {
-      const dateKey = event.date.toISOString().split('T')[0];
-      if (!map.has(dateKey)) {
-        map.set(dateKey, []);
-      }
-      map.get(dateKey)!.push(event);
-    });
-    return map;
+    return events.reduce((acc, event) => {
+        const day = event.date.toISOString().split('T')[0];
+        if (!acc[day]) {
+            acc[day] = [];
+        }
+        acc[day].push(event);
+        return acc;
+    }, {} as Record<string, CalendarEvent[]>);
   }, [events]);
 
-  const EventBadge = ({ event }: { event: CalendarEvent }) => {
-    const typeClasses: Record<CalendarEventType, string> = {
-      cita: 'bg-blue-100 text-blue-800 border-blue-200',
-      seguimiento: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-      atencion: 'bg-gray-100 text-gray-600 border-gray-200',
-    };
-    return <Badge className={cn("block truncate text-xs p-1", typeClasses[event.type])}>{event.title}</Badge>;
-  };
-  
-  function DayWithEvents(props: { date: Date } & React.HTMLAttributes<HTMLDivElement>) {
-    const dateKey = props.date.toISOString().split('T')[0];
-    const eventsDelDia = eventsByDay.get(dateKey) || [];
+  const DayWithEvents = useCallback(({ date, displayMonth }: DayProps) => {
+    const dayKey = date.toISOString().split('T')[0];
+    const dayEvents = eventsByDay[dayKey] || [];
+    const isOutside = date.getMonth() !== displayMonth.getMonth();
 
-    if (eventsDelDia.length === 0) {
-        return <div className="p-1 h-24">{props.date.getDate()}</div>;
+    if (isOutside) {
+        return <div className="p-1 h-24 text-muted-foreground/30">{date.getDate()}</div>;
+    }
+    
+    if (dayEvents.length === 0) {
+      return <div className="p-1 h-24">{date.getDate()}</div>;
     }
 
     return (
       <Popover>
         <PopoverTrigger asChild>
-            <div className="p-1 h-24 cursor-pointer hover:bg-muted/50 rounded-md flex flex-col">
-                <span className='font-semibold'>{props.date.getDate()}</span>
-                <div className="mt-1 space-y-1 overflow-hidden">
-                    {eventsDelDia.slice(0, 2).map(event => (
-                        <EventBadge key={event.id} event={event} />
-                    ))}
-                    {eventsDelDia.length > 2 && <Badge variant="outline" className="text-xs">+{eventsDelDia.length - 2} más</Badge>}
-                </div>
+          <div className="relative flex h-24 w-full flex-col p-1">
+            <div>{date.getDate()}</div>
+            <div className="flex-1 overflow-y-auto">
+              {dayEvents.slice(0,2).map((event) => (
+                <EventBadge key={event.id} event={event} />
+              ))}
+              {dayEvents.length > 2 && <Badge variant="outline" className="text-xs w-full">+ {dayEvents.length-2} más</Badge>}
             </div>
+          </div>
         </PopoverTrigger>
-        <PopoverContent className="w-80 z-10">
-            <div className="space-y-2">
-                <h4 className="font-medium leading-none">Eventos para {props.date.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}</h4>
-                <ul className='space-y-2 text-sm max-h-60 overflow-y-auto'>
-                    {eventsDelDia.map(e => (
-                        <li key={e.id} className='p-2 bg-muted/50 rounded-md'>
-                           <EventBadge event={e} />
-                           <p className="text-xs text-muted-foreground mt-1">{e.description}</p>
-                        </li>
-                    ))}
-                </ul>
-            </div>
+        <PopoverContent className="w-80">
+          <h4 className="font-medium leading-none mb-2">Eventos para {date.toLocaleDateString('es-ES')}</h4>
+          <div className='max-h-60 overflow-y-auto space-y-2'>
+          {dayEvents.map(event => (
+              <div key={event.id} className='p-2 rounded-md bg-muted/50'>
+                  <EventBadge event={event}/>
+                  <p className='text-xs text-muted-foreground mt-1'>{event.description}</p>
+              </div>
+          ))}
+          </div>
         </PopoverContent>
       </Popover>
     );
-  }
+  }, [eventsByDay]);
+
 
   if (loading) return <div>Cargando agenda...</div>;
 
@@ -133,17 +142,20 @@ export default function AgendaCalendarioPage() {
         </div>
       </div>
       <Card>
-        <CardContent className="p-1 md:p-2">
-          <DayPicker
+        <CardContent className="p-0">
+         <DayPicker
             month={currentMonth}
             onMonthChange={setCurrentMonth}
             className="w-full"
-            components={{
-              Day: DayWithEvents,
+            classNames={{
+              month: 'space-y-4 p-3',
+              head_cell: 'w-full',
+              table: 'w-full border-collapse',
+              row: 'flex w-full mt-2',
+              cell: 'w-full text-sm !h-24 rounded-md text-left p-0 focus-within:relative focus-within:z-20',
+              day: 'w-full h-full p-1',
             }}
-             classNames={{
-              day_outside: "text-muted-foreground/50",
-            }}
+            components={{ Day: DayWithEvents }}
           />
         </CardContent>
       </Card>
