@@ -46,25 +46,8 @@ export function Topbar({ toggleSidebar }: { toggleSidebar: () => void }) {
         {/* Breadcrumb can go here */}
       </div>
       <div className="flex items-center gap-4">
-        {/* Country Selector */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="gap-2">
-              <Globe className="h-4 w-4" />
-              <span>{pais}</span>
-              <ChevronDown className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            <DropdownMenuLabel>Seleccionar País</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuRadioGroup value={pais} onValueChange={(p) => setPais(p as Pais)}>
-                <DropdownMenuRadioItem value="NI">Nicaragua</DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="CR">Costa Rica</DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="HN">Honduras</DropdownMenuRadioItem>
-            </DropdownMenuRadioGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {/* Country Selector was here */}
+     
 
         {/* Role Switcher */}
         {usuarioActual?.idUsuario && (
