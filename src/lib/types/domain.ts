@@ -3,6 +3,8 @@
 export type Rol = 'PACIENTE' | 'MEDICO' | 'ADMIN';
 export type Pais = 'NI' | 'CR' | 'HN';
 
+export type EstadoClinico = 'BIEN' | 'REGULAR' | 'MAL';
+
 export interface UsuarioAplicacion {
   idUsuario: number;
   carnet: string;
@@ -76,62 +78,66 @@ export interface CitaMedica {
   idCita: number;
   idCaso?: number;
   idPaciente: number;
-  idMedico?: number;
-  idChequeo?: number;
+  idMedico: number;
   fechaCita: string; // YYYY-MM-DD
   horaCita: string; // HH:mm
-  canalOrigen: 'CHEQUEO' | 'RRHH' | 'DIRECTO';
-  estadoCita: 'PROGRAMADA' | 'CONFIRMADA' | 'FINALIZADA' | 'CANCELADA';
-  notasCita?: string;
+  canalOrigen: 'CHEQUEO' | 'RRHH' | 'OTRO';
+  estadoCita: 'PROGRAMADA' | 'EN_ATENCION' | 'FINALIZADA' | 'CANCELADA';
+  motivoResumen: string;
+  nivelSemaforoPaciente: 'V' | 'A' | 'R';
 }
 
 export interface AtencionMedica {
   idAtencion: number;
   idCita: number;
-  idCaso: number;
-  idMedico?: number;
-  fechaAtencion: string;
+  idCaso?: number;
+  idMedico: number;
+  fechaAtencion: string; // ISO
+  temperaturaC?: number;
   pesoKg?: number;
   alturaM?: number;
   presionArterial?: string;
   frecuenciaCardiaca?: number;
-  temperaturaC?: number;
-  diagnosticoMedico: string;
-  codigoDiagnostico?: string;
+  estadoClinico: EstadoClinico; // BIEN / REGULAR / MAL
+  diagnosticoPrincipal: string;
+  codDiagnostico?: string;
   planTratamiento?: string;
   recomendaciones?: string;
-  nivelSemaforo: 'V' | 'A' | 'R';
-  requiereSeguimiento?: boolean;
-  fechaSugeridaSeguimiento?: string;
-  tipoAlta: string;
-  estadoAtencion: string;
+  requiereSeguimiento: boolean;
+  fechaSiguienteCita?: string; // solo si requiereSeguimiento
+  tipoSiguienteCita?: 'CONTROL' | 'RESULTADO_EXAMEN' | 'OTRO';
+  notasSeguimientoMedico?: string;
 }
 
-export interface ExamenMedico {
-  idExamen: number;
-  idCaso: number;
-  idAtencion?: number;
-  idPaciente: number;
-  tipoExamen: string;
-  fechaSolicitud: string;
-  fechaResultado?: string;
-  laboratorio?: string;
-  resultadoResumen?: string;
-  estadoExamen: 'PENDIENTE' | 'ENTREGADO';
+export interface VacunaAplicada {
+  idVacunaRegistro: number;
+  idAtencion: number;
+  tipoVacuna: string; // Influenza, COVID, Hepatitis, etc.
+  dosis: string; // 1ra dosis, refuerzo, etc.
+  fechaAplicacion: string;
+  observaciones?: string;
 }
 
-export interface SeguimientoPaciente {
+export interface RegistroPsicosocial {
+  idRegistroPsico: number;
+  idAtencion: number;
+  nivelEstrés?: 'BAJO' | 'MEDIO' | 'ALTO';
+  sintomasPsico?: string[]; // Ej: ['Ansiedad', 'Insomnio', 'Tristeza']
+  riesgoSuicida?: boolean;
+  derivarAPsico?: boolean;
+  notasPsico?: string;
+  confidencial?: boolean; // Indica si es info sensible
+}
+
+export interface SeguimientoGenerado {
   idSeguimiento: number;
-  idCaso: number;
-  idAtencion?: number;
+  idCaso?: number;
+  idAtencion: number;
   idPaciente: number;
   fechaProgramada: string;
-  fechaReal?: string;
-  tipoSeguimiento: 'LLAMADA' | 'TEAMS' | 'PRESENCIAL';
-  estadoSeguimiento: 'PENDIENTE' | 'EN_PROCESO' | 'RESUELTO';
-  nivelSemaforo: 'V' | 'A' | 'R';
-  notasSeguimiento?: string;
-  usuarioResponsable: string;
+  motivo: string;
+  estadoInicial: 'PENDIENTE';
+  estadoClinicoAlProgramar: EstadoClinico;
 }
 
 export interface EmpleadoEmp2024 {

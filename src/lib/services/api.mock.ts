@@ -10,7 +10,10 @@ import {
   seguimientos as mockSeguimientos,
   medicos as mockMedicos,
   usuarios as mockUsuarios,
-  empleadosEmp2024 as mockEmpleados
+  empleadosEmp2024 as mockEmpleados,
+  registrosPsicosociales as mockPsico,
+  vacunasAplicadas as mockVacunas,
+  seguimientosGenerados as mockSeguimientosGenerados,
 } from '@/lib/mock/index';
 
 import type { 
@@ -25,7 +28,10 @@ import type {
   UsuarioAplicacion,
   EmpleadoEmp2024,
   Rol,
-  Pais
+  Pais,
+  VacunaAplicada,
+  RegistroPsicosocial,
+  SeguimientoGenerado
 } from '@/lib/types/domain';
 
 // --- Paciente Services ---
@@ -95,11 +101,58 @@ export const getDashboardPaciente = (idPaciente: number): Promise<{
 
 // --- Medico Services ---
 
-export const getCitasPorMedico = (idMedico: number, filters?: { dateRange?: [Date, Date], estado?: string, semaforo?: string, pais?: Pais }): Promise<(CitaMedica & {paciente: Paciente})[]> => {
+export const getCitaPorId = (idCita: number): Promise<CitaMedica | null> => {
+  return Promise.resolve(mockCitas.find(c => c.idCita === idCita) || null);
+}
+
+export const getPacientePorId = (idPaciente: number): Promise<Paciente | null> => {
+    return Promise.resolve(mockPacientes.find(p => p.idPaciente === idPaciente) || null);
+}
+
+export const getEmpleadoEmp2024PorCarnet = (carnet: string): Promise<EmpleadoEmp2024 | null> => {
+    return Promise.resolve(mockEmpleados.find(e => e.carnet === carnet) || null);
+}
+
+
+export const guardarAtencionCompleta = (payload: { atencion: AtencionMedica; vacunas: VacunaAplicada[]; psico: RegistroPsicosocial | null; seguimientos: SeguimientoGenerado[] }): Promise<{ ok: boolean }> => {
+    return new Promise(resolve => {
+        setTimeout(() => {
+            const { atencion, vacunas, psico, seguimientos } = payload;
+            
+            // "Save" atencion
+            mockAtenciones.push(atencion);
+
+            // "Save" vacunas
+            vacunas.forEach(v => mockVacunas.push(v));
+
+            // "Save" psico
+            if (psico) {
+                mockPsico.push(psico);
+            }
+
+            // "Save" seguimientos
+            seguimientos.forEach(s => mockSeguimientosGenerados.push(s));
+            
+            // Update cita status
+            const cita = mockCitas.find(c => c.idCita === atencion.idCita);
+            if (cita) {
+                cita.estadoCita = 'FINALIZADA';
+            }
+
+            resolve({ ok: true });
+        }, 500); // Simulate network delay
+    });
+}
+
+
+export const getCitasPorMedico = (idMedico: number, filters?: { dateRange?: [Date, Date], estado?: string, semaforo?: 'V' | 'A' | 'R', pais?: Pais }): Promise<(CitaMedica & {paciente: Paciente})[]> => {
     let citas = mockCitas.filter(c => c.idMedico === idMedico);
     
     if (filters?.estado) {
         citas = citas.filter(c => c.estadoCita === filters.estado);
+    }
+    if (filters?.semaforo) {
+        citas = citas.filter(c => c.nivelSemaforoPaciente === filters.semaforo);
     }
 
     const citasConPaciente = citas.map(cita => {
@@ -107,14 +160,8 @@ export const getCitasPorMedico = (idMedico: number, filters?: { dateRange?: [Dat
         return { ...cita, paciente };
     });
 
-    // filter by semaforo and pais on patient data
-    let filteredCitas = citasConPaciente;
-
-    if (filters?.semaforo) {
-        filteredCitas = filteredCitas.filter(c => c.paciente.nivelSemaforo === filters.semaforo);
-    }
-    
     // Pais filter from Empleado data
+    let filteredCitas = citasConPaciente;
     if (filters?.pais) {
       const empleadosDelPais = mockEmpleados.filter(e => e.pais === filters.pais).map(e => e.carnet);
       filteredCitas = filteredCitas.filter(c => empleadosDelPais.includes(c.paciente.carnet));
@@ -187,8 +234,13 @@ export const getAtencionMedicaData = (idCita: number): Promise<{cita: CitaMedica
     return Promise.resolve({ cita: {...cita, paciente, caso } });
 }
 
-export const guardarAtencion = (input: Omit<AtencionMedica, 'idAtencion'>): Promise<AtencionMedica> => {
-    const nuevaAtencion = { ...input, idAtencion: mockAtenciones.length + 1 };
+export const guardarAtencion = (input: Omit<AtencionMedica, 'idAtencion' | 'estadoClinico' | 'requiereSeguimiento'>): Promise<AtencionMedica> => {
+    const nuevaAtencion = { 
+      ...input, 
+      idAtencion: mockAtenciones.length + 1, 
+      estadoClinico: 'BIEN' as const, 
+      requiereSeguimiento: false
+     };
     mockAtenciones.push(nuevaAtencion);
     const cita = mockCitas.find(c => c.idCita === input.idCita);
     if (cita) {
@@ -269,10 +321,10 @@ export const getDashboardAdmin = (pais: Pais): Promise<{
         { name: 'Zona Franca', value: 15 },
     ]
     const citasPorEstado = [
-        { name: 'Programada', value: 12, fill: 'var(--color-yellow)' },
-        { name: 'Confirmada', value: 8, fill: 'var(--color-blue)' },
-        { name: 'Finalizada', value: 30, fill: 'var(--color-green)' },
-        { name: 'Cancelada', value: 5, fill: 'var(--color-red)' },
+        { name: 'Programada', value: 12, fill: 'hsl(var(--primary))' },
+        { name: 'Confirmada', value: 8, fill: 'hsl(var(--secondary))' },
+        { name: 'Finalizada', value: 30, fill: 'hsl(var(--accent))' },
+        { name: 'Cancelada', value: 5, fill: 'hsl(var(--destructive))' },
     ]
 
     return Promise.resolve({ kpis, chequeosPorRuta, citasPorEstado });

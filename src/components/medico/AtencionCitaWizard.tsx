@@ -1,0 +1,150 @@
+"use client";
+
+import React, { useState, useMemo } from 'react';
+import { Card, CardContent } from "@/components/ui/card";
+import { StepHeaderWizard } from './StepHeaderWizard';
+import { Button } from '@/components/ui/button';
+import { AtencionMedica, CitaMedica, Paciente, EmpleadoEmp2024, EstadoClinico, VacunaAplicada, RegistroPsicosocial, SeguimientoGenerado } from '@/lib/types/domain';
+import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import * as api from '@/lib/services/api.mock';
+import { useAuth } from '@/hooks/use-auth';
+
+// Import steps
+import { Step1_Resumen } from './steps/Step1_Resumen';
+import { Step2_Vitales } from './steps/Step2_Vitales';
+import { Step3_Diagnostico } from './steps/Step3_Diagnostico';
+import { Step4_Seguimiento } from './steps_Seguimiento';
+import { Step5_Cierre } from './steps/Step5_Cierre';
+
+
+const TOTAL_STEPS = 5;
+
+interface AtencionCitaWizardProps {
+  citaData: {
+    cita: CitaMedica;
+    paciente: Paciente;
+    empleado: EmpleadoEmp2024;
+  };
+}
+
+export function AtencionCitaWizard({ citaData }: AtencionCitaWizardProps) {
+    const { usuarioActual } = useAuth();
+    const [step, setStep] = useState(1);
+    const [showSummaryModal, setShowSummaryModal] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+
+    // Main state for the medical attention
+    const [atencion, setAtencion] = useState<AtencionMedica>({
+        idAtencion: Date.now(),
+        idCita: citaData.cita.idCita,
+        idCaso: citaData.cita.idCaso,
+        idMedico: usuarioActual!.idMedico!,
+        fechaAtencion: new Date().toISOString(),
+        estadoClinico: 'BIEN',
+        diagnosticoPrincipal: '',
+        requiereSeguimiento: false,
+    });
+
+    const [vacunas, setVacunas] = useState<VacunaAplicada[]>([]);
+    const [psico, setPsico] = useState<RegistroPsicosocial>({
+        idRegistroPsico: Date.now(),
+        idAtencion: atencion.idAtencion,
+        confidencial: true,
+        sintomasPsico: [],
+    });
+    const [seguimientos, setSeguimientos] = useState<SeguimientoGenerado[]>([]);
+
+    const handleNext = () => setStep(prev => Math.min(prev + 1, TOTAL_STEPS));
+    const handlePrev = () => setStep(prev => Math.max(prev - 1, 1));
+    
+    const handleChangeAtencion = (field: keyof AtencionMedica, value: any) => {
+        setAtencion(prev => ({ ...prev, [field]: value }));
+    };
+
+    const handleUpdatePsico = (field: keyof RegistroPsicosocial, value: any) => {
+        setPsico(prev => ({...prev, [field]: value}));
+    };
+
+    const handleSave = async () => {
+        setIsSaving(true);
+        try {
+            await api.guardarAtencionCompleta({
+                atencion,
+                vacunas,
+                psico: psico,
+                seguimientos
+            });
+            setShowSummaryModal(true);
+        } catch (error) {
+            console.error("Error guardando la atención", error);
+            // Here you would show a toast with the error
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+
+    const stepConfig = useMemo(() => [
+        { title: 'Resumen de Cita', theme: 'red', guide: 'Confirma que estás atendiendo a la persona correcta y revisa el motivo de la cita.' },
+        { title: 'Signos Vitales y Estado Clínico', theme: 'slate', guide: 'Registra los signos vitales básicos y define el estado clínico general del paciente en esta consulta.' },
+        { title: 'Diagnóstico y Plan', theme: 'green', guide: 'Establece el diagnóstico principal y detalla el plan de tratamiento y las recomendaciones.' },
+        { title: 'Seguimiento', theme: 'gray', guide: 'Determina si el paciente necesita una cita de seguimiento y genera el recordatorio correspondiente.' },
+        { title: 'Acciones Adicionales y Cierre', theme: 'dark-red', guide: 'Registra acciones de la empresa, notas psicosociales y revisa el resumen antes de guardar.' },
+    ], []);
+
+    const currentStepConfig = stepConfig[step - 1];
+
+    return (
+        <Card className='overflow-hidden'>
+            <StepHeaderWizard
+                step={step}
+                totalSteps={TOTAL_STEPS}
+                title={currentStepConfig.title}
+                theme={currentStepConfig.theme}
+                guide={currentStepConfig.guide}
+            />
+            <CardContent className="p-6">
+                {step === 1 && <Step1_Resumen citaData={citaData} />}
+                {step === 2 && <Step2_Vitales atencion={atencion} handleChange={handleChangeAtencion} />}
+                {step === 3 && <Step3_Diagnostico atencion={atencion} handleChange={handleChangeAtencion} />}
+                {step === 4 && <Step4_Seguimiento atencion={atencion} handleChange={handleChangeAtencion} setSeguimientos={setSeguimientos} idPaciente={citaData.paciente.idPaciente} />}
+                {step === 5 && <Step5_Cierre atencion={atencion} vacunas={vacunas} setVacunas={setVacunas} psico={psico} setPsico={handleUpdatePsico} />}
+                
+                <div className="mt-8 flex justify-between">
+                    <Button variant="outline" onClick={handlePrev} disabled={step === 1 || isSaving}>
+                        ← Anterior
+                    </Button>
+                    {step < TOTAL_STEPS ? (
+                        <Button onClick={handleNext} disabled={isSaving}>
+                            Siguiente →
+                        </Button>
+                    ) : (
+                        <Button onClick={handleSave} disabled={isSaving}>
+                            {isSaving ? 'Guardando...' : 'Guardar Atención'}
+                        </Button>
+                    )}
+                </div>
+            </CardContent>
+
+            <AlertDialog open={showSummaryModal}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Atención Guardada Exitosamente</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            La atención para <strong>{citaData.paciente.nombreCompleto}</strong> ha sido registrada.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <div className="text-sm space-y-2 max-h-60 overflow-y-auto">
+                        <p><strong>Diagnóstico:</strong> {atencion.diagnosticoPrincipal}</p>
+                        {atencion.requiereSeguimiento && <p><strong>Seguimiento Programado:</strong> Sí, para el {atencion.fechaSiguienteCita}</p>}
+                        {vacunas.length > 0 && <p><strong>Vacunas Aplicadas:</strong> {vacunas.length}</p>}
+                        {seguimientos.length > 0 && <p><strong>Nuevos Seguimientos:</strong> {seguimientos.length}</p>}
+                    </div>
+                    <AlertDialogFooter>
+                        <AlertDialogAction onClick={() => window.location.href = '/medico/agenda-citas'}>Cerrar</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        </Card>
+    );
+}

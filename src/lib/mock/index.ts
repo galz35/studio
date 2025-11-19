@@ -7,4 +7,7 @@ export * from './examenes.mock';
 export * from './medicos.mock';
 export * from './pacientes.mock';
 export * from './seguimientos.mock';
+export * from './seguimientosGenerados.mock';
 export * from './usuarios.mock';
+export * from './vacunas.mock';
+export * from './psicosocial.mock';
