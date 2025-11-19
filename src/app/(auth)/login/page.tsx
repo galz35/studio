@@ -24,21 +24,10 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useAuth } from "@/hooks/use-auth";
-import type { Rol } from "@/lib/types/domain";
 
 const loginSchema = z.object({
   carnet: z.string().min(1, { message: "El carnet es requerido." }),
-  rol: z.enum(["PACIENTE", "MEDICO", "ADMIN"], {
-    required_error: "Debe seleccionar un rol.",
-  }),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
@@ -49,12 +38,11 @@ export default function LoginPage() {
     resolver: zodResolver(loginSchema),
     defaultValues: {
       carnet: "",
-      rol: "PACIENTE",
     },
   });
 
   const onSubmit: SubmitHandler<LoginFormValues> = (data) => {
-    loginFake(data.carnet, data.rol as Rol);
+    loginFake(data.carnet);
   };
 
   return (
@@ -62,7 +50,7 @@ export default function LoginPage() {
       <CardHeader>
         <CardTitle>Iniciar Sesión</CardTitle>
         <CardDescription>
-          Ingrese su carnet y seleccione su rol para acceder al sistema.
+          Ingrese su carnet para acceder al sistema.
         </CardDescription>
       </CardHeader>
       <Form {...form}>
@@ -77,31 +65,6 @@ export default function LoginPage() {
                   <FormControl>
                     <Input placeholder="Ej: P001, M001, A001" {...field} />
                   </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="rol"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Rol de Acceso</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seleccione un rol" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="PACIENTE">Paciente</SelectItem>
-                      <SelectItem value="MEDICO">Médico</SelectItem>
-                      <SelectItem value="ADMIN">Administrador</SelectItem>
-                    </SelectContent>
-                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
@@ -129,8 +92,8 @@ export default function LoginPage() {
           </CardFooter>
         </form>
       </Form>
-      <Card>
-        <CardHeader>
+      <Card className="mt-4 border-dashed">
+        <CardHeader className="pb-2 pt-4">
             <CardTitle className="text-base">Usuarios de Prueba</CardTitle>
         </CardHeader>
         <CardContent className="text-sm space-y-2">

@@ -12,7 +12,7 @@ interface AuthContextType {
   loading: boolean;
   pais: Pais;
   setPais: (pais: Pais) => void;
-  loginFake: (carnet: string, rol: Rol) => void;
+  loginFake: (carnet: string) => void;
   logout: () => void;
   switchRole: (newRole: Rol) => void;
 }
@@ -67,32 +67,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const loginFake = (carnet: string, rol: Rol) => {
-    let user = mockUsuarios.find(u => u.carnet.toLowerCase() === carnet.toLowerCase() && u.rol === rol);
+  const loginFake = (carnet: string) => {
+    // Find the first matching user profile for the given carnet
+    let user = mockUsuarios.find(u => u.carnet.toLowerCase() === carnet.toLowerCase());
     
     if (!user) {
-        const empleadoInfo = empleadosEmp2024.find(e => e.carnet.toLowerCase() === carnet.toLowerCase());
-        if (!empleadoInfo) {
-            console.error("Carnet no encontrado en la base de datos de empleados.");
-            // Ideally show a toast error here
-            return;
-        }
-        
-        // Create a fake user on the fly if not in mockUsuarios
-        user = {
-            idUsuario: 99,
-            carnet: empleadoInfo.carnet,
-            nombreCompleto: empleadoInfo.nombreCompleto,
-            rol,
-            estado: 'A',
-            pais: empleadoInfo.pais,
-        };
+        console.error("Carnet no encontrado en la base de datos de usuarios.");
+        // Ideally show a toast error here
+        return;
     }
     
     const userWithCountry = { ...user, pais };
     setUsuarioActual(userWithCountry);
     localStorage.setItem('usuarioActual', JSON.stringify(userWithCountry));
-    router.push(getDashboardUrl(rol));
+    router.push(getDashboardUrl(user.rol));
   };
 
   const logout = () => {
