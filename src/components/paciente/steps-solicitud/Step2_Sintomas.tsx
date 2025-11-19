@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
 const catalogoSintomas = {
     "General": [
@@ -110,7 +111,10 @@ export function Step2_Sintomas({ datosExtra, updateDatosExtra }: Step2Props) {
         } else {
             currentKeys.add(key);
             currentLabels.add(label);
-            currentDetails[key] = { Intensidad: 5, Duracion: "" }; // Default intensity
+            currentDetails[key] = { 
+                Intensidad: 5, // Default intensity
+                Duracion: { valor: null, unidad: 'días' }
+            }; 
         }
 
         updateDatosExtra('SintomasKeys', Array.from(currentKeys));
@@ -125,6 +129,14 @@ export function Step2_Sintomas({ datosExtra, updateDatosExtra }: Step2Props) {
             updateDatosExtra('Detalles', currentDetails);
         }
     }
+
+    const handleDuracionChange = (key: string, field: 'valor' | 'unidad', value: any) => {
+        const currentDetails = {...datosExtra.Detalles};
+        if(currentDetails[key]) {
+            const newDuracion = { ...currentDetails[key].Duracion, [field]: value };
+            handleDetailChange(key, 'Duracion', newDuracion);
+        }
+    };
     
     const handleDesencadenanteChange = (key: string, value: string) => {
         const currentDetails = {...datosExtra.Detalles};
@@ -162,7 +174,7 @@ export function Step2_Sintomas({ datosExtra, updateDatosExtra }: Step2Props) {
                         placeholder="Ej: Siento un hormigueo en la mano derecha desde ayer..."
                         value={datosExtra.Detalles['otro']?.Notas || ''}
                         onChange={(e) => {
-                             updateDatosExtra('Detalles', { ...datosExtra.Detalles, 'otro': { Notas: e.target.value } });
+                             updateDatosExtra('Detalles', { ...datosExtra.Detalles, 'otro': { Notas: e.target.value, Duracion: { valor: null, unidad: null} } });
                              updateDatosExtra('SintomasKeys', ['otro']);
                              updateDatosExtra('Sintomas', ['Otro (descrito)']);
                         }}
@@ -189,7 +201,7 @@ export function Step2_Sintomas({ datosExtra, updateDatosExtra }: Step2Props) {
                     {datosExtra.SintomasKeys.map(key => {
                         if (key === 'otro') return null;
                         const sintomaLabel = datosExtra.Sintomas[datosExtra.SintomasKeys.indexOf(key)];
-                        const detalle = datosExtra.Detalles[key] || {};
+                        const detalle = datosExtra.Detalles[key] || { Duracion: { valor: null, unidad: 'días' }};
                         return (
                             <Card key={key} className="bg-slate-50">
                                 <CardHeader className='pb-2'>
@@ -207,13 +219,26 @@ export function Step2_Sintomas({ datosExtra, updateDatosExtra }: Step2Props) {
                                                 <Badge variant="secondary" className='w-12 justify-center'>{detalle.Intensidad || 5}/10</Badge>
                                             </div>
                                         </div>
-                                         <div>
+                                        <div className='space-y-2'>
                                             <label className="text-sm font-medium">Duración</label>
-                                             <Input
-                                                placeholder="Ej: 3 días"
-                                                value={detalle.Duracion || ""}
-                                                onChange={(e) => handleDetailChange(key, 'Duracion', e.target.value)}
-                                            />
+                                            <div className="flex gap-2">
+                                                <Input
+                                                    type="number"
+                                                    placeholder="Ej: 3"
+                                                    className="w-24"
+                                                    value={detalle.Duracion.valor ?? ''}
+                                                    onChange={(e) => handleDuracionChange(key, 'valor', e.target.valueAsNumber)}
+                                                />
+                                                <ToggleGroup 
+                                                    type="single" 
+                                                    variant="outline"
+                                                    value={detalle.Duracion.unidad ?? 'días'}
+                                                    onValueChange={(v) => handleDuracionChange(key, 'unidad', v || 'días')}
+                                                >
+                                                    <ToggleGroupItem value="horas">Horas</ToggleGroupItem>
+                                                    <ToggleGroupItem value="días">Días</ToggleGroupItem>
+                                                </ToggleGroup>
+                                            </div>
                                         </div>
                                         <div>
                                             <label className="text-sm font-medium">Frecuencia</label>

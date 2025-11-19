@@ -14,10 +14,16 @@ export interface HabitosInfo {
   hidratacion?: 'Sí' | 'Poco' | 'Aún no' | null;
 }
 
+export interface DuracionSintoma {
+  valor: number | null;
+  unidad: 'horas' | 'días' | null;
+}
+
+
 export interface DetalleSintoma {
   Intensidad?: number; // 0–10
   Lado?: 'Izquierdo' | 'Derecho' | 'Ambos';
-  Duracion?: string;
+  Duracion: DuracionSintoma;
   Frecuencia?: 'Ocasional' | 'A ratos' | 'Frecuente';
   Desencadenantes?: string[];
   Notas?: string;
