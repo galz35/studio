@@ -46,6 +46,14 @@ export default function ChequeoDiarioPage() {
       aptoLaboral: true,
       alergiasActivas: false,
       yaConsultoMedico: false,
+      alergiasDescripcion: '',
+      motivoNoAcudirMedico: '',
+      comentarioGeneral: '',
+      estadoAnimo: '',
+      modalidadTrabajo: '',
+      ruta: '',
+      calidadSueno: '',
+      consumoAgua: '',
     },
   });
 
@@ -110,7 +118,7 @@ export default function ChequeoDiarioPage() {
                 <FormField control={form.control} name="estadoAnimo" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Estado de ánimo hoy</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione..." /></SelectTrigger></FormControl>
                       <SelectContent><SelectItem value="Contento(a)">Contento(a)</SelectItem><SelectItem value="Normal">Normal</SelectItem><SelectItem value="Estresado(a)">Estresado(a)</SelectItem><SelectItem value="Triste">Triste</SelectItem></SelectContent>
                     </Select><FormMessage />
                   </FormItem>
@@ -118,7 +126,7 @@ export default function ChequeoDiarioPage() {
                 <FormField control={form.control} name="modalidadTrabajo" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Modalidad de Trabajo</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione..." /></SelectTrigger></FormControl>
                       <SelectContent><SelectItem value="Presencial">Presencial</SelectItem><SelectItem value="Remoto">Remoto</SelectItem><SelectItem value="Híbrido">Híbrido</SelectItem></SelectContent>
                     </Select><FormMessage />
                   </FormItem>
@@ -132,7 +140,7 @@ export default function ChequeoDiarioPage() {
                 <FormField control={form.control} name="calidadSueno" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Calidad del sueño anoche</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione..." /></SelectTrigger></FormControl>
                       <SelectContent><SelectItem value="Buena">Buena</SelectItem><SelectItem value="Regular">Regular</SelectItem><SelectItem value="Mala">Mala</SelectItem></SelectContent>
                     </Select><FormMessage />
                   </FormItem>
@@ -140,7 +148,7 @@ export default function ChequeoDiarioPage() {
                  <FormField control={form.control} name="consumoAgua" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Consumo de agua ayer</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione..." /></SelectTrigger></FormControl>
                       <SelectContent><SelectItem value="Más de 2 litros">Más de 2 litros</SelectItem><SelectItem value="Entre 1 y 2 litros">Entre 1 y 2 litros</SelectItem><SelectItem value="Menos de 1 litro">Menos de 1 litro</SelectItem></SelectContent>
                     </Select><FormMessage />
                   </FormItem>
