@@ -129,6 +129,16 @@ export default function LoginPage() {
           </CardFooter>
         </form>
       </Form>
+      <Card>
+        <CardHeader>
+            <CardTitle className="text-base">Usuarios de Prueba</CardTitle>
+        </CardHeader>
+        <CardContent className="text-sm space-y-2">
+            <p><strong>Paciente:</strong> carnet `P001`</p>
+            <p><strong>Médico:</strong> carnet `M001`</p>
+            <p><strong>Admin:</strong> carnet `A001`</p>
+        </CardContent>
+      </Card>
     </Card>
   );
 }
