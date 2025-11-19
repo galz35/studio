@@ -10,7 +10,7 @@ export const seguimientos: SeguimientoPaciente[] = [
     estadoSeguimiento: "PENDIENTE",
     nivelSemaforo: "R",
     usuarioResponsable: "Dr. Carlos Herrera",
-    notasSeguimiento: "Verificar evolución de migrañas y efectividad del tratamiento inicial.",
+    notasSeguimiento: "Verificar evolución de migrañas y efectividad del tratamiento inicial. Paciente reportó síntomas severos.",
   },
   {
     idSeguimiento: 2,
@@ -21,7 +21,7 @@ export const seguimientos: SeguimientoPaciente[] = [
     estadoSeguimiento: "PENDIENTE",
     nivelSemaforo: "A",
     usuarioResponsable: "Dra. Isabel Castillo",
-    notasSeguimiento: "Check-in sobre niveles de energía.",
+    notasSeguimiento: "Check-in sobre niveles de energía y fatiga persistente.",
   },
   {
     idSeguimiento: 3,
@@ -45,5 +45,27 @@ export const seguimientos: SeguimientoPaciente[] = [
     nivelSemaforo: "A",
     usuarioResponsable: "Dr. Carlos Herrera",
     notasSeguimiento: "Cita de control para reevaluar tratamiento de migraña. Verificar adherencia a terapia de sueño."
+  },
+  {
+    idSeguimiento: 5,
+    idCaso: 4,
+    idPaciente: 1,
+    fechaProgramada: "2024-08-02",
+    tipoSeguimiento: "LLAMADA",
+    estadoSeguimiento: "PENDIENTE",
+    nivelSemaforo: "A",
+    usuarioResponsable: "Dr. Carlos Herrera",
+    notasSeguimiento: "Verificar si el dolor de espalda ha disminuido con el reposo y los analgésicos."
+  },
+   {
+    idSeguimiento: 6,
+    idCaso: 1,
+    idPaciente: 2,
+    fechaProgramada: "2024-07-30",
+    tipoSeguimiento: "LLAMADA",
+    estadoSeguimiento: "EN_PROCESO",
+    nivelSemaforo: "R",
+    usuarioResponsable: "Dra. Isabel Castillo",
+    notasSeguimiento: "Llamada inicial realizada. Paciente aún con malestar. Se indicó mantener reposo y se volverá a llamar en 2 días.",
   }
 ];
