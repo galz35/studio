@@ -12,7 +12,7 @@ export default function AuthLayout({
       <div className="mb-8 flex items-center gap-3">
          <HeartPulse className="h-8 w-8 text-primary"/>
         <h1 className="text-3xl font-bold text-foreground">
-          Claro <span className="text-primary">Bienestar</span>
+          Claro <span className="font-extrabold text-primary">Bienestar</span>
         </h1>
       </div>
       <main className="w-full max-w-md">{children}</main>
