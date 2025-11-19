@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Eye } from 'lucide-react';
+import { Eye, MoreHorizontal } from 'lucide-react';
 import * as api from '@/lib/services/api.mock';
 import { CasoClinico, Paciente } from '@/lib/types/domain';
 import { casosClinicos as mockCasos } from '@/lib/mock/casosClinicos.mock';
@@ -11,6 +11,8 @@ import { DataTable } from '@/components/shared/DataTable';
 import { Button } from '@/components/ui/button';
 import { SemaforoBadge } from '@/components/shared/SemaforoBadge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+
 
 type CasoConPaciente = CasoClinico & { paciente: Paciente };
 
@@ -49,11 +51,21 @@ export default function PacientesCasosPage() {
       accessor: 'actions',
       header: 'Acciones',
       cell: (row: CasoConPaciente) => (
-        <Button asChild variant="ghost" size="icon">
-          <Link href={`/medico/casos/${row.idCaso}`}>
-            <Eye className="h-4 w-4" />
-          </Link>
-        </Button>
+         <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-8 w-8 p-0">
+                    <span className="sr-only">Abrir menú</span>
+                    <MoreHorizontal className="h-4 w-4" />
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+                <DropdownMenuItem asChild>
+                   <Link href={`/medico/casos/${row.idCaso}`}>
+                        <Eye className="mr-2 h-4 w-4" /> Ver Detalle del Caso
+                    </Link>
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+        </DropdownMenu>
       ),
     },
   ];

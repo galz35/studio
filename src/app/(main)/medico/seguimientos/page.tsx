@@ -9,11 +9,13 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { SemaforoBadge } from '@/components/shared/SemaforoBadge';
-import { Check, Eye } from 'lucide-react';
+import { Check, Eye, MoreHorizontal } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+
 
 type SeguimientoConDetalle = SeguimientoPaciente & { paciente: Paciente, caso: CasoClinico };
 
@@ -65,18 +67,26 @@ export default function SeguimientosPage() {
       accessor: 'actions',
       header: 'Acciones',
       cell: (row: SeguimientoConDetalle) => (
-        <div className="flex gap-2">
-          {row.estadoSeguimiento === 'PENDIENTE' && (
-            <Button variant="ghost" size="icon" onClick={() => setConfirming(row.idSeguimiento)}>
-              <Check className="h-4 w-4" />
-            </Button>
-          )}
-           <Button asChild variant="ghost" size="icon">
-            <Link href={`/medico/casos/${row.idCaso}`}>
-                <Eye className="h-4 w-4" />
-            </Link>
-          </Button>
-        </div>
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-8 w-8 p-0">
+                    <span className="sr-only">Abrir menú</span>
+                    <MoreHorizontal className="h-4 w-4" />
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+                <DropdownMenuItem asChild>
+                     <Link href={`/medico/casos/${row.idCaso}`}>
+                        <Eye className="mr-2 h-4 w-4" /> Ver Caso Asociado
+                    </Link>
+                </DropdownMenuItem>
+                {row.estadoSeguimiento === 'PENDIENTE' && (
+                    <DropdownMenuItem onClick={() => setConfirming(row.idSeguimiento)}>
+                        <Check className="mr-2 h-4 w-4" /> Marcar como Resuelto
+                    </DropdownMenuItem>
+                )}
+            </DropdownMenuContent>
+        </DropdownMenu>
       ),
     },
   ];
