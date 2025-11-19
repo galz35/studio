@@ -15,6 +15,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function HistorialChequeosPage() {
   const { usuarioActual } = useAuth();
@@ -69,7 +70,14 @@ export default function HistorialChequeosPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold">Historial de Chequeos</h1>
-      <DataTable columns={columns} data={chequeos} filterColumn="estadoAnimo" filterPlaceholder="Filtrar por estado de ánimo..." />
+      <Card>
+        <CardHeader>
+          <CardTitle>Mis Chequeos Registrados</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <DataTable columns={columns} data={chequeos} filterColumn="estadoAnimo" filterPlaceholder="Filtrar por estado de ánimo..." />
+        </CardContent>
+      </Card>
       
       {selectedChequeo && (
         <Dialog open={!!selectedChequeo} onOpenChange={(open) => !open && setSelectedChequeo(null)}>

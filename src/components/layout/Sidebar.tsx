@@ -15,6 +15,7 @@ import {
   Repeat,
   BookUser,
   PanelLeft,
+  CalendarPlus,
 } from "lucide-react";
 
 import { useAuth } from "@/hooks/use-auth";
@@ -53,8 +54,9 @@ const NavItem = ({ href, icon: Icon, label, isCollapsed }: NavItemProps) => {
 const pacienteMenu = [
   { href: "/paciente/dashboard", icon: LayoutDashboard, label: "Panel" },
   { href: "/paciente/chequeo-diario", icon: ShieldCheck, label: "Chequeo Diario" },
-  { href: "/paciente/historial-chequeos", icon: ClipboardList, label: "Historial" },
+  { href: "/paciente/solicitar-cita", icon: CalendarPlus, label: "Solicitar Cita" },
   { href: "/paciente/mis-citas", icon: Calendar, label: "Mis Citas" },
+  { href: "/paciente/historial-chequeos", icon: ClipboardList, label: "Historial Chequeos" },
 ];
 
 const medicoMenu = [

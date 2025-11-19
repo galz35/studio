@@ -65,6 +65,31 @@ export const crearChequeo = (input: Omit<ChequeoBienestar, 'idChequeo' | 'fechaR
   return Promise.resolve(nuevoChequeo);
 };
 
+export const solicitarCita = (idPaciente: number, motivoConsulta: string, resumenSintomas: string, diagnosticoPrevio?: string): Promise<CasoClinico> => {
+  return new Promise(resolve => {
+    setTimeout(() => {
+        const nuevoCaso: CasoClinico = {
+            idCaso: mockCasos.length + 1,
+            codigoCaso: `CC-2024-${String(mockCasos.length + 1).padStart(3, '0')}`,
+            idPaciente,
+            fechaCreacion: new Date().toISOString().split('T')[0],
+            estadoCaso: 'Abierto',
+            nivelSemaforo: 'A', // Default to yellow for new requests
+            motivoConsulta: motivoConsulta,
+            resumenClinicoUsuario: resumenSintomas,
+            diagnosticoUsuario: diagnosticoPrevio,
+        };
+        mockCasos.push(nuevoCaso);
+        
+        // We don't create a CitaMedica here, that's the "job" of the medical team after reviewing the case.
+        // We just create the clinical case.
+
+        resolve(nuevoCaso);
+    }, 500);
+  });
+};
+
+
 export const getDashboardPaciente = (idPaciente: number): Promise<{
   kpis: {
     estadoActual: 'V' | 'A' | 'R';
