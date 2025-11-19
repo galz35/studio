@@ -74,7 +74,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
       <div className={cn(
         "flex flex-1 flex-col transition-all duration-300 ease-in-out",
-        isMobile ? 'w-full' : (isSidebarCollapsed ? "ml-20" : "ml-64")
+        isMobile ? 'w-full' : (isSidebarCollapsed ? "md:ml-20" : "md:ml-64")
       )}>
         <Topbar toggleSidebar={toggleSidebar} />
         <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
