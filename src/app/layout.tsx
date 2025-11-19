@@ -4,10 +4,10 @@ import { Toaster } from "@/components/ui/toaster";
 import "./globals.css";
 import { Inter } from "next/font/google";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
-  title: "Médica Corporativo",
+  title: "Claro Bienestar",
   description: "Sistema de Salud Corporativo",
 };
 
