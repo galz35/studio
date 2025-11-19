@@ -224,17 +224,6 @@ export function Step2_Sintomas({ datosExtra, updateDatosExtra }: Step2Props) {
                     })}
                  </div>
             )}
-            
-            <div>
-                 <h3 className="text-lg font-semibold mb-2 text-red-700">Cosas a vigilar (Marcar si aplica)</h3>
-                 <ChipGroup>
-                    {urgentes.map(s => (
-                        <Chip key={s.key} multi active={datosExtra.SintomasKeys.includes(s.key)} onClick={() => handleSymptomToggle(s.key, s.label)} className="border-red-500 data-[active=true]:bg-red-100 data-[active=true]:border-red-600">
-                           {s.label}
-                        </Chip>
-                    ))}
-                 </ChipGroup>
-            </div>
         </div>
     );
 }

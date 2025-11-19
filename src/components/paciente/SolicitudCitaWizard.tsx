@@ -84,7 +84,7 @@ export function SolicitudCitaWizard() {
 
     const calcTriage = useCallback((): TriageNivel => {
         const detalles = Object.values(datosExtra.Detalles);
-        const urgentes = datosExtra.SintomasKeys.filter(key => ['dolorPecho', 'faltaAire', 'desmayo', 'confusion', 'sangradoInusual'].includes(key));
+        const urgentes = datosExtra.SintomasKeys.filter(key => ['dolorPecho', 'dificultadRespirar', 'desmayo', 'sangradoInusual'].includes(key));
 
         if (urgentes.length > 0) return 'ROJO';
         
