@@ -28,10 +28,7 @@ import type {
   UsuarioAplicacion,
   EmpleadoEmp2024,
   Rol,
-  Pais,
-  VacunaAplicada,
-  RegistroPsicosocial,
-  SeguimientoGenerado
+  Pais
 } from '@/lib/types/domain';
 import type { SolicitudCitaPayload } from '@/lib/types/solicitud';
 
@@ -101,7 +98,7 @@ export const guardarSolicitudCita = (idPaciente: number, payload: SolicitudCitaP
             fechaCreacion: new Date().toISOString().split('T')[0],
             estadoCaso: 'Abierto',
             nivelSemaforo: payload.Triage || 'A',
-            motivoConsulta: payload.DatosExtraJSON.Sintomas.join(', '),
+            motivoConsulta: payload.DatosExtraJSON.Sintomas.join(', ') || 'Revisión General',
             resumenClinicoUsuario: payload.Comentario || '',
             diagnosticoUsuario: 'Autodiagnóstico por solicitud',
         };
@@ -407,3 +404,40 @@ export const getMedicos = (filters?: { pais?: Pais }): Promise<Medico[]> => {
 export const getEmpleados = (): Promise<EmpleadoEmp2024[]> => {
     return Promise.resolve(mockEmpleados);
 }
+
+export const getCasosClinicos = (filters: { estado?: string, pais?: Pais }): Promise<CasoClinico[]> => {
+    let casos = [...mockCasos];
+    if (filters.estado) {
+        casos = casos.filter(c => c.estadoCaso === filters.estado);
+    }
+    if (filters.pais) {
+        const empleadosDelPais = mockEmpleados.filter(e => e.pais === filters.pais).map(e => e.carnet);
+        const pacientesDelPais = mockPacientes.filter(p => empleadosDelPais.includes(p.carnet)).map(p => p.idPaciente);
+        casos = casos.filter(c => pacientesDelPais.includes(c.idPaciente));
+    }
+    return Promise.resolve(casos);
+}
+
+export const agendarCitaDesdeCaso = (idCaso: number, idMedico: number, fechaCita: string, horaCita: string, canal: CitaMedica['canalOrigen']): Promise<CitaMedica> => {
+    const caso = mockCasos.find(c => c.idCaso === idCaso);
+    if (!caso) throw new Error("Caso no encontrado");
+
+    const nuevaCita: CitaMedica = {
+        idCita: mockCitas.length + 1,
+        idCaso: caso.idCaso,
+        idPaciente: caso.idPaciente,
+        idMedico,
+        fechaCita,
+        horaCita,
+        canalOrigen: canal,
+        estadoCita: 'PROGRAMADA',
+        motivoResumen: caso.motivoConsulta,
+        nivelSemaforoPaciente: caso.nivelSemaforo,
+    };
+    
+    mockCitas.push(nuevaCita);
+    caso.estadoCaso = 'AGENDADO';
+    caso.idCita = nuevaCita.idCita;
+
+    return Promise.resolve(nuevaCita);
+};

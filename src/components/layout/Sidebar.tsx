@@ -7,7 +7,6 @@ import {
   LayoutDashboard,
   ClipboardList,
   Calendar,
-  Stethoscope,
   Users,
   Settings,
   ShieldCheck,
@@ -16,6 +15,8 @@ import {
   BookUser,
   PanelLeft,
   CalendarPlus,
+  BarChart3,
+  CalendarDays
 } from "lucide-react";
 
 import { useAuth } from "@/hooks/use-auth";
@@ -61,10 +62,12 @@ const pacienteMenu = [
 
 const medicoMenu = [
   { href: "/medico/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-  { href: "/medico/agenda-citas", icon: Calendar, label: "Agenda de Citas" },
+  { href: "/medico/gestion-citas", icon: CalendarPlus, label: "Gestión de Citas" },
+  { href: "/medico/agenda-calendario", icon: CalendarDays, label: "Agenda (Calendario)" },
   { href: "/medico/pacientes-casos", icon: BookUser, label: "Pacientes y Casos" },
   { href: "/medico/examenes", icon: FlaskConical, label: "Exámenes" },
   { href: "/medico/seguimientos", icon: Repeat, label: "Seguimientos" },
+  { href: "/medico/reportes", icon: BarChart3, label: "Reportes" },
 ];
 
 const adminMenu = [
@@ -108,7 +111,7 @@ export function Sidebar({ isCollapsed, toggleSidebar }: { isCollapsed: boolean, 
             <HeartPulse className="h-7 w-7 text-primary" />
             {!isCollapsed && (
             <h1 className="text-xl font-bold text-sidebar-foreground">
-                Médica <span className="text-primary">Corp</span>
+                Claro <span className="text-primary">B</span>
             </h1>
             )}
         </Link>

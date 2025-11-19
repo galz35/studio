@@ -4,8 +4,8 @@ import { Toaster } from "@/components/ui/toaster";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Médica Corporativo",
-  description: "Sistema Médico Interno",
+  title: "Claro Bienestar",
+  description: "Sistema de Salud Corporativo",
 };
 
 export default function RootLayout({
