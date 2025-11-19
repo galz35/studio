@@ -24,6 +24,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { CalendarPlus, Ban } from 'lucide-react';
+import { pacientes as mockPacientes } from '@/lib/mock/pacientes.mock';
 
 type CasoConPaciente = CasoClinico & { paciente: Paciente };
 
@@ -42,7 +43,7 @@ export default function GestionCitasPage() {
     ]).then(([casosRes, medicosRes]) => {
       const casosConPaciente = casosRes.map(caso => ({
         ...caso,
-        paciente: api.mockPacientes.find(p => p.idPaciente === caso.idPaciente)!,
+        paciente: mockPacientes.find(p => p.idPaciente === caso.idPaciente)!,
       }));
       setCasos(casosConPaciente);
       setMedicos(medicosRes);
