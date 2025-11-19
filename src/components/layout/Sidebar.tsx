@@ -75,7 +75,8 @@ const pacienteMenu = [
   { href: "/paciente/dashboard", icon: LayoutDashboard, label: "Panel" },
   { href: "/paciente/solicitar-cita", icon: CalendarPlus, label: "Solicitar Cita" },
   { href: "/paciente/mis-citas", icon: Calendar, label: "Mis Citas" },
-  { href: "/paciente/historial-chequeos", icon: ClipboardList, label: "Historial Chequeos" },
+  { href: "/paciente/historial-chequeos", icon: ClipboardList, label: "Mis Chequeos" },
+  { href: "/paciente/mis-examenes", icon: FlaskConical, label: "Mis Exámenes" },
 ];
 
 const medicoMenu = [
@@ -93,6 +94,7 @@ const adminMenu = [
   { href: "/admin/gestion-usuarios", icon: Users, label: "Usuarios" },
   { href: "/admin/gestion-medicos", icon: Stethoscope, label: "Médicos" },
   { href: "/admin/configuracion", icon: Settings, label: "Configuración" },
+  { href: "/admin/reportes", icon: BarChart3, label: "Reportes" },
 ];
 
 

@@ -28,10 +28,7 @@ import type {
   UsuarioAplicacion,
   EmpleadoEmp2024,
   Rol,
-  Pais,
-  VacunaAplicada,
-  RegistroPsicosocial,
-  SeguimientoGenerado
+  Pais
 } from '@/lib/types/domain';
 import type { SolicitudCitaPayload } from '@/lib/types/solicitud';
 
@@ -56,6 +53,11 @@ export const getCitasPorPaciente = (idPaciente: number): Promise<CitaMedica[]> =
   const citas = mockCitas.filter(c => c.idPaciente === idPaciente);
   return Promise.resolve(citas.sort((a, b) => new Date(b.fechaCita).getTime() - new Date(a.fechaCita).getTime()));
 };
+
+export const getExamenesPorPaciente = (idPaciente: number): Promise<ExamenMedico[]> => {
+    const examenes = mockExamenes.filter(ex => ex.idPaciente === idPaciente);
+    return Promise.resolve(examenes.sort((a,b) => new Date(b.fechaSolicitud).getTime() - new Date(a.fechaSolicitud).getTime()));
+}
 
 export const crearChequeo = (input: Omit<ChequeoBienestar, 'idChequeo' | 'fechaRegistro'>): Promise<ChequeoBienestar> => {
   const nuevoChequeo: ChequeoBienestar = {
@@ -342,6 +344,30 @@ export const getSeguimientos = (filters?: { estado?: string, tipo?: string, pais
 
 
 // --- Admin Services ---
+type AtencionCompleta = AtencionMedica & { paciente: Paciente, medico: Medico, caso: CasoClinico, empleado: EmpleadoEmp2024 };
+
+export const getAllAtenciones = (pais: Pais): Promise<AtencionCompleta[]> => {
+    const empleadosDelPais = new Set(mockEmpleados.filter(e => e.pais === pais).map(e => e.carnet));
+    
+    const atencionesDelPais = mockAtenciones.map(atencion => {
+        const caso = mockCasos.find(c => c.idCaso === atencion.idCaso);
+        if (!caso) return null;
+        
+        const paciente = mockPacientes.find(p => p.idPaciente === caso.idPaciente);
+        if (!paciente || !empleadosDelPais.has(paciente.carnet)) return null;
+
+        const medico = mockMedicos.find(m => m.idMedico === atencion.idMedico);
+        if (!medico) return null;
+
+        const empleado = mockEmpleados.find(e => e.carnet === paciente.carnet);
+        if (!empleado) return null;
+
+        return { ...atencion, paciente, medico, caso, empleado };
+    }).filter(Boolean) as AtencionCompleta[];
+
+    return Promise.resolve(atencionesDelPais);
+};
+
 export const getDashboardAdmin = (pais: Pais): Promise<{
     kpis: {
         totalUsuarios: number,
