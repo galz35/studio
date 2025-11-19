@@ -167,3 +167,16 @@ export interface SeguimientoPaciente {
   usuarioResponsable: string;
   notasSeguimiento: string;
 }
+
+export interface ExamenMedico {
+  idExamen: number;
+  idCaso?: number;
+  idAtencion?: number;
+  idPaciente: number;
+  tipoExamen: string;
+  fechaSolicitud: string;
+  fechaResultado?: string;
+  laboratorio: string;
+  resultadoResumen?: string;
+  estadoExamen: 'PENDIENTE' | 'ENTREGADO' | 'CANCELADO';
+}

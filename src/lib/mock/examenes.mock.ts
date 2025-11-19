@@ -36,6 +36,7 @@ export const examenes: ExamenMedico[] = [
   {
     idExamen: 4,
     idCaso: 2,
+    idAtencion: undefined,
     idPaciente: 3,
     tipoExamen: "Perfil tiroideo (TSH, T4 libre)",
     fechaSolicitud: "2024-08-01",
@@ -44,6 +45,7 @@ export const examenes: ExamenMedico[] = [
   },
   {
     idExamen: 5,
+    idAtencion: undefined,
     idPaciente: 1,
     tipoExamen: "Papanicolau",
     fechaSolicitud: "2024-07-15",
