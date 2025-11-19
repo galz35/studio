@@ -5,15 +5,18 @@ import type { DatosExtraJSON } from '@/lib/types/solicitud';
 import { Chip, ChipGroup } from '../Chip';
 import { Textarea } from '@/components/ui/textarea';
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Label } from '@/components/ui/label';
 
 interface Step3Props {
     datosExtra: DatosExtraJSON;
     updateDatosExtra: (field: keyof DatosExtraJSON, value: any) => void;
     aptoLaboral: boolean | null;
     setAptoLaboral: (value: boolean) => void;
+    motivoNoApto: string;
+    setMotivoNoApto: (value: string) => void;
 }
 
-export function Step3_Habitos({ datosExtra, updateDatosExtra, aptoLaboral, setAptoLaboral }: Step3Props) {
+export function Step3_Habitos({ datosExtra, updateDatosExtra, aptoLaboral, setAptoLaboral, motivoNoApto, setMotivoNoApto }: Step3Props) {
     
     const handleAlergiaChange = (value: boolean) => {
         updateDatosExtra('Alergia', { ...datosExtra.Alergia, activa: value });
@@ -95,6 +98,18 @@ export function Step3_Habitos({ datosExtra, updateDatosExtra, aptoLaboral, setAp
                     <ToggleGroupItem value="true" aria-label="Sí">Sí</ToggleGroupItem>
                     <ToggleGroupItem value="false" aria-label="No">No</ToggleGroupItem>
                 </ToggleGroup>
+
+                {aptoLaboral === false && (
+                    <div className="mt-4 space-y-2 animate-in fade-in-50">
+                        <Label htmlFor="motivo-no-apto">Por favor, describe brevemente por qué no te sientes apto para laborar:</Label>
+                        <Textarea 
+                            id="motivo-no-apto"
+                            value={motivoNoApto}
+                            onChange={(e) => setMotivoNoApto(e.target.value)}
+                            placeholder="Ej: El dolor de cabeza es muy intenso, tengo mareos, etc."
+                        />
+                    </div>
+                )}
             </div>
         </div>
     );

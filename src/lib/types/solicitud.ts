@@ -51,6 +51,7 @@ export interface SolicitudCitaPayload {
   Ruta: RutaMotivo | null;
   Modalidad: ModalidadTrabajo | null;
   AptoLaboral: boolean | null;
+  MotivoNoApto?: string | null;
   AlergiasActivas: boolean | null;
   AlergiasDescripcion?: string | null;
   Triage: TriageNivel | null;

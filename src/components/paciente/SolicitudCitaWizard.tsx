@@ -59,6 +59,7 @@ export function SolicitudCitaWizard() {
     const [ruta, setRuta] = useState<RutaMotivo | null>(null);
     const [modalidad, setModalidad] = useState<ModalidadTrabajo | null>(null);
     const [aptoLaboral, setAptoLaboral] = useState<boolean | null>(true);
+    const [motivoNoApto, setMotivoNoApto] = useState('');
     const [triage, setTriage] = useState<TriageNivel>('VERDE');
     const [comentario, setComentario] = useState('');
     const [datosExtra, setDatosExtra] = useState<DatosExtraJSON>(initialDatosExtra);
@@ -76,6 +77,7 @@ export function SolicitudCitaWizard() {
         setRuta(null);
         setModalidad(null);
         setAptoLaboral(true);
+        setMotivoNoApto('');
         setTriage('VERDE');
         setComentario('');
         setDatosExtra(initialDatosExtra);
@@ -128,6 +130,7 @@ export function SolicitudCitaWizard() {
             Ruta: ruta,
             Modalidad: modalidad,
             AptoLaboral: aptoLaboral,
+            MotivoNoApto: !aptoLaboral ? motivoNoApto : null,
             AlergiasActivas: datosExtra.Alergia.activa,
             AlergiasDescripcion: datosExtra.Alergia.descripcion || null,
             Triage: triage,
@@ -176,7 +179,7 @@ export function SolicitudCitaWizard() {
                 <div className="min-h-[400px]">
                     {step === 1 && <Step1_EstadoHoy setRuta={setRuta} ruta={ruta} setModalidad={setModalidad} modalidad={modalidad} datosExtra={datosExtra} updateDatosExtra={updateDatosExtra} setComentario={setComentario} />}
                     {step === 2 && <Step2_Sintomas datosExtra={datosExtra} updateDatosExtra={updateDatosExtra} />}
-                    {step === 3 && <Step3_Habitos aptoLaboral={aptoLaboral} setAptoLaboral={setAptoLaboral} datosExtra={datosExtra} updateDatosExtra={updateDatosExtra} />}
+                    {step === 3 && <Step3_Habitos aptoLaboral={aptoLaboral} setAptoLaboral={setAptoLaboral} datosExtra={datosExtra} updateDatosExtra={updateDatosExtra} motivoNoApto={motivoNoApto} setMotivoNoApto={setMotivoNoApto} />}
                     {step === 4 && <Step4_Revision datosExtra={datosExtra} updateDatosExtra={updateDatosExtra} comentario={comentario} setComentario={setComentario} />}
                 </div>
 
