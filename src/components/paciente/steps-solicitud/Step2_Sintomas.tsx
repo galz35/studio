@@ -9,6 +9,7 @@ import { Slider } from '@/components/ui/slider';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 
 const catalogoSintomas = {
     "General": [
@@ -70,7 +71,6 @@ const catalogoSintomas = {
     ]
 };
 
-const lateralKeys = ["dolorCabeza", "dolorCuello", "dolorOido", "ojosRojos", "dolorOcular", "dolorMuscular", "dolorArticular"];
 const desencadenantesOptions = ["Esfuerzo", "Comida", "Frío/Calor", "Estrés", "Reposo mejora", "Medicamento ayuda"];
 
 
@@ -110,7 +110,7 @@ export function Step2_Sintomas({ datosExtra, updateDatosExtra }: Step2Props) {
         } else {
             currentKeys.add(key);
             currentLabels.add(label);
-            currentDetails[key] = { Intensidad: 5 }; // Default intensity
+            currentDetails[key] = { Intensidad: 5, Duracion: "" }; // Default intensity
         }
 
         updateDatosExtra('SintomasKeys', Array.from(currentKeys));
@@ -207,24 +207,13 @@ export function Step2_Sintomas({ datosExtra, updateDatosExtra }: Step2Props) {
                                                 <Badge variant="secondary" className='w-12 justify-center'>{detalle.Intensidad || 5}/10</Badge>
                                             </div>
                                         </div>
-                                         {lateralKeys.includes(key) && (
-                                            <div>
-                                                <label className="text-sm font-medium">Lado</label>
-                                                 <ChipGroup>
-                                                    <Chip active={detalle.Lado === 'Izquierdo'} onClick={() => handleDetailChange(key, 'Lado', 'Izquierdo')}>Izquierdo</Chip>
-                                                    <Chip active={detalle.Lado === 'Derecho'} onClick={() => handleDetailChange(key, 'Lado', 'Derecho')}>Derecho</Chip>
-                                                    <Chip active={detalle.Lado === 'Ambos'} onClick={() => handleDetailChange(key, 'Lado', 'Ambos')}>Ambos</Chip>
-                                                </ChipGroup>
-                                            </div>
-                                        )}
-                                        <div>
+                                         <div>
                                             <label className="text-sm font-medium">Duración</label>
-                                             <ChipGroup>
-                                                <Chip active={detalle.Duracion === 'Horas'} onClick={() => handleDetailChange(key, 'Duracion', 'Horas')}>Horas</Chip>
-                                                <Chip active={detalle.Duracion === 'Días'} onClick={() => handleDetailChange(key, 'Duracion', 'Días')}>Días</Chip>
-                                                <Chip active={detalle.Duracion === 'Semanas'} onClick={() => handleDetailChange(key, 'Duracion', 'Semanas')}>Semanas</Chip>
-                                                <Chip active={detalle.Duracion === 'Meses'} onClick={() => handleDetailChange(key, 'Duracion', 'Meses')}>Meses</Chip>
-                                            </ChipGroup>
+                                             <Input
+                                                placeholder="Ej: 3 días"
+                                                value={detalle.Duracion || ""}
+                                                onChange={(e) => handleDetailChange(key, 'Duracion', e.target.value)}
+                                            />
                                         </div>
                                         <div>
                                             <label className="text-sm font-medium">Frecuencia</label>

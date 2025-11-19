@@ -68,7 +68,7 @@ export function Step3_Habitos({ datosExtra, updateDatosExtra, aptoLaboral, setAp
                 <h3 className="text-lg font-semibold mb-2">¿Estás en condiciones de trabajar?</h3>
                 <ToggleGroup type="single" value={String(aptoLaboral)} onValueChange={(v) => setAptoLaboral(v === 'true')}>
                     <ToggleGroupItem value="true" aria-label="Sí">Sí</ToggleGroupItem>
-                    <ToggleGroupItem value="false" aria-label="Prefiero reposo">Prefiero reposo</ToggleGroupItem>
+                    <ToggleGroupItem value="false" aria-label="No">No</ToggleGroupItem>
                 </ToggleGroup>
             </div>
         </div>

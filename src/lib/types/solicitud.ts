@@ -17,7 +17,7 @@ export interface HabitosInfo {
 export interface DetalleSintoma {
   Intensidad?: number; // 0–10
   Lado?: 'Izquierdo' | 'Derecho' | 'Ambos';
-  Duracion?: 'Horas' | 'Días' | 'Semanas' | 'Meses';
+  Duracion?: string;
   Frecuencia?: 'Ocasional' | 'A ratos' | 'Frecuente';
   Desencadenantes?: string[];
   Notas?: string;
