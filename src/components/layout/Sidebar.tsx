@@ -132,7 +132,7 @@ export function Sidebar({ isCollapsed, toggleSidebar }: { isCollapsed: boolean, 
             <HeartPulse className="h-7 w-7 text-white" />
             {!isCollapsed && (
             <h1 className="text-xl font-bold text-white">
-                Claro <span className="font-light opacity-80">Bienestar</span>
+                Claro <span className="font-light opacity-80">Mi Salud</span>
             </h1>
             )}
         </Link>

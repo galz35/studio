@@ -7,7 +7,7 @@ import { Inter } from "next/font/google";
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
-  title: "Claro Bienestar",
+  title: "Claro Mi Salud",
   description: "Sistema de Salud Corporativo",
 };
 
