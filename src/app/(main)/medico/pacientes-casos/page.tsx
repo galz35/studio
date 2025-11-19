@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Eye, MoreHorizontal } from 'lucide-react';
+import { Eye, MoreHorizontal, Stethoscope } from 'lucide-react';
 import * as api from '@/lib/services/api.mock';
 import { CasoClinico, Paciente } from '@/lib/types/domain';
 import { casosClinicos as mockCasos } from '@/lib/mock/casosClinicos.mock';
@@ -59,6 +59,11 @@ export default function PacientesCasosPage() {
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+                <DropdownMenuItem asChild>
+                   <Link href={`/medico/atencion/${row.idCita || 1}`}>
+                        <Stethoscope className="mr-2 h-4 w-4" /> Iniciar Atención / Nota
+                    </Link>
+                </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                    <Link href={`/medico/casos/${row.idCaso}`}>
                         <Eye className="mr-2 h-4 w-4" /> Ver Detalle del Caso
