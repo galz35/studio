@@ -8,7 +8,7 @@ import { DataTable } from '@/components/shared/DataTable';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Eye, FilePenLine } from 'lucide-react';
+import { Eye, FilePenLine, UploadCloud } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   Dialog,
@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
+import { Input } from '@/components/ui/input';
 
 type ExamenConPaciente = ExamenMedico & { paciente: Paciente };
 
@@ -30,22 +31,33 @@ export default function ExamenesMedicosPage() {
   const [examenes, setExamenes] = useState<ExamenConPaciente[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedExamen, setSelectedExamen] = useState<ExamenConPaciente | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
+  const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
 
   useEffect(() => {
     api.getExamenesMedicos({ pais }).then(res => {
       setExamenes(res);
       setLoading(false);
     });
-  }, [pais]);
+  }, [pais, isRegisterModalOpen]); // Re-fetch on country change or after a modal closes
   
   const handleRegisterResult = (idExamen: number, resultado: string) => {
     // Mock update
     setExamenes(prev => prev.map(ex => ex.idExamen === idExamen ? { ...ex, estadoExamen: 'ENTREGADO', resultadoResumen: resultado, fechaResultado: new Date().toISOString().split('T')[0] } : ex));
     toast({ title: 'Resultado Registrado', description: 'El resultado del examen se ha guardado.' });
-    setIsModalOpen(false);
+    setIsRegisterModalOpen(false);
     setSelectedExamen(null);
   };
+
+  const handleBulkUpload = (file: File) => {
+    if(!file) return;
+    toast({ title: 'Procesando archivo...', description: `Se ha iniciado la carga masiva de ${file.name}` });
+    // Simulate upload and processing
+    setTimeout(() => {
+        toast({ title: 'Carga Masiva Completada', description: 'Los resultados se han registrado exitosamente.'});
+        setIsBulkModalOpen(false);
+    }, 2000);
+  }
 
   const columns = [
     { accessor: 'fechaSolicitud', header: 'F. Solicitud' },
@@ -66,7 +78,7 @@ export default function ExamenesMedicosPage() {
       header: 'Acciones',
       cell: (row: ExamenConPaciente) => (
         <div className="flex gap-2">
-            <Button variant="ghost" size="icon" onClick={() => { setSelectedExamen(row); setIsModalOpen(true); }}>
+            <Button variant="ghost" size="icon" onClick={() => { setSelectedExamen(row); setIsRegisterModalOpen(true); }}>
                 {row.estadoExamen === 'PENDIENTE' ? <FilePenLine className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </Button>
         </div>
@@ -78,7 +90,55 @@ export default function ExamenesMedicosPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Gestión de Exámenes Médicos</h1>
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold">Gestión de Exámenes Médicos</h1>
+        <div className="flex gap-2">
+           <Dialog>
+            <DialogTrigger asChild>
+                <Button variant="outline"><FilePenLine/> Registrar Resultado Manual</Button>
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader><DialogTitle>Registro Manual de Resultado</DialogTitle></DialogHeader>
+                <p className="text-muted-foreground text-sm">Para registrar un resultado, búsquelo en la tabla de abajo y haga clic en el ícono de lápiz en la columna de acciones.</p>
+            </DialogContent>
+           </Dialog>
+           <Dialog open={isBulkModalOpen} onOpenChange={setIsBulkModalOpen}>
+            <DialogTrigger asChild>
+                <Button><UploadCloud/> Carga Masiva (Excel)</Button>
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader><DialogTitle>Carga Masiva de Resultados desde Excel</DialogTitle></DialogHeader>
+                <form id="bulk-upload-form" onSubmit={(e) => {
+                    e.preventDefault();
+                    const fileInput = e.currentTarget.elements.namedItem('excel-file') as HTMLInputElement;
+                    if(fileInput.files && fileInput.files.length > 0) {
+                        handleBulkUpload(fileInput.files[0]);
+                    } else {
+                        toast({ variant: 'destructive', title: 'Error', description: 'Por favor, seleccione un archivo.'});
+                    }
+                }}>
+                    <div className="space-y-4 py-4">
+                        <div className="flex items-center justify-center w-full">
+                            <label htmlFor="excel-file" className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-lg cursor-pointer bg-muted hover:bg-muted/80">
+                                <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                    <UploadCloud className="w-10 h-10 mb-3 text-muted-foreground" />
+                                    <p className="mb-2 text-sm text-muted-foreground"><span className="font-semibold">Click para subir</span> o arrastra y suelta</p>
+                                    <p className="text-xs text-muted-foreground">Archivo .XLSX o .CSV</p>
+                                </div>
+                                <Input id="excel-file" name="excel-file" type="file" className="hidden" accept=".xlsx, .csv" />
+                            </label>
+                        </div>
+                        <a href="#" className="text-sm text-primary hover:underline">Descargar plantilla de ejemplo</a>
+                    </div>
+                    <DialogFooter>
+                        <DialogClose asChild><Button type="button" variant="ghost">Cancelar</Button></DialogClose>
+                        <Button type="submit">Procesar Archivo</Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+           </Dialog>
+        </div>
+      </div>
       <Card>
         <CardHeader><CardTitle>Listado de Exámenes</CardTitle></CardHeader>
         <CardContent>
@@ -87,7 +147,7 @@ export default function ExamenesMedicosPage() {
       </Card>
       
       {selectedExamen && (
-        <Dialog open={isModalOpen} onOpenChange={(open) => { if (!open) setSelectedExamen(null); setIsModalOpen(open); }}>
+        <Dialog open={isRegisterModalOpen} onOpenChange={(open) => { if (!open) setSelectedExamen(null); setIsRegisterModalOpen(open); }}>
              <DialogContent>
                 <DialogHeader>
                     <DialogTitle>{selectedExamen.estadoExamen === 'PENDIENTE' ? 'Registrar Resultado' : 'Ver Resultado'}</DialogTitle>
@@ -99,7 +159,7 @@ export default function ExamenesMedicosPage() {
                         const resultado = formData.get('resultado') as string;
                         handleRegisterResult(selectedExamen.idExamen, resultado);
                     } else {
-                        setIsModalOpen(false);
+                        setIsRegisterModalOpen(false);
                     }
                 }}>
                     <div className="space-y-4 py-4">
