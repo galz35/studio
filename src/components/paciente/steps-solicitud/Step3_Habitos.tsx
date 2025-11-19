@@ -56,7 +56,7 @@ export function Step3_Habitos({ datosExtra, updateDatosExtra, aptoLaboral, setAp
             </div>
             
             <div>
-                <h3 className="text-lg font-semibold mb-2">¿Te has hidratado hoy?</h3>
+                <h3 className="text-lg font-semibold mb-2">¿Ha bebido agua hoy?</h3>
                  <ChipGroup>
                     <Chip active={datosExtra.Habitos.hidratacion === 'Sí'} onClick={() => handleHidratacionChange('Sí')}>Sí</Chip>
                     <Chip active={datosExtra.Habitos.hidratacion === 'Poco'} onClick={() => handleHidratacionChange('Poco')}>Poco</Chip>

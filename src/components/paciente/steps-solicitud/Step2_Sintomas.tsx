@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import type { DatosExtraJSON, DetalleSintoma } from '@/lib/types/solicitud';
 import { Chip, ChipGroup } from '../Chip';
 import { Badge } from '@/components/ui/badge';
@@ -71,12 +71,6 @@ const catalogoSintomas = {
 };
 
 const lateralKeys = ["dolorCabeza", "dolorCuello", "dolorOido", "ojosRojos", "dolorOcular", "dolorMuscular", "dolorArticular"];
-const urgentes = [
-    { key: 'dolorPecho', label: 'Dolor en el pecho' },
-    { key: 'faltaAire', label: 'Falta de aire severa' },
-    { key: 'desmayo', label: 'Desmayo o confusión' },
-    { key: 'sangradoInusual', label: 'Sangrado inusual' },
-];
 const desencadenantesOptions = ["Esfuerzo", "Comida", "Frío/Calor", "Estrés", "Reposo mejora", "Medicamento ayuda"];
 
 
@@ -86,13 +80,23 @@ interface Step2Props {
 }
 
 export function Step2_Sintomas({ datosExtra, updateDatosExtra }: Step2Props) {
+    const [isOtroActive, setIsOtroActive] = useState(false);
 
     const handleCategoryToggle = (cat: string) => {
         const current = new Set(datosExtra.Categorias);
         if (current.has(cat)) current.delete(cat);
         else current.add(cat);
         updateDatosExtra('Categorias', Array.from(current));
+
+        if (isOtroActive) setIsOtroActive(false);
     };
+
+    const handleOtroToggle = () => {
+        setIsOtroActive(prev => !prev);
+        if (!isOtroActive) {
+            updateDatosExtra('Categorias', []); // Deselect other categories
+        }
+    }
 
     const handleSymptomToggle = (key: string, label: string) => {
         const currentKeys = new Set(datosExtra.SintomasKeys);
@@ -144,10 +148,29 @@ export function Step2_Sintomas({ datosExtra, updateDatosExtra }: Step2Props) {
                             {cat}
                         </Chip>
                     ))}
+                    <Chip multi active={isOtroActive} onClick={handleOtroToggle}>
+                        Otro
+                    </Chip>
                 </ChipGroup>
             </div>
             
-            {datosExtra.Categorias.length > 0 && (
+            {isOtroActive && (
+                 <div className="p-4 border-l-4 border-slate-500 bg-slate-50 rounded-r-lg space-y-2 animate-in fade-in-50">
+                    <label htmlFor="otro-sintoma-desc" className="font-semibold text-slate-800">Describe lo que sientes</label>
+                    <Textarea 
+                        id="otro-sintoma-desc"
+                        placeholder="Ej: Siento un hormigueo en la mano derecha desde ayer..."
+                        value={datosExtra.Detalles['otro']?.Notas || ''}
+                        onChange={(e) => {
+                             updateDatosExtra('Detalles', { ...datosExtra.Detalles, 'otro': { Notas: e.target.value } });
+                             updateDatosExtra('SintomasKeys', ['otro']);
+                             updateDatosExtra('Sintomas', ['Otro (descrito)']);
+                        }}
+                    />
+                </div>
+            )}
+
+            {!isOtroActive && datosExtra.Categorias.length > 0 && (
                 <div>
                     <h3 className="text-lg font-semibold mb-2">Tus Síntomas</h3>
                     <ChipGroup>
@@ -160,10 +183,11 @@ export function Step2_Sintomas({ datosExtra, updateDatosExtra }: Step2Props) {
                 </div>
             )}
             
-            {datosExtra.SintomasKeys.length > 0 && (
+            {!isOtroActive && datosExtra.SintomasKeys.length > 0 && (
                  <div className="space-y-4">
                     <h3 className="text-lg font-semibold">Detalles de los Síntomas</h3>
                     {datosExtra.SintomasKeys.map(key => {
+                        if (key === 'otro') return null;
                         const sintomaLabel = datosExtra.Sintomas[datosExtra.SintomasKeys.indexOf(key)];
                         const detalle = datosExtra.Detalles[key] || {};
                         return (
