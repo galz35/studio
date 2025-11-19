@@ -17,6 +17,7 @@ import {
   CalendarDays,
   Stethoscope,
   X,
+  BookOpen,
 } from "lucide-react";
 
 import { useAuth } from "@/hooks/use-auth";
@@ -93,8 +94,12 @@ const adminMenu = [
   { href: "/admin/dashboard", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/admin/gestion-usuarios", icon: Users, label: "Usuarios" },
   { href: "/admin/gestion-medicos", icon: Stethoscope, label: "Médicos" },
-  { href: "/admin/configuracion", icon: Settings, label: "Configuración" },
   { href: "/admin/reportes", icon: BarChart3, label: "Reportes" },
+  { href: "/admin/configuracion", icon: Settings, label: "Configuración" },
+];
+
+const commonMenu = [
+    { href: "/tutorial", icon: BookOpen, label: "Ayuda / Tutorial" },
 ];
 
 
@@ -142,6 +147,12 @@ export function Sidebar({ isCollapsed, toggleSidebar }: { isCollapsed: boolean, 
       <nav className="flex-1 overflow-y-auto p-2">
         <ul className="space-y-1">
           {menuItems.map((item) => (
+            <NavItem key={item.href} {...item} isCollapsed={isCollapsed && !isMobile} />
+          ))}
+        </ul>
+        <hr className="my-4 border-white/10" />
+         <ul className="space-y-1">
+          {commonMenu.map((item) => (
             <NavItem key={item.href} {...item} isCollapsed={isCollapsed && !isMobile} />
           ))}
         </ul>
