@@ -90,7 +90,7 @@ export default function GestionCitasPage() {
       accessor: (row: CasoConPaciente) => row.paciente.nombreCompleto,
       header: 'Paciente',
     },
-    { accessor: 'motivoConsulta', header: 'Motivo Resumido' },
+    { accessor: 'motivoConsulta', header: 'Motivo' },
     {
       accessor: 'nivelSemaforo',
       header: 'Semáforo',
@@ -100,12 +100,12 @@ export default function GestionCitasPage() {
       accessor: 'actions',
       header: 'Acciones',
       cell: (row: CasoConPaciente) => (
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
             <Button size="sm" variant="outline" className="gap-2" onClick={() => { setSelectedCaso(row); setAgendarOpen(true); }}>
-              <CalendarPlus className="h-4 w-4"/> Agendar
+              <CalendarPlus className="h-4 w-4"/> <span>Agendar</span>
             </Button>
             <Button size="sm" variant="destructive" className="gap-2" onClick={() => { setSelectedCaso(row); setCancelarOpen(true); }}>
-                <Ban className="h-4 w-4"/> Cancelar
+                <Ban className="h-4 w-4"/> <span>Cancelar</span>
             </Button>
         </div>
       ),

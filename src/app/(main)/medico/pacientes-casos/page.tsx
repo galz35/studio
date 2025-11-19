@@ -88,8 +88,8 @@ export default function PacientesCasosPage() {
           <DataTable
             columns={columns}
             data={casos}
-            filterColumn="codigoCaso"
-            filterPlaceholder="Filtrar por código o paciente..."
+            filterColumn="paciente.nombreCompleto"
+            filterPlaceholder="Filtrar por paciente..."
           />
         </CardContent>
       </Card>

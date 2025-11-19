@@ -121,10 +121,8 @@ export function Sidebar({ isCollapsed, toggleSidebar }: { isCollapsed: boolean, 
   return (
     <aside
       className={cn(
-        "bg-primary text-primary-foreground flex-col border-r border-primary-foreground/10 transition-all duration-300 ease-in-out",
-        isMobile ? "fixed z-40 h-full" : "relative",
-        isCollapsed ? "w-20" : "w-64",
-        isMobile && isCollapsed ? 'hidden' : 'flex'
+        "bg-primary text-primary-foreground flex-col border-r border-primary-foreground/10 transition-all duration-300 ease-in-out hidden md:flex",
+        isCollapsed ? "w-20" : "w-64"
       )}
     >
       <div className={cn("flex h-16 items-center border-b border-white/10", isCollapsed ? 'justify-center' : 'px-4')}>
@@ -136,11 +134,6 @@ export function Sidebar({ isCollapsed, toggleSidebar }: { isCollapsed: boolean, 
             </h1>
             )}
         </Link>
-        {isMobile && (
-            <Button variant="ghost" size="icon" className="ml-auto text-primary-foreground" onClick={toggleSidebar}>
-                <PanelLeft />
-            </Button>
-        )}
       </div>
       <nav className="flex-1 overflow-y-auto p-2">
         <ul className="space-y-1">

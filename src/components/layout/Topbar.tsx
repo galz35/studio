@@ -43,12 +43,12 @@ export function Topbar({ toggleSidebar }: { toggleSidebar: () => void }) {
         <span className="sr-only">Toggle Sidebar</span>
       </Button>
       <div className="flex-1">
-        {/* Breadcrumb can go here */}
+         <Button variant="ghost" size="icon" className="hidden md:inline-flex" onClick={toggleSidebar}>
+            <PanelLeft className="h-6 w-6" />
+            <span className="sr-only">Toggle Sidebar</span>
+        </Button>
       </div>
       <div className="flex items-center gap-4">
-        {/* Country Selector was here */}
-     
-
         {/* Role Switcher */}
         {usuarioActual?.idUsuario && (
            <DropdownMenu>

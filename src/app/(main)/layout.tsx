@@ -12,6 +12,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   const { isAuthenticated, loading } = useAuth();
   const router = useRouter();
   const isMobile = useIsMobile();
+  const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   useEffect(() => {
@@ -23,11 +24,19 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   useEffect(() => {
     if (isMobile) {
       setSidebarCollapsed(true);
+      setSidebarOpen(false);
+    } else {
+      setSidebarCollapsed(false);
+      setSidebarOpen(true);
     }
   }, [isMobile]);
 
   const toggleSidebar = () => {
-    setSidebarCollapsed(!isSidebarCollapsed);
+    if(isMobile) {
+      setSidebarOpen(!isSidebarOpen);
+    } else {
+      setSidebarCollapsed(!isSidebarCollapsed);
+    }
   };
   
   if (loading || !isAuthenticated) {
@@ -39,12 +48,25 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   }
 
   return (
-    <div className="flex min-h-screen w-full bg-gray-50">
-      <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
+    <div className="flex min-h-screen w-full bg-background">
+      {isMobile && isSidebarOpen && (
+         <div className="fixed inset-0 z-30 bg-black/60" onClick={toggleSidebar} />
+      )}
+      <div className={cn(
+          "fixed top-0 left-0 h-full z-40 bg-primary text-primary-foreground flex-col border-r border-primary-foreground/10 transition-transform duration-300 ease-in-out md:hidden",
+          isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+      )}>
+        <Sidebar isCollapsed={false} toggleSidebar={toggleSidebar} />
+      </div>
+
+      <div className="hidden md:flex">
+         <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
+      </div>
+
       <div className="flex flex-1 flex-col">
         <Topbar toggleSidebar={toggleSidebar} />
         <main className={cn("flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 transition-all duration-300 ease-in-out", 
-          isMobile ? 'ml-0' : (isSidebarCollapsed ? "ml-20" : "ml-64")
+          isMobile ? '' : (isSidebarCollapsed ? "md:ml-20" : "md:ml-64")
         )}>
            {children}
         </main>
