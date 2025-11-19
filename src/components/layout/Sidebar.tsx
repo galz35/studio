@@ -16,7 +16,8 @@ import {
   PanelLeft,
   CalendarPlus,
   BarChart3,
-  CalendarDays
+  CalendarDays,
+  Stethoscope
 } from "lucide-react";
 
 import { useAuth } from "@/hooks/use-auth";
@@ -62,7 +63,7 @@ const pacienteMenu = [
 
 const medicoMenu = [
   { href: "/medico/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-  { href: "/medico/gestion-citas", icon: CalendarPlus, label: "Gestión de Citas" },
+  { href: "/medico/agenda-citas", icon: CalendarPlus, label: "Gestión de Citas" },
   { href: "/medico/agenda-calendario", icon: CalendarDays, label: "Agenda (Calendario)" },
   { href: "/medico/pacientes-casos", icon: BookUser, label: "Pacientes y Casos" },
   { href: "/medico/examenes", icon: FlaskConical, label: "Exámenes" },
