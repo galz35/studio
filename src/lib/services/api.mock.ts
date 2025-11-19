@@ -28,7 +28,10 @@ import type {
   UsuarioAplicacion,
   EmpleadoEmp2024,
   Rol,
-  Pais
+  Pais,
+  VacunaAplicada,
+  RegistroPsicosocial,
+  SeguimientoGenerado
 } from '@/lib/types/domain';
 import type { SolicitudCitaPayload } from '@/lib/types/solicitud';
 

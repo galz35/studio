@@ -35,6 +35,9 @@ export default function GestionCitasPage() {
   const [medicos, setMedicos] = useState<Medico[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCaso, setSelectedCaso] = useState<CasoConPaciente | null>(null);
+  const [isAgendarOpen, setAgendarOpen] = useState(false);
+  const [isCancelarOpen, setCancelarOpen] = useState(false);
+
 
   useEffect(() => {
     Promise.all([
@@ -64,6 +67,7 @@ export default function GestionCitasPage() {
     toast({ title: 'Cita Agendada', description: `Se ha agendado una cita para ${selectedCaso.paciente.nombreCompleto}.` });
     // Remove from list
     setCasos(prev => prev.filter(c => c.idCaso !== selectedCaso.idCaso));
+    setAgendarOpen(false);
     setSelectedCaso(null);
   };
   
@@ -72,6 +76,7 @@ export default function GestionCitasPage() {
      console.log(`Caso ${selectedCaso.idCaso} cancelado por: ${motivo}`);
      toast({ title: 'Solicitud Cancelada', description: `Se ha cancelado la solicitud de ${selectedCaso.paciente.nombreCompleto}.`, variant: 'destructive'});
      setCasos(prev => prev.filter(c => c.idCaso !== selectedCaso.idCaso));
+     setCancelarOpen(false);
      setSelectedCaso(null);
   }
 
@@ -96,20 +101,12 @@ export default function GestionCitasPage() {
       header: 'Acciones',
       cell: (row: CasoConPaciente) => (
         <div className="flex gap-2">
-            <Dialog onOpenChange={(open) => !open && setSelectedCaso(null)}>
-              <DialogTrigger asChild>
-                <Button size="sm" variant="outline" className="gap-2" onClick={() => setSelectedCaso(row)}>
-                  <CalendarPlus className="h-4 w-4"/> Agendar
-                </Button>
-              </DialogTrigger>
-            </Dialog>
-            <Dialog onOpenChange={(open) => !open && setSelectedCaso(null)}>
-                 <DialogTrigger asChild>
-                    <Button size="sm" variant="destructive" className="gap-2" onClick={() => setSelectedCaso(row)}>
-                        <Ban className="h-4 w-4"/> Cancelar
-                    </Button>
-                </DialogTrigger>
-            </Dialog>
+            <Button size="sm" variant="outline" className="gap-2" onClick={() => { setSelectedCaso(row); setAgendarOpen(true); }}>
+              <CalendarPlus className="h-4 w-4"/> Agendar
+            </Button>
+            <Button size="sm" variant="destructive" className="gap-2" onClick={() => { setSelectedCaso(row); setCancelarOpen(true); }}>
+                <Ban className="h-4 w-4"/> Cancelar
+            </Button>
         </div>
       ),
     },
@@ -133,7 +130,7 @@ export default function GestionCitasPage() {
       </Card>
       
       {/* Agendar Modal */}
-      <Dialog open={!!(selectedCaso && !selectedCaso.idCita)} onOpenChange={(open) => !open && setSelectedCaso(null)}>
+      <Dialog open={isAgendarOpen} onOpenChange={(open) => { if(!open) setSelectedCaso(null); setAgendarOpen(open); }}>
          <DialogContent>
             <DialogHeader>
                 <DialogTitle>Agendar Cita para {selectedCaso?.paciente.nombreCompleto}</DialogTitle>
@@ -149,16 +146,16 @@ export default function GestionCitasPage() {
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="fecha-cita">Fecha</Label>
-                            <Input id="fecha-cita" name="fechaCita" type="date" />
+                            <Input id="fecha-cita" name="fechaCita" type="date" required/>
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="hora-cita">Hora</Label>
-                            <Input id="hora-cita" name="horaCita" type="time" />
+                            <Input id="hora-cita" name="horaCita" type="time" required/>
                         </div>
                     </div>
                      <div className="space-y-2">
                         <Label htmlFor="medico-cita">Asignar Médico</Label>
-                        <Select name="idMedico">
+                        <Select name="idMedico" required>
                             <SelectTrigger id="medico-cita"><SelectValue placeholder="Seleccione un médico" /></SelectTrigger>
                             <SelectContent>
                                 {medicos.map(m => <SelectItem key={m.idMedico} value={String(m.idMedico)}>{m.nombreCompleto}</SelectItem>)}
@@ -175,7 +172,7 @@ export default function GestionCitasPage() {
       </Dialog>
       
       {/* Cancelar Modal */}
-      <Dialog open={!!selectedCaso} onOpenChange={(open) => !open && setSelectedCaso(null)}>
+      <Dialog open={isCancelarOpen} onOpenChange={(open) => { if(!open) setSelectedCaso(null); setCancelarOpen(open); }}>
         <DialogContent>
              <DialogHeader>
                 <DialogTitle>Cancelar Solicitud de {selectedCaso?.paciente.nombreCompleto}</DialogTitle>
@@ -187,7 +184,7 @@ export default function GestionCitasPage() {
              }}>
                 <div className="space-y-4 py-4">
                      <Label htmlFor="motivo-cancelacion">Motivo de la cancelación</Label>
-                     <Textarea id="motivo-cancelacion" name="motivo-cancelacion" placeholder="Especifique por qué se cancela la solicitud (ej: datos insuficientes, contactado por otro medio, etc.)"/>
+                     <Textarea id="motivo-cancelacion" name="motivo-cancelacion" placeholder="Especifique por qué se cancela la solicitud (ej: datos insuficientes, contactado por otro medio, etc.)" required/>
                 </div>
                  <DialogFooter>
                     <DialogClose asChild><Button type="button" variant="ghost">Cerrar</Button></DialogClose>

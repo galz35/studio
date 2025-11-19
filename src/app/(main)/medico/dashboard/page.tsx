@@ -65,7 +65,7 @@ export default function DashboardMedicoPage() {
                 <TableRow>
                   <TableHead>Hora</TableHead>
                   <TableHead>Paciente</TableHead>
-                  <TableHead>Ruta</TableHead>
+                  <TableHead>Motivo</TableHead>
                   <TableHead>Estado</TableHead>
                   <TableHead>Semáforo</TableHead>
                   <TableHead>Acción</TableHead>
@@ -76,11 +76,11 @@ export default function DashboardMedicoPage() {
                   <TableRow key={cita.idCita}>
                     <TableCell>{cita.horaCita}</TableCell>
                     <TableCell>{cita.paciente.nombreCompleto}</TableCell>
-                    <TableCell>{cita.caso?.motivoConsulta || "N/A"}</TableCell>
+                    <TableCell>{cita.motivoResumen || "N/A"}</TableCell>
                     <TableCell>{cita.estadoCita}</TableCell>
                     <TableCell><SemaforoBadge nivel={cita.paciente.nivelSemaforo!} /></TableCell>
                     <TableCell>
-                      <Button size="sm" onClick={() => router.push(`/medico/atenciones/${cita.idCita}`)}>
+                      <Button size="sm" onClick={() => router.push(`/medico/atencion/${cita.idCita}`)}>
                         Atender
                       </Button>
                     </TableCell>

@@ -66,7 +66,7 @@ const PsicosocialBlock: React.FC<{ psico: RegistroPsicosocial, setPsico: (field:
                     <CardTitle>Registro Psicosocial (Opcional)</CardTitle>
                     <div className="flex items-center gap-2">
                         <Label htmlFor="confidencial">Confidencial</Label>
-                        <Switch id="confidencial" checked={psico.confidencial} onCheckedChange={(c) => setPsico('confidential', c)} />
+                        <Switch id="confidencial" checked={psico.confidencial} onCheckedChange={(c) => setPsico('confidencial', c)} />
                     </div>
                 </div>
             </CardHeader>

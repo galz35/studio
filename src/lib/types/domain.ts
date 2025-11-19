@@ -81,8 +81,8 @@ export interface CitaMedica {
   idMedico: number;
   fechaCita: string; // YYYY-MM-DD
   horaCita: string; // HH:mm
-  canalOrigen: 'CHEQUEO' | 'RRHH' | 'OTRO' | 'SOLICITUD';
-  estadoCita: 'PROGRAMADA' | 'EN_ATENCION' | 'FINALIZADA' | 'CANCELADA';
+  canalOrigen: 'CHEQUEO' | 'RRHH' | 'OTRO' | 'SOLICITUD' | 'AGENDADA_POR_MEDICO';
+  estadoCita: 'PROGRAMADA' | 'CONFIRMADA' | 'EN_ATENCION' | 'FINALIZADA' | 'CANCELADA';
   motivoResumen: string;
   nivelSemaforoPaciente: 'V' | 'A' | 'R';
 }
