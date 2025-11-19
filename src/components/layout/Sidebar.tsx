@@ -42,9 +42,9 @@ const NavItem = ({ href, icon: Icon, label, isCollapsed }: NavItemProps) => {
       <Button
         variant="ghost"
         className={cn(
-          "w-full h-12 justify-start text-primary-foreground/80 hover:bg-black/10 hover:text-white",
+          "w-full h-12 justify-start text-white/80 hover:bg-white/10 hover:text-white",
           isCollapsed ? "px-3.5" : "px-4",
-          isActive && "bg-black/20 text-white"
+          isActive && "bg-white/20 text-white"
         )}
         aria-label={label}
       >
@@ -127,12 +127,12 @@ export function Sidebar({ isCollapsed, toggleSidebar }: { isCollapsed: boolean, 
         isMobile && isCollapsed ? 'hidden' : 'flex'
       )}
     >
-      <div className={cn("flex h-16 items-center border-b border-primary-foreground/10", isCollapsed ? 'justify-center' : 'px-4')}>
+      <div className={cn("flex h-16 items-center border-b border-white/10", isCollapsed ? 'justify-center' : 'px-4')}>
          <Link href="/" className="flex items-center gap-2">
             <HeartPulse className="h-7 w-7 text-white" />
             {!isCollapsed && (
-            <h1 className="text-xl font-bold text-white">
-                Claro <span className="font-light opacity-80">Mi Salud</span>
+            <h1 className="text-xl text-white">
+                Claro <span className="font-bold">Mi Salud</span>
             </h1>
             )}
         </Link>
