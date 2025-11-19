@@ -101,7 +101,6 @@ export interface AtencionMedica {
   frecuenciaCardiaca?: number;
   estadoClinico: EstadoClinico; // BIEN / REGULAR / MAL
   diagnosticoPrincipal: string;
-  codDiagnostico?: string;
   planTratamiento?: string;
   recomendaciones?: string;
   requiereSeguimiento: boolean;

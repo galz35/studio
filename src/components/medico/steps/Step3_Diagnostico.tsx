@@ -2,7 +2,6 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AtencionMedica } from "@/lib/types/domain";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
 interface Step3Props {
@@ -18,11 +17,6 @@ export function Step3_Diagnostico({ atencion, handleChange }: Step3Props) {
               <div className="space-y-2">
                 <label className="text-sm font-medium">Diagnóstico Principal</label>
                 <Textarea rows={4} value={atencion.diagnosticoPrincipal} onChange={(e) => handleChange('diagnosticoPrincipal', e.target.value)} placeholder="Ej: Faringoamigdalitis viral..."/>
-              </div>
-
-               <div className="space-y-2">
-                <label className="text-sm font-medium">Código Diagnóstico (Opcional)</label>
-                <Input value={atencion.codDiagnostico || ''} onChange={(e) => handleChange('codDiagnostico', e.target.value)} placeholder="Ej: J06.9"/>
               </div>
 
                <div className="space-y-2">
