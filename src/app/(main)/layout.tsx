@@ -39,7 +39,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   }
 
   return (
-    <div className="flex min-h-screen w-full bg-gray-50">
+    <div className="flex min-h-screen w-full bg-background">
       <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
       <div className="flex flex-1 flex-col">
         <Topbar toggleSidebar={toggleSidebar} />
