@@ -20,17 +20,6 @@ export function Step1_Resumen({ citaData }: Step1Props) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Card>
                     <CardHeader>
-                        <CardTitle>Información del Paciente</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-2 text-sm">
-                        <p><strong>Nombre:</strong> {paciente.nombreCompleto}</p>
-                        <p><strong>Carnet:</strong> {paciente.carnet}</p>
-                        <p><strong>Gerencia:</strong> {empleado.gerencia}</p>
-                        <p><strong>Área:</strong> {empleado.area}</p>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader>
                         <CardTitle>Detalles de la Cita</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3 text-sm">
@@ -42,15 +31,15 @@ export function Step1_Resumen({ citaData }: Step1Props) {
                         </div>
                     </CardContent>
                 </Card>
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>Motivo de la Cita</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                         <p className="text-muted-foreground italic pl-4 border-l-2">{cita.motivoResumen}</p>
+                    </CardContent>
+                 </Card>
             </div>
-             <Card>
-                <CardHeader>
-                    <CardTitle>Motivo de la Cita</CardTitle>
-                </CardHeader>
-                <CardContent>
-                     <p className="text-muted-foreground italic pl-4 border-l-2">{cita.motivoResumen}</p>
-                </CardContent>
-             </Card>
         </div>
     );
 }

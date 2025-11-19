@@ -8,7 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
-import { DayPicker, type DayProps } from 'react-day-picker';
+import { DayPicker, type DayProps, type Matcher } from 'react-day-picker';
 import 'react-day-picker/dist/style.css';
 
 
@@ -76,6 +76,8 @@ export default function AgendaCalendarioPage() {
     }
   }, [usuarioActual, pais]);
 
+  const eventDays = useMemo(() => events.map(e => e.date), [events]);
+  
   const eventsByDay = useMemo(() => {
     return events.reduce((acc, event) => {
         const day = event.date.toISOString().split('T')[0];
@@ -135,18 +137,19 @@ export default function AgendaCalendarioPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Agenda del Médico</h1>
-        <div className="flex gap-4 items-center text-sm">
+        <div className="hidden sm:flex gap-4 items-center text-sm">
           <div className="flex items-center gap-2"><span className="h-3 w-3 rounded-full bg-blue-100 border border-blue-200"></span>Cita</div>
-          <div className="flex items-center gap-2"><span className="h-3 w-3 rounded-full bg-yellow-100 border border-yellow-200"></span>Seguimiento</div>
+          <div className="flex items-center gap-2"><span className="h-3 w-3 rounded-full bg-yellow-100 border-yellow-200"></span>Seguimiento</div>
           <div className="flex items-center gap-2"><span className="h-3 w-3 rounded-full bg-gray-100 border border-gray-200"></span>Atención</div>
         </div>
       </div>
       <Card>
         <CardContent className="p-0">
+          {/* Desktop Calendar */}
          <DayPicker
             month={currentMonth}
             onMonthChange={setCurrentMonth}
-            className="w-full"
+            className="w-full hidden sm:block"
             classNames={{
               month: 'space-y-4 p-3',
               head_cell: 'w-full',
@@ -156,9 +159,37 @@ export default function AgendaCalendarioPage() {
               day: 'w-full h-full p-1',
             }}
             components={{ Day: DayWithEvents }}
+            modifiers={{ events: eventDays }}
+            modifiersClassNames={{ events: 'font-bold' }}
+          />
+          {/* Mobile Calendar */}
+           <DayPicker
+            mode="single"
+            month={currentMonth}
+            onMonthChange={setCurrentMonth}
+            className="w-full sm:hidden"
+            modifiers={{ haveEvents: eventDays as Matcher | Matcher[] }}
+            modifiersClassNames={{ haveEvents: "font-bold text-primary" }}
           />
         </CardContent>
       </Card>
+      {/* Mobile Event List */}
+      <div className="sm:hidden space-y-2">
+        <h2 className="font-bold text-lg">Eventos del Calendario</h2>
+        {events.length > 0 ? (
+          events.map(event => (
+            <Card key={event.id}>
+              <CardContent className='p-3'>
+                <p className='font-bold'>{event.date.toLocaleDateString('es-ES')}</p>
+                <EventBadge event={event} />
+                <p className='text-xs text-muted-foreground mt-1'>{event.description}</p>
+              </CardContent>
+            </Card>
+          ))
+        ) : (
+          <p className="text-sm text-muted-foreground text-center py-4">No hay eventos este mes.</p>
+        )}
+      </div>
     </div>
   );
 }

@@ -85,12 +85,12 @@ export function AtencionCitaWizard({ citaData }: AtencionCitaWizardProps) {
 
 
     const stepConfig = useMemo(() => [
-        { title: 'Resumen de Cita', theme: 'primary', guide: 'Confirma que estás atendiendo a la persona correcta y revisa el motivo de la cita.' },
+        { title: `Atención para: ${citaData.paciente.nombreCompleto}`, theme: 'primary', guide: 'Confirma los detalles de la cita antes de continuar con la atención.' },
         { title: 'Signos Vitales y Estado Clínico', theme: 'slate', guide: 'Registra los signos vitales básicos y define el estado clínico general del paciente en esta consulta.' },
         { title: 'Diagnóstico y Plan', theme: 'green', guide: 'Establece el diagnóstico principal y detalla el plan de tratamiento y las recomendaciones.' },
         { title: 'Seguimiento', theme: 'gray', guide: 'Determina si el paciente necesita una cita de seguimiento y genera el recordatorio correspondiente.' },
         { title: 'Acciones Adicionales y Cierre', theme: 'dark', guide: 'Registra acciones de la empresa, notas psicosociales y revisa el resumen antes de guardar.' },
-    ], []);
+    ], [citaData.paciente.nombreCompleto]);
 
     const currentStepConfig = stepConfig[step - 1];
 
