@@ -13,7 +13,8 @@ export interface UsuarioAplicacion {
   ultimoAcceso?: string;
   idPaciente?: number;
   idMedico?: number;
-  nombreCompleto: string; // Added from Empleado mock
+  nombreCompleto: string; 
+  correo?: string;
   pais: Pais;
 }
 

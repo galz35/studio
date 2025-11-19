@@ -15,20 +15,37 @@ import {
 import {
   Form, FormControl, FormField, FormItem, FormLabel, FormMessage
 } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 const userSchema = z.object({
-  carnet: z.string().min(1, "Debe seleccionar un empleado."),
-  rol: z.enum(["PACIENTE", "MEDICO", "ADMIN"]),
-});
+  userType: z.enum(['interno', 'externo']),
+  empleadoCarnet: z.string().optional(),
+  nombreCompleto: z.string().optional(),
+  carnet: z.string().optional(),
+  correo: z.string().email({ message: "Correo inválido." }).optional(),
+  rol: z.enum(["PACIENTE", "MEDICO", "ADMIN"], { required_error: "El rol es requerido." }),
+}).refine(data => {
+    if (data.userType === 'interno') return !!data.empleadoCarnet;
+    return true;
+}, { message: "Debe seleccionar un empleado.", path: ["empleadoCarnet"] })
+.refine(data => {
+    if (data.userType === 'externo') return !!data.nombreCompleto && !!data.carnet;
+    return true;
+}, { message: "Nombre y Carnet son requeridos para usuarios externos.", path: ["nombreCompleto"] });
+
 
 type UserFormValues = z.infer<typeof userSchema>;
 
 export default function GestionUsuariosPage() {
   const { pais } = useAuth();
+  const { toast } = useToast();
   const [usuarios, setUsuarios] = useState<UsuarioAplicacion[]>([]);
   const [empleados, setEmpleados] = useState<EmpleadoEmp2024[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,7 +53,12 @@ export default function GestionUsuariosPage() {
 
   const form = useForm<UserFormValues>({
     resolver: zodResolver(userSchema),
+    defaultValues: {
+        userType: 'interno',
+    }
   });
+
+  const userType = form.watch('userType');
 
   useEffect(() => {
     Promise.all([
@@ -44,43 +66,59 @@ export default function GestionUsuariosPage() {
       api.getEmpleados()
     ]).then(([usersRes, employeesRes]) => {
       setUsuarios(usersRes);
-      setEmpleados(employeesRes);
+      setEmpleados(employeesRes.filter(e => e.pais === pais));
       setLoading(false);
     });
   }, [pais]);
 
   const onSubmit = (data: UserFormValues) => {
-    // Mock user creation
-    const empleado = empleados.find(e => e.carnet === data.carnet)!;
-    const newUser: UsuarioAplicacion = {
-      idUsuario: usuarios.length + 1,
-      carnet: data.carnet,
-      rol: data.rol,
-      estado: 'A',
-      nombreCompleto: empleado.nombreCompleto,
-      pais: empleado.pais,
-      ultimoAcceso: new Date().toISOString(),
-    };
+    let newUser: UsuarioAplicacion;
+
+    if (data.userType === 'interno') {
+        const empleado = empleados.find(e => e.carnet === data.empleadoCarnet)!;
+        newUser = {
+          idUsuario: usuarios.length + 1,
+          carnet: empleado.carnet,
+          rol: data.rol,
+          estado: 'A',
+          nombreCompleto: empleado.nombreCompleto,
+          correo: empleado.correo,
+          pais: pais,
+          ultimoAcceso: new Date().toISOString(),
+        };
+    } else { // Externo
+        newUser = {
+          idUsuario: usuarios.length + 1,
+          carnet: data.carnet!,
+          rol: data.rol,
+          estado: 'A',
+          nombreCompleto: data.nombreCompleto!,
+          correo: data.correo,
+          pais: pais,
+          ultimoAcceso: new Date().toISOString(),
+        };
+    }
+
     setUsuarios(prev => [...prev, newUser]);
+    toast({ title: "Usuario Creado", description: `El usuario ${newUser.nombreCompleto} ha sido añadido al sistema.`});
     setDialogOpen(false);
-    form.reset();
+    form.reset({ userType: 'interno' });
   };
 
   const columns = [
     { accessor: 'carnet', header: 'Carnet' },
     { accessor: 'nombreCompleto', header: 'Nombre' },
+    { accessor: 'correo', header: 'Correo' },
     { accessor: 'rol', header: 'Rol' },
     {
       accessor: 'estado',
       header: 'Estado',
       cell: (row: UsuarioAplicacion) => (
-        <Badge variant={row.estado === 'A' ? 'default' : 'destructive'} className={row.estado === 'A' ? 'bg-accent text-accent-foreground' : ''}>
+        <Badge variant={row.estado === 'A' ? 'default' : 'destructive'} className={cn(row.estado === 'A' ? 'bg-accent text-accent-foreground' : '')}>
           {row.estado === 'A' ? 'Activo' : 'Inactivo'}
         </Badge>
       ),
     },
-    { accessor: (row: UsuarioAplicacion) => row.idPaciente ? 'Sí' : 'No', header: '¿Es Paciente?' },
-    { accessor: (row: UsuarioAplicacion) => row.idMedico ? 'Sí' : 'No', header: '¿Es Médico?' },
     { accessor: 'ultimoAcceso', header: 'Último Acceso', cell: (row: UsuarioAplicacion) => row.ultimoAcceso ? new Date(row.ultimoAcceso).toLocaleString('es-ES') : 'N/A' },
     {
       accessor: 'actions',
@@ -101,20 +139,46 @@ export default function GestionUsuariosPage() {
           <DialogTrigger asChild>
             <Button className="gap-2"><PlusCircle /> Nuevo Usuario</Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="sm:max-w-[525px]">
             <DialogHeader><DialogTitle>Crear Nuevo Usuario</DialogTitle></DialogHeader>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField control={form.control} name="carnet" render={({ field }) => (
-                  <FormItem><FormLabel>Empleado</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un empleado" /></SelectTrigger></FormControl>
-                      <SelectContent>
-                        {empleados.filter(e => e.pais === pais).map(e => <SelectItem key={e.carnet} value={e.carnet}>{e.nombreCompleto} ({e.carnet})</SelectItem>)}
-                      </SelectContent>
-                    </Select><FormMessage />
-                  </FormItem>)} />
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <FormField control={form.control} name="userType" render={({ field }) => (
+                  <FormItem className="space-y-3"><FormLabel>Tipo de Usuario</FormLabel>
+                    <FormControl>
+                      <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex gap-4">
+                        <FormItem className="flex items-center space-x-3 space-y-0"><FormControl><RadioGroupItem value="interno" /></FormControl><FormLabel className="font-normal">Interno (Empleado)</FormLabel></FormItem>
+                        <FormItem className="flex items-center space-x-3 space-y-0"><FormControl><RadioGroupItem value="externo" /></FormControl><FormLabel className="font-normal">Externo</FormLabel></FormItem>
+                      </RadioGroup>
+                    </FormControl><FormMessage />
+                  </FormItem>)}
+                />
+                
+                {userType === 'interno' ? (
+                    <FormField control={form.control} name="empleadoCarnet" render={({ field }) => (
+                      <FormItem><FormLabel>Empleado</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un empleado" /></SelectTrigger></FormControl>
+                          <SelectContent>
+                            {empleados.map(e => <SelectItem key={e.carnet} value={e.carnet}>{e.nombreCompleto} ({e.carnet})</SelectItem>)}
+                          </SelectContent>
+                        </Select><FormMessage />
+                      </FormItem>)} />
+                ) : (
+                    <div className='grid grid-cols-2 gap-4 border p-4 rounded-md bg-muted/20'>
+                         <FormField control={form.control} name="nombreCompleto" render={({ field }) => (
+                            <FormItem><FormLabel>Nombre Completo</FormLabel><FormControl><Input placeholder="Nombre del usuario" {...field} /></FormControl><FormMessage /></FormItem>
+                         )} />
+                         <FormField control={form.control} name="carnet" render={({ field }) => (
+                            <FormItem><FormLabel>Carnet / ID</FormLabel><FormControl><Input placeholder="Identificador único" {...field} /></FormControl><FormMessage /></FormItem>
+                         )} />
+                         <FormField control={form.control} name="correo" render={({ field }) => (
+                            <FormItem className="col-span-2"><FormLabel>Correo</FormLabel><FormControl><Input placeholder="correo@externo.com" {...field} /></FormControl><FormMessage /></FormItem>
+                         )} />
+                    </div>
+                )}
+                
                 <FormField control={form.control} name="rol" render={({ field }) => (
-                  <FormItem><FormLabel>Rol</FormLabel>
+                  <FormItem><FormLabel>Asignar Rol</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un rol" /></SelectTrigger></FormControl>
                       <SelectContent><SelectItem value="PACIENTE">Paciente</SelectItem><SelectItem value="MEDICO">Médico</SelectItem><SelectItem value="ADMIN">Administrador</SelectItem></SelectContent>
                     </Select><FormMessage />
@@ -126,7 +190,7 @@ export default function GestionUsuariosPage() {
         </Dialog>
       </div>
       <Card>
-        <CardHeader><CardTitle>Listado de Usuarios del Sistema</CardTitle></CardHeader>
+        <CardHeader><CardTitle>Listado de Usuarios del Sistema ({pais})</CardTitle></CardHeader>
         <CardContent>
           <DataTable columns={columns} data={usuarios} filterColumn="nombreCompleto" filterPlaceholder="Filtrar por nombre..." />
         </CardContent>
