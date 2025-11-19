@@ -34,9 +34,9 @@ const stepHelps = [
 ];
 
 const themeClasses = {
-    red: "from-red-600 to-red-800",
+    primary: "from-primary to-red-700",
     slate: "from-slate-600 to-slate-800",
-    green: "from-green-500 to-teal-700",
+    green: "from-green-600 to-teal-800",
     dark: "from-gray-800 to-black",
 };
 
@@ -149,7 +149,7 @@ export function SolicitudCitaWizard() {
     };
 
     const currentStepConfig = useMemo(() => {
-        const themeMap = ['red', 'slate', 'green', 'dark'];
+        const themeMap = ['primary', 'slate', 'green', 'dark'];
         return {
             name: stepNames[step - 1],
             help: stepHelps[step - 1],

@@ -24,6 +24,8 @@ import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+
 
 interface NavItemProps {
   href: string;
@@ -36,22 +38,37 @@ const NavItem = ({ href, icon: Icon, label, isCollapsed }: NavItemProps) => {
   const pathname = usePathname();
   const isActive = pathname.startsWith(href);
 
+  const linkContent = (
+      <Button
+        variant="ghost"
+        className={cn(
+          "w-full h-12 justify-start text-gray-300 hover:bg-gray-700 hover:text-white",
+          isCollapsed ? "px-3.5" : "px-4",
+          isActive && "bg-primary/90 text-white"
+        )}
+        aria-label={label}
+      >
+        <Icon className="h-5 w-5 flex-shrink-0" />
+        {!isCollapsed && <span className="ml-3 font-medium">{label}</span>}
+      </Button>
+  );
+
   return (
     <li>
-      <Link href={href}>
-        <Button
-          variant={isActive ? "secondary" : "ghost"}
-          className={cn(
-            "w-full justify-start h-10 text-primary-foreground hover:bg-red-700/50", 
-            isCollapsed ? "px-2" : "px-3",
-            isActive && "bg-white/20"
-          )}
-          aria-label={label}
-        >
-          <Icon className="h-5 w-5" />
-          {!isCollapsed && <span className="ml-3">{label}</span>}
-        </Button>
-      </Link>
+        {isCollapsed ? (
+            <TooltipProvider>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                         <Link href={href}>{linkContent}</Link>
+                    </TooltipTrigger>
+                    <TooltipContent side="right">
+                        <p>{label}</p>
+                    </TooltipContent>
+                </Tooltip>
+            </TooltipProvider>
+        ) : (
+             <Link href={href}>{linkContent}</Link>
+        )}
     </li>
   );
 };
@@ -104,18 +121,18 @@ export function Sidebar({ isCollapsed, toggleSidebar }: { isCollapsed: boolean, 
   return (
     <aside
       className={cn(
-        "bg-primary text-primary-foreground flex-col border-r border-red-700/50 transition-all duration-300 ease-in-out",
+        "bg-gray-900 text-white flex-col border-r border-gray-700 transition-all duration-300 ease-in-out",
         isMobile ? "fixed z-40 h-full" : "relative",
-        isCollapsed ? "w-16" : "w-64",
+        isCollapsed ? "w-20" : "w-64",
         isMobile && isCollapsed ? 'hidden' : 'flex'
       )}
     >
-      <div className={cn("flex h-16 items-center border-b border-white/20", isCollapsed ? 'justify-center' : 'px-4')}>
+      <div className={cn("flex h-16 items-center border-b border-gray-700/50", isCollapsed ? 'justify-center' : 'px-4')}>
          <Link href="/" className="flex items-center gap-2">
-            <HeartPulse className="h-7 w-7 text-white" />
+            <HeartPulse className="h-7 w-7 text-primary" />
             {!isCollapsed && (
             <h1 className="text-xl font-bold text-white">
-                Claro <span className="font-light">Bienestar</span>
+                Claro <span className="font-light opacity-80">Bienestar</span>
             </h1>
             )}
         </Link>

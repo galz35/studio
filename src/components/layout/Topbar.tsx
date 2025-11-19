@@ -67,24 +67,26 @@ export function Topbar({ toggleSidebar }: { toggleSidebar: () => void }) {
         </DropdownMenu>
 
         {/* Role Switcher */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="gap-2">
-              <Building className="h-4 w-4" />
-              <span>Rol: {usuarioActual?.rol}</span>
-              <ChevronDown className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            <DropdownMenuLabel>Cambiar Rol</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuRadioGroup value={usuarioActual?.rol} onValueChange={(r) => switchRole(r as Rol)}>
-                <DropdownMenuRadioItem value="PACIENTE">Paciente</DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="MEDICO">Médico</DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="ADMIN">Administrador</DropdownMenuRadioItem>
-            </DropdownMenuRadioGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {usuarioActual?.idUsuario && (
+           <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <Building className="h-4 w-4" />
+                <span>Rol: {usuarioActual?.rol}</span>
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuLabel>Cambiar Rol</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuRadioGroup value={usuarioActual?.rol} onValueChange={(r) => switchRole(r as Rol)}>
+                  <DropdownMenuRadioItem value="PACIENTE">Paciente</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="MEDICO">Médico</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="ADMIN">Administrador</DropdownMenuRadioItem>
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
 
 
         {/* User Profile */}

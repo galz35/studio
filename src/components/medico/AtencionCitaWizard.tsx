@@ -13,7 +13,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { Step1_Resumen } from './steps/Step1_Resumen';
 import { Step2_Vitales } from './steps/Step2_Vitales';
 import { Step3_Diagnostico } from './steps/Step3_Diagnostico';
-import { Step4_Seguimiento } from './steps_Seguimiento';
+import { Step4_Seguimiento } from './steps/Step4_Seguimiento';
 import { Step5_Cierre } from './steps/Step5_Cierre';
 
 
@@ -85,11 +85,11 @@ export function AtencionCitaWizard({ citaData }: AtencionCitaWizardProps) {
 
 
     const stepConfig = useMemo(() => [
-        { title: 'Resumen de Cita', theme: 'red', guide: 'Confirma que estás atendiendo a la persona correcta y revisa el motivo de la cita.' },
+        { title: 'Resumen de Cita', theme: 'primary', guide: 'Confirma que estás atendiendo a la persona correcta y revisa el motivo de la cita.' },
         { title: 'Signos Vitales y Estado Clínico', theme: 'slate', guide: 'Registra los signos vitales básicos y define el estado clínico general del paciente en esta consulta.' },
         { title: 'Diagnóstico y Plan', theme: 'green', guide: 'Establece el diagnóstico principal y detalla el plan de tratamiento y las recomendaciones.' },
         { title: 'Seguimiento', theme: 'gray', guide: 'Determina si el paciente necesita una cita de seguimiento y genera el recordatorio correspondiente.' },
-        { title: 'Acciones Adicionales y Cierre', theme: 'dark-red', guide: 'Registra acciones de la empresa, notas psicosociales y revisa el resumen antes de guardar.' },
+        { title: 'Acciones Adicionales y Cierre', theme: 'dark', guide: 'Registra acciones de la empresa, notas psicosociales y revisa el resumen antes de guardar.' },
     ], []);
 
     const currentStepConfig = stepConfig[step - 1];
@@ -100,7 +100,7 @@ export function AtencionCitaWizard({ citaData }: AtencionCitaWizardProps) {
                 step={step}
                 totalSteps={TOTAL_STEPS}
                 title={currentStepConfig.title}
-                theme={currentStepConfig.theme}
+                theme={currentStepConfig.theme as any}
                 guide={currentStepConfig.guide}
             />
             <CardContent className="p-6">

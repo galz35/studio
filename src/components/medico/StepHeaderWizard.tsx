@@ -8,15 +8,15 @@ interface StepHeaderWizardProps {
     totalSteps: number;
     title: string;
     guide: string;
-    theme: 'red' | 'slate' | 'green' | 'gray' | 'dark-red';
+    theme: 'primary' | 'slate' | 'green' | 'gray' | 'dark';
 }
 
 const themeClasses = {
-    red: "from-red-500 to-rose-700",
+    primary: "from-primary to-red-700",
     slate: "from-slate-600 to-slate-800",
-    green: "from-green-500 to-teal-700",
+    green: "from-green-600 to-teal-800",
     gray: "from-gray-500 to-gray-700",
-    "dark-red": "from-red-800 to-red-900",
+    dark: "from-gray-800 to-black",
 };
 
 
