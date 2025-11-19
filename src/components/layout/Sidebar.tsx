@@ -42,9 +42,9 @@ const NavItem = ({ href, icon: Icon, label, isCollapsed }: NavItemProps) => {
       <Button
         variant="ghost"
         className={cn(
-          "w-full h-12 justify-start text-gray-300 hover:bg-gray-700 hover:text-white",
+          "w-full h-12 justify-start text-primary-foreground/80 hover:bg-black/10 hover:text-white",
           isCollapsed ? "px-3.5" : "px-4",
-          isActive && "bg-primary/90 text-white"
+          isActive && "bg-black/20 text-white"
         )}
         aria-label={label}
       >
@@ -121,15 +121,15 @@ export function Sidebar({ isCollapsed, toggleSidebar }: { isCollapsed: boolean, 
   return (
     <aside
       className={cn(
-        "bg-gray-900 text-white flex-col border-r border-gray-700 transition-all duration-300 ease-in-out",
+        "bg-primary text-primary-foreground flex-col border-r border-primary-foreground/10 transition-all duration-300 ease-in-out",
         isMobile ? "fixed z-40 h-full" : "relative",
         isCollapsed ? "w-20" : "w-64",
         isMobile && isCollapsed ? 'hidden' : 'flex'
       )}
     >
-      <div className={cn("flex h-16 items-center border-b border-gray-700/50", isCollapsed ? 'justify-center' : 'px-4')}>
+      <div className={cn("flex h-16 items-center border-b border-primary-foreground/10", isCollapsed ? 'justify-center' : 'px-4')}>
          <Link href="/" className="flex items-center gap-2">
-            <HeartPulse className="h-7 w-7 text-primary" />
+            <HeartPulse className="h-7 w-7 text-white" />
             {!isCollapsed && (
             <h1 className="text-xl font-bold text-white">
                 Claro <span className="font-light opacity-80">Bienestar</span>
