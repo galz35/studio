@@ -104,6 +104,7 @@ export const guardarSolicitudCita = (idPaciente: number, payload: SolicitudCitaP
             motivoConsulta: payload.DatosExtraJSON.Sintomas.join(', ') || 'Revisión General',
             resumenClinicoUsuario: payload.Comentario || '',
             diagnosticoUsuario: 'Autodiagnóstico por solicitud',
+            datosExtra: payload.DatosExtraJSON,
         };
         mockCasos.push(nuevoCaso);
         console.log("Nueva solicitud guardada como Caso Clínico:", nuevoCaso);
@@ -174,7 +175,7 @@ export const guardarAtencionCompleta = (payload: { atencion: AtencionMedica; vac
             vacunas.forEach(v => mockVacunas.push(v));
 
             // "Save" psico
-            if (psico) {
+            if (psico && (psico.nivelEstrés || psico.sintomasPsico?.length || psico.notasPsico)) {
                 mockPsico.push(psico);
             }
 

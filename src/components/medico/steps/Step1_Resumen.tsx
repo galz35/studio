@@ -2,18 +2,21 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { SemaforoBadge } from '@/components/shared/SemaforoBadge';
-import type { CitaMedica, Paciente, EmpleadoEmp2024 } from '@/lib/types/domain';
+import type { CitaMedica, Paciente, EmpleadoEmp2024, CasoClinico } from '@/lib/types/domain';
+import { Badge } from '@/components/ui/badge';
 
 interface Step1Props {
     citaData: {
         cita: CitaMedica;
         paciente: Paciente;
         empleado: EmpleadoEmp2024;
+        caso: CasoClinico;
     };
 }
 
 export function Step1_Resumen({ citaData }: Step1Props) {
-    const { cita, paciente, empleado } = citaData;
+    const { cita, paciente, empleado, caso } = citaData;
+    const datosPsico = caso?.datosExtra?.Psicosocial;
 
     return (
         <div className="space-y-6">
@@ -29,6 +32,15 @@ export function Step1_Resumen({ citaData }: Step1Props) {
                             <strong>Semáforo del Paciente:</strong> 
                             <SemaforoBadge nivel={cita.nivelSemaforoPaciente} />
                         </div>
+                        {datosPsico && (
+                             <div className="space-y-2 pt-2 border-t">
+                                <h4 className="font-semibold">Contexto Psicosocial (Reportado)</h4>
+                                <div className='flex gap-2 flex-wrap'>
+                                    {datosPsico.estres && <Badge variant='secondary'>Estrés: {datosPsico.estres}</Badge>}
+                                    {datosPsico.animo && <Badge variant='secondary'>Ánimo: {datosPsico.animo}</Badge>}
+                                </div>
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
                  <Card>

@@ -21,11 +21,11 @@ export function Step3_Habitos({ datosExtra, updateDatosExtra, aptoLaboral, setAp
     const handleAlergiaDescChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         updateDatosExtra('Alergia', { ...datosExtra.Alergia, descripcion: e.target.value });
     }
-    const handleSuenoChange = (value: any) => {
-        updateDatosExtra('Habitos', { ...datosExtra.Habitos, sueno: value });
+    const handleHabitoChange = (field: 'sueno' | 'hidratacion', value: any) => {
+        updateDatosExtra('Habitos', { ...datosExtra.Habitos, [field]: value });
     }
-    const handleHidratacionChange = (value: any) => {
-        updateDatosExtra('Habitos', { ...datosExtra.Habitos, hidratacion: value });
+    const handlePsicosocialChange = (field: 'estres' | 'animo', value: any) => {
+        updateDatosExtra('Psicosocial', { ...datosExtra.Psicosocial, [field]: value });
     }
 
     return (
@@ -46,22 +46,47 @@ export function Step3_Habitos({ datosExtra, updateDatosExtra, aptoLaboral, setAp
             </div>
 
             <div>
-                <h3 className="text-lg font-semibold mb-2">¿Cómo dormiste?</h3>
-                 <ChipGroup>
-                    <Chip active={datosExtra.Habitos.sueno === 'Bien'} onClick={() => handleSuenoChange('Bien')}>Bien</Chip>
-                    <Chip active={datosExtra.Habitos.sueno === 'Regular'} onClick={() => handleSuenoChange('Regular')}>Regular</Chip>
-                    <Chip active={datosExtra.Habitos.sueno === 'Mal'} onClick={() => handleSuenoChange('Mal')}>Mal</Chip>
-                    <Chip active={datosExtra.Habitos.sueno === 'Prefiero no decir'} onClick={() => handleSuenoChange('Prefiero no decir')}>Prefiero no decir</Chip>
-                </ChipGroup>
+                <h3 className="text-lg font-semibold mb-2">Salud y Hábitos</h3>
+                <div className='space-y-6'>
+                    <div>
+                        <h4 className='font-medium text-sm mb-2'>¿Cómo dormiste?</h4>
+                        <ChipGroup>
+                            <Chip active={datosExtra.Habitos.sueno === 'Bien'} onClick={() => handleHabitoChange('sueno', 'Bien')}>Bien</Chip>
+                            <Chip active={datosExtra.Habitos.sueno === 'Regular'} onClick={() => handleHabitoChange('sueno', 'Regular')}>Regular</Chip>
+                            <Chip active={datosExtra.Habitos.sueno === 'Mal'} onClick={() => handleHabitoChange('sueno', 'Mal')}>Mal</Chip>
+                        </ChipGroup>
+                    </div>
+                    <div>
+                        <h4 className='font-medium text-sm mb-2'>¿Ha bebido agua hoy?</h4>
+                        <ChipGroup>
+                            <Chip active={datosExtra.Habitos.hidratacion === 'Sí'} onClick={() => handleHabitoChange('hidratacion', 'Sí')}>Sí</Chip>
+                            <Chip active={datosExtra.Habitos.hidratacion === 'Poco'} onClick={() => handleHabitoChange('hidratacion', 'Poco')}>Poco</Chip>
+                            <Chip active={datosExtra.Habitos.hidratacion === 'Aún no'} onClick={() => handleHabitoChange('hidratacion', 'Aún no')}>Aún no</Chip>
+                        </ChipGroup>
+                    </div>
+                </div>
             </div>
-            
+
             <div>
-                <h3 className="text-lg font-semibold mb-2">¿Ha bebido agua hoy?</h3>
-                 <ChipGroup>
-                    <Chip active={datosExtra.Habitos.hidratacion === 'Sí'} onClick={() => handleHidratacionChange('Sí')}>Sí</Chip>
-                    <Chip active={datosExtra.Habitos.hidratacion === 'Poco'} onClick={() => handleHidratacionChange('Poco')}>Poco</Chip>
-                    <Chip active={datosExtra.Habitos.hidratacion === 'Aún no'} onClick={() => handleHidratacionChange('Aún no')}>Aún no</Chip>
-                </ChipGroup>
+                <h3 className="text-lg font-semibold mb-2">Bienestar Emocional</h3>
+                <div className='space-y-6'>
+                     <div>
+                        <h4 className='font-medium text-sm mb-2'>Nivel de estrés hoy</h4>
+                        <ChipGroup>
+                            <Chip active={datosExtra.Psicosocial.estres === 'Bajo'} onClick={() => handlePsicosocialChange('estres', 'Bajo')}>Bajo</Chip>
+                            <Chip active={datosExtra.Psicosocial.estres === 'Medio'} onClick={() => handlePsicosocialChange('estres', 'Medio')}>Medio</Chip>
+                            <Chip active={datosExtra.Psicosocial.estres === 'Alto'} onClick={() => handlePsicosocialChange('estres', 'Alto')}>Alto</Chip>
+                        </ChipGroup>
+                    </div>
+                    <div>
+                        <h4 className='font-medium text-sm mb-2'>Estado de ánimo general</h4>
+                         <ChipGroup>
+                            <Chip active={datosExtra.Psicosocial.animo === 'Bien'} onClick={() => handlePsicosocialChange('animo', 'Bien')}>Bien</Chip>
+                            <Chip active={datosExtra.Psicosocial.animo === 'Regular'} onClick={() => handlePsicosocialChange('animo', 'Regular')}>Regular</Chip>
+                            <Chip active={datosExtra.Psicosocial.animo === 'Decaído'} onClick={() => handlePsicosocialChange('animo', 'Decaído')}>Decaído</Chip>
+                        </ChipGroup>
+                    </div>
+                </div>
             </div>
 
              <div>

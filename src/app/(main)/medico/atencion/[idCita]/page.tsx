@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import * as api from '@/lib/services/api.mock';
-import type { CitaMedica, Paciente, EmpleadoEmp2024 } from '@/lib/types/domain';
+import type { CitaMedica, Paciente, EmpleadoEmp2024, CasoClinico } from '@/lib/types/domain';
 import { AtencionCitaWizard } from '@/components/medico/AtencionCitaWizard';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -11,6 +11,7 @@ type AtencionPageData = {
   cita: CitaMedica;
   paciente: Paciente;
   empleado: EmpleadoEmp2024;
+  caso: CasoClinico;
 };
 
 export default function AtencionCitaPage() {
@@ -43,8 +44,13 @@ export default function AtencionCitaPage() {
         if (!empleado) {
           throw new Error("Datos de empleado no encontrados.");
         }
+        
+        const caso = await api.getCasoClinicoDetalle(cita.idCaso!);
+        if (!caso) {
+            throw new Error("Caso clínico no encontrado.");
+        }
 
-        setData({ cita, paciente, empleado });
+        setData({ cita, paciente, empleado, caso });
       } catch (err: any) {
         setError(err.message || "Ocurrió un error al cargar los datos.");
       } finally {

@@ -22,14 +22,14 @@ const TOTAL_STEPS = 4;
 const stepNames = [
     'Tu estado hoy',
     '¿Qué te molesta?',
-    'Hábitos y alergias',
+    'Hábitos y bienestar',
     'Revisión y envío'
 ];
 
 const stepHelps = [
     'Cuéntanos cómo te sientes hoy. Si todo está bien, puedes finalizar rápido.',
     'Elige la zona y luego los síntomas. Puedes quitar tocando de nuevo.',
-    'Marca si tienes alergias hoy y cuéntanos sobre sueño e hidratación.',
+    'Cuéntanos sobre tus hábitos y estado de ánimo para darnos más contexto.',
     'Revisa tus datos, agrega una nota si deseas y envía tu registro.'
 ];
 
@@ -49,6 +49,7 @@ const initialDatosExtra: DatosExtraJSON = {
     Detalles: {},
     Alergia: { activa: null },
     Habitos: { sueno: null, hidratacion: null },
+    Psicosocial: { estres: null, animo: null },
     Insumos: [],
 };
 
@@ -89,10 +90,10 @@ export function SolicitudCitaWizard() {
         if (urgentes.length > 0) return 'ROJO';
         
         const intensos = detalles.filter(d => (d.Intensidad || 0) >= 7);
-        if (intensos.length >= 2) return 'AMARILLO';
+        if (intensos.length >= 2 || datosExtra.Psicosocial.estres === 'Alto' || datosExtra.Habitos.sueno === 'Mal') return 'AMARILLO';
         
         return 'VERDE';
-    }, [datosExtra.Detalles, datosExtra.SintomasKeys]);
+    }, [datosExtra]);
 
     useEffect(() => {
         const newTriage = calcTriage();
@@ -100,7 +101,7 @@ export function SolicitudCitaWizard() {
         if (newTriage === 'ROJO') {
             setAptoLaboral(false);
         }
-    }, [datosExtra.SintomasKeys, datosExtra.Detalles, calcTriage]);
+    }, [datosExtra, calcTriage]);
 
     const handleNext = () => {
         if (step === 1 && !ruta) {

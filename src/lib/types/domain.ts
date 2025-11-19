@@ -73,6 +73,7 @@ export interface CasoClinico {
   motivoConsulta: string;
   resumenClinicoUsuario?: string;
   diagnosticoUsuario?: string;
+  datosExtra?: any; // To store the full payload from the wizard
 }
 
 export interface CitaMedica {

@@ -12,6 +12,7 @@ export const casosClinicos: CasoClinico[] = [
     motivoConsulta: "Migrañas recurrentes y problemas de sueño.",
     resumenClinicoUsuario: "El paciente reporta dolores de cabeza intensos 3-4 veces por semana, dificultad para conciliar el sueño y cansancio extremo durante el día.",
     diagnosticoUsuario: "Posible migraña crónica o cefalea tensional.",
+    datosExtra: { Habitos: { sueno: 'Mal'}, Psicosocial: { estres: 'Alto', animo: 'Decaído'}},
   },
   {
     idCaso: 2,
@@ -24,6 +25,7 @@ export const casosClinicos: CasoClinico[] = [
     motivoConsulta: "Revisión general por cansancio.",
     resumenClinicoUsuario: "Reporta sentirse más cansada de lo habitual en las últimas dos semanas.",
     diagnosticoUsuario: "Fatiga.",
+    datosExtra: { Habitos: { sueno: 'Regular'}, Psicosocial: { estres: 'Medio', animo: 'Regular'}},
   },
   {
     idCaso: 3,
@@ -36,6 +38,7 @@ export const casosClinicos: CasoClinico[] = [
     motivoConsulta: "Alergia estacional leve.",
     resumenClinicoUsuario: "Congestión nasal y estornudos por la mañana.",
     diagnosticoUsuario: "Rinitis alérgica.",
+     datosExtra: { Habitos: { sueno: 'Bien'}, Psicosocial: { estres: 'Bajo', animo: 'Bien'}},
   },
   {
     idCaso: 4,

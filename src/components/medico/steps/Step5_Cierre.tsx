@@ -12,6 +12,13 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Trash2 } from "lucide-react";
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
+
 
 // Subcomponents defined in the same file for simplicity
 const VacunasEmpresaBlock: React.FC<{ vacunas: VacunaAplicada[], setVacunas: React.Dispatch<React.SetStateAction<VacunaAplicada[]>>, idAtencion: number }> = ({ vacunas, setVacunas, idAtencion }) => {
@@ -60,52 +67,56 @@ const PsicosocialBlock: React.FC<{ psico: RegistroPsicosocial, setPsico: (field:
     };
     
     return (
-        <Card>
-            <CardHeader>
-                <div className="flex justify-between items-center">
-                    <CardTitle>Registro Psicosocial (Opcional)</CardTitle>
-                    <div className="flex items-center gap-2">
-                        <Label htmlFor="confidencial">Confidencial</Label>
-                        <Switch id="confidencial" checked={psico.confidencial} onCheckedChange={(c) => setPsico('confidencial', c)} />
+        <Accordion type="single" collapsible>
+            <AccordionItem value="item-1">
+                <AccordionTrigger>
+                    <div className="flex justify-between items-center w-full pr-4">
+                        <CardTitle>Registro Psicosocial (Opcional)</CardTitle>
+                        <div className="flex items-center gap-2">
+                            <Label htmlFor="confidencial">Confidencial</Label>
+                            <Switch id="confidencial" checked={psico.confidencial} onCheckedChange={(c) => setPsico('confidencial', c)} />
+                        </div>
                     </div>
-                </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                <div>
-                    <Label>Nivel de Estrés Percibido</Label>
-                    <div className="flex gap-2 mt-2">
-                        {(['BAJO', 'MEDIO', 'ALTO'] as const).map(level => (
-                             <Badge key={level} onClick={() => setPsico('nivelEstrés', level)} variant={psico.nivelEstrés === level ? 'default' : 'outline'} className={cn('cursor-pointer', psico.nivelEstrés === level ? 'bg-primary' : '')}>{level}</Badge>
-                        ))}
-                    </div>
-                </div>
-                <div>
-                    <Label>Síntomas Psicológicos Referidos</Label>
-                     <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
-                        {sintomas.map(sintoma => (
-                            <div key={sintoma} className="flex items-center gap-2">
-                                <Checkbox id={`sintoma-${sintoma}`} checked={psico.sintomasPsico?.includes(sintoma)} onCheckedChange={(c) => handleSintomaChange(sintoma, !!c)} />
-                                <Label htmlFor={`sintoma-${sintoma}`}>{sintoma}</Label>
+                </AccordionTrigger>
+                <AccordionContent>
+                    <div className="space-y-4 p-2">
+                        <div>
+                            <Label>Nivel de Estrés Percibido</Label>
+                            <div className="flex gap-2 mt-2">
+                                {(['BAJO', 'MEDIO', 'ALTO'] as const).map(level => (
+                                     <Badge key={level} onClick={() => setPsico('nivelEstrés', level)} variant={psico.nivelEstrés === level ? 'default' : 'outline'} className={cn('cursor-pointer', psico.nivelEstrés === level ? 'bg-primary' : '')}>{level}</Badge>
+                                ))}
                             </div>
-                        ))}
+                        </div>
+                        <div>
+                            <Label>Síntomas Psicológicos Referidos</Label>
+                             <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
+                                {sintomas.map(sintoma => (
+                                    <div key={sintoma} className="flex items-center gap-2">
+                                        <Checkbox id={`sintoma-${sintoma}`} checked={psico.sintomasPsico?.includes(sintoma)} onCheckedChange={(c) => handleSintomaChange(sintoma, !!c)} />
+                                        <Label htmlFor={`sintoma-${sintoma}`}>{sintoma}</Label>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                             <Label>Notas Psicosociales</Label>
+                             <Textarea placeholder="Detalles adicionales, narrativa del paciente, etc." value={psico.notasPsico || ''} onChange={(e) => setPsico('notasPsico', e.target.value)} />
+                        </div>
+                         <div className="flex items-center gap-6">
+                            <div className="flex items-center gap-2">
+                                <Checkbox id="riesgo-suicida" checked={psico.riesgoSuicida} onCheckedChange={(c) => setPsico('riesgoSuicida', !!c)} />
+                                <Label htmlFor="riesgo-suicida" className="text-destructive font-semibold">¿Riesgo suicida?</Label>
+                            </div>
+                             <div className="flex items-center gap-2">
+                                <Checkbox id="derivar-psico" checked={psico.derivarAPsico} onCheckedChange={(c) => setPsico('derivarAPsico', !!c)} />
+                                <Label htmlFor="derivar-psico">¿Derivar a Psicología?</Label>
+                            </div>
+                         </div>
                     </div>
-                </div>
-                <div className="space-y-2">
-                     <Label>Notas Psicosociales</Label>
-                     <Textarea placeholder="Detalles adicionales, narrativa del paciente, etc." value={psico.notasPsico || ''} onChange={(e) => setPsico('notasPsico', e.target.value)} />
-                </div>
-                 <div className="flex items-center gap-6">
-                    <div className="flex items-center gap-2">
-                        <Checkbox id="riesgo-suicida" checked={psico.riesgoSuicida} onCheckedChange={(c) => setPsico('riesgoSuicida', !!c)} />
-                        <Label htmlFor="riesgo-suicida" className="text-destructive font-semibold">¿Riesgo suicida?</Label>
-                    </div>
-                     <div className="flex items-center gap-2">
-                        <Checkbox id="derivar-psico" checked={psico.derivarAPsico} onCheckedChange={(c) => setPsico('derivarAPsico', !!c)} />
-                        <Label htmlFor="derivar-psico">¿Derivar a Psicología?</Label>
-                    </div>
-                 </div>
-            </CardContent>
-        </Card>
+                </AccordionContent>
+            </AccordionItem>
+        </Accordion>
     );
 };
 
@@ -131,7 +142,7 @@ export function Step5_Cierre({ atencion, vacunas, setVacunas, psico, setPsico }:
                     <p><strong>Diagnóstico:</strong> {atencion.diagnosticoPrincipal || 'No especificado'}</p>
                     <p><strong>Requiere Seguimiento:</strong> {atencion.requiereSeguimiento ? `Sí, para el ${atencion.fechaSiguienteCita}` : 'No'}</p>
                     <p><strong>Vacunas/Acciones registradas:</strong> {vacunas.length}</p>
-                    <p><strong>Se registró info psicosocial:</strong> {psico.nivelEstrés || psico.sintomasPsico?.length || psico.notasPsico ? 'Sí' : 'No'}</p>
+                    <p><strong>Se registró info psicosocial:</strong> {psico.nivelEstrés || (psico.sintomasPsico && psico.sintomasPsico.length > 0) || psico.notasPsico ? 'Sí' : 'No'}</p>
                 </CardContent>
             </Card>
         </div>

@@ -14,6 +14,11 @@ export interface HabitosInfo {
   hidratacion?: 'Sí' | 'Poco' | 'Aún no' | null;
 }
 
+export interface PsicosocialInfo {
+  estres?: 'Bajo' | 'Medio' | 'Alto' | null;
+  animo?: 'Bien' | 'Regular' | 'Decaído' | null;
+}
+
 export interface DuracionSintoma {
   valor: number | null;
   unidad: 'horas' | 'días' | null;
@@ -38,6 +43,7 @@ export interface DatosExtraJSON {
   Detalles: Record<string, DetalleSintoma>;
   Alergia: AlergiaInfo;
   Habitos: HabitosInfo;
+  Psicosocial: PsicosocialInfo;
   Insumos: string[];
 }
 

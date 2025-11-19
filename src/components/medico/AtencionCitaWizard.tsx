@@ -4,7 +4,7 @@ import React, { useState, useMemo } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { StepHeaderWizard } from './StepHeaderWizard';
 import { Button } from '@/components/ui/button';
-import { AtencionMedica, CitaMedica, Paciente, EmpleadoEmp2024, EstadoClinico, VacunaAplicada, RegistroPsicosocial, SeguimientoGenerado } from '@/lib/types/domain';
+import { AtencionMedica, CitaMedica, Paciente, EmpleadoEmp2024, EstadoClinico, VacunaAplicada, RegistroPsicosocial, SeguimientoGenerado, CasoClinico } from '@/lib/types/domain';
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import * as api from '@/lib/services/api.mock';
 import { useAuth } from '@/hooks/use-auth';
@@ -24,6 +24,7 @@ interface AtencionCitaWizardProps {
     cita: CitaMedica;
     paciente: Paciente;
     empleado: EmpleadoEmp2024;
+    caso: CasoClinico;
   };
 }
 
@@ -85,7 +86,7 @@ export function AtencionCitaWizard({ citaData }: AtencionCitaWizardProps) {
 
 
     const stepConfig = useMemo(() => [
-        { title: `Atención para: ${citaData.paciente.nombreCompleto}`, theme: 'primary', guide: 'Confirma los detalles de la cita antes de continuar con la atención.' },
+        { title: `Atención para: ${citaData.paciente.nombreCompleto}`, theme: 'primary', guide: 'Confirma los detalles de la cita y el contexto del paciente antes de continuar.' },
         { title: 'Signos Vitales y Estado Clínico', theme: 'slate', guide: 'Registra los signos vitales básicos y define el estado clínico general del paciente en esta consulta.' },
         { title: 'Diagnóstico y Plan', theme: 'green', guide: 'Establece el diagnóstico principal y detalla el plan de tratamiento y las recomendaciones.' },
         { title: 'Seguimiento', theme: 'gray', guide: 'Determina si el paciente necesita una cita de seguimiento y genera el recordatorio correspondiente.' },
