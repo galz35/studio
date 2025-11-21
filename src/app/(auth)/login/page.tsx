@@ -33,7 +33,7 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
-  const { loginFake } = useAuth();
+  const { loginFake, loading } = useAuth();
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -71,8 +71,8 @@ export default function LoginPage() {
             />
           </CardContent>
           <CardFooter className="flex flex-col gap-4">
-            <Button type="submit" className="w-full">
-              Iniciar Sesión
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? "Cargando..." : "Iniciar Sesión"}
             </Button>
             <div className="text-center text-sm">
               <Link
@@ -97,9 +97,9 @@ export default function LoginPage() {
             <CardTitle className="text-base">Usuarios de Prueba</CardTitle>
         </CardHeader>
         <CardContent className="text-sm space-y-2">
-            <p><strong>Paciente:</strong> carnet `P001`</p>
-            <p><strong>Médico:</strong> carnet `M001`</p>
-            <p><strong>Admin:</strong> carnet `A001`</p>
+            <p><strong>Paciente:</strong> carnet `P001` (password: `password`)</p>
+            <p><strong>Médico:</strong> carnet `M001` (password: `password`)</p>
+            <p><strong>Admin:</strong> carnet `A001` (password: `password`)</p>
         </CardContent>
       </Card>
     </Card>

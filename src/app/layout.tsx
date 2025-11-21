@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { AuthProvider } from "@/lib/context/AuthContext";
 import { Toaster } from "@/components/ui/toaster";
+import { FirebaseClientProvider } from "@/firebase";
 import "./globals.css";
 import { Inter, Dancing_Script } from "next/font/google";
 
@@ -20,10 +21,12 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className={`${inter.variable} ${dancingScript.variable}`}>
-        <AuthProvider>
-          {children}
-          <Toaster />
-        </AuthProvider>
+        <FirebaseClientProvider>
+          <AuthProvider>
+            {children}
+            <Toaster />
+          </AuthProvider>
+        </FirebaseClientProvider>
       </body>
     </html>
   );

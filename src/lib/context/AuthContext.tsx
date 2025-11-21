@@ -2,9 +2,12 @@
 
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
+import { User, signInWithEmailAndPassword } from 'firebase/auth';
+
 import type { UsuarioAplicacion, Rol, Pais } from '@/lib/types/domain';
 import { usuarios as mockUsuarios } from '@/lib/mock/usuarios.mock';
-import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
+import { useFirebase } from '@/firebase';
 
 interface AuthContextType {
   usuarioActual: UsuarioAplicacion | null;
@@ -34,28 +37,40 @@ const getDashboardUrl = (rol: Rol) => {
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [usuarioActual, setUsuarioActual] = useState<UsuarioAplicacion | null>(null);
-  const [loading, setLoading] = useState(true);
   const [pais, setPaisState] = useState<Pais>('NI');
   const router = useRouter();
+  const { toast } = useToast();
+  const { auth, user: firebaseUser, isUserLoading } = useFirebase();
 
   useEffect(() => {
-    try {
-      const storedUser = localStorage.getItem('usuarioActual');
-      const storedPais = localStorage.getItem('pais') as Pais;
-      if (storedUser) {
-        const user = JSON.parse(storedUser);
-        setUsuarioActual(user);
-        if (storedPais) {
-          setPaisState(storedPais);
+    if (!isUserLoading && firebaseUser) {
+      try {
+        const storedUser = localStorage.getItem('usuarioActual');
+        const storedPais = localStorage.getItem('pais') as Pais;
+        if (storedUser) {
+          const user = JSON.parse(storedUser);
+          setUsuarioActual(user);
+          if (storedPais) {
+            setPaisState(storedPais);
+          }
+        } else {
+            // This might happen if user is logged in to Firebase but localStorage is cleared
+            // We find the base user from mocks and set it.
+            const baseUser = mockUsuarios.find(u => u.carnet.startsWith(firebaseUser.email?.split('@')[0] || ''));
+            if(baseUser) {
+                setUsuarioActual(baseUser);
+                localStorage.setItem('usuarioActual', JSON.stringify(baseUser));
+            }
         }
+      } catch (error) {
+        console.error("Failed to parse user from localStorage", error);
+        logout();
       }
-    } catch (error) {
-      console.error("Failed to parse user from localStorage", error);
-      localStorage.removeItem('usuarioActual');
-    } finally {
-      setLoading(false);
+    } else if (!isUserLoading && !firebaseUser) {
+        setUsuarioActual(null);
+        localStorage.removeItem('usuarioActual');
     }
-  }, []);
+  }, [firebaseUser, isUserLoading]);
 
   const setPais = (newPais: Pais) => {
     setPaisState(newPais);
@@ -67,7 +82,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const loginFake = (carnet: string) => {
+  const loginFake = async (carnet: string) => {
     let user = mockUsuarios.find(u => u.carnet.toLowerCase() === carnet.toLowerCase());
     
     if (!user) {
@@ -79,15 +94,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return;
     }
     
-    const userWithCountry = { ...user, pais };
-    setUsuarioActual(userWithCountry);
-    localStorage.setItem('usuarioActual', JSON.stringify(userWithCountry));
-    router.push(getDashboardUrl(user.rol));
+    try {
+        // We use the carnet as the email username for this mock login
+        await signInWithEmailAndPassword(auth, `${carnet.toLowerCase()}@corp.local`, 'password');
+        
+        const userWithCountry = { ...user, pais };
+        setUsuarioActual(userWithCountry);
+        localStorage.setItem('usuarioActual', JSON.stringify(userWithCountry));
+        router.push(getDashboardUrl(user.rol));
+
+    } catch (error: any) {
+        console.error("Firebase login error:", error);
+         toast({
+            variant: "destructive",
+            title: "Error de Servidor",
+            description: "No se pudo iniciar sesión en Firebase. " + error.message,
+        });
+    }
   };
 
   const logout = () => {
+    auth.signOut();
     setUsuarioActual(null);
     localStorage.removeItem('usuarioActual');
+    localStorage.removeItem('pais');
     router.push('/login');
   };
   
@@ -100,15 +130,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             localStorage.setItem('usuarioActual', JSON.stringify(userWithCountry));
             router.push(getDashboardUrl(newRole));
         } else {
-            const tempUser: UsuarioAplicacion = {
-                ...usuarioActual,
-                rol: newRole,
-                idMedico: newRole === 'MEDICO' ? usuarioActual.idMedico : undefined,
-                idPaciente: newRole === 'PACIENTE' ? usuarioActual.idPaciente : undefined,
-            };
-            setUsuarioActual(tempUser);
-            localStorage.setItem('usuarioActual', JSON.stringify(tempUser));
-            router.push(getDashboardUrl(newRole));
+            toast({
+                variant: 'destructive',
+                title: 'Rol no disponible',
+                description: 'No tiene acceso a este rol.'
+            })
         }
     }
   };
@@ -116,8 +142,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   return (
     <AuthContext.Provider value={{ 
         usuarioActual, 
-        isAuthenticated: !!usuarioActual,
-        loading,
+        isAuthenticated: !!firebaseUser && !!usuarioActual,
+        loading: isUserLoading,
         pais,
         setPais,
         loginFake, 
