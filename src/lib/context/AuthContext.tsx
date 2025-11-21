@@ -2,7 +2,7 @@
 
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { User, signInWithEmailAndPassword } from 'firebase/auth';
+import { User, signInAnonymously } from 'firebase/auth';
 
 import type { UsuarioAplicacion, Rol, Pais } from '@/lib/types/domain';
 import { usuarios as mockUsuarios } from '@/lib/mock/usuarios.mock';
@@ -56,7 +56,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         } else {
             // This might happen if user is logged in to Firebase but localStorage is cleared
             // We find the base user from mocks and set it.
-            const baseUser = mockUsuarios.find(u => u.carnet.startsWith(firebaseUser.email?.split('@')[0] || ''));
+            const baseUser = mockUsuarios.find(u => u.carnet.startsWith(firebaseUser.uid || ''));
             if(baseUser) {
                 setUsuarioActual(baseUser);
                 localStorage.setItem('usuarioActual', JSON.stringify(baseUser));
@@ -95,8 +95,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
     
     try {
-        // We use the carnet as the email username for this mock login
-        await signInWithEmailAndPassword(auth, `${carnet.toLowerCase()}@corp.local`, 'password');
+        // Use anonymous sign-in for mock users. This creates a valid Firebase session.
+        await signInAnonymously(auth);
         
         const userWithCountry = { ...user, pais };
         setUsuarioActual(userWithCountry);
