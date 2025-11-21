@@ -28,21 +28,23 @@ import { useAuth } from "@/hooks/use-auth";
 
 const loginSchema = z.object({
   carnet: z.string().min(1, { message: "El carnet es requerido." }),
+  password: z.string().min(1, { message: "La contraseña es requerida." }),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
-  const { loginFake, loading } = useAuth();
+  const { login, loading } = useAuth();
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
       carnet: "",
+      password: "",
     },
   });
 
   const onSubmit: SubmitHandler<LoginFormValues> = (data) => {
-    loginFake(data.carnet);
+    login(data.carnet, data.password);
   };
 
   return (
@@ -50,7 +52,7 @@ export default function LoginPage() {
       <CardHeader>
         <CardTitle>Iniciar Sesión</CardTitle>
         <CardDescription>
-          Ingrese su carnet para acceder al sistema.
+          Ingrese su carnet y contraseña para acceder al sistema.
         </CardDescription>
       </CardHeader>
       <Form {...form}>
@@ -64,6 +66,19 @@ export default function LoginPage() {
                   <FormLabel>Carnet de Empleado</FormLabel>
                   <FormControl>
                     <Input placeholder="Ej: P001, M001, A001" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Contraseña</FormLabel>
+                  <FormControl>
+                    <Input type="password" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

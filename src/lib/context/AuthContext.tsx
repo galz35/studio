@@ -2,7 +2,7 @@
 
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { User, signInAnonymously } from 'firebase/auth';
+import { User, signInWithEmailAndPassword } from 'firebase/auth';
 
 import type { UsuarioAplicacion, Rol, Pais } from '@/lib/types/domain';
 import { usuarios as mockUsuarios } from '@/lib/mock/usuarios.mock';
@@ -15,7 +15,7 @@ interface AuthContextType {
   loading: boolean;
   pais: Pais;
   setPais: (pais: Pais) => void;
-  loginFake: (carnet: string) => void;
+  login: (carnet: string, password: string) => void;
   logout: () => void;
   switchRole: (newRole: Rol) => void;
 }
@@ -82,7 +82,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const loginFake = async (carnet: string) => {
+  const login = async (carnet: string, password: string) => {
     let user = mockUsuarios.find(u => u.carnet.toLowerCase() === carnet.toLowerCase());
     
     if (!user) {
@@ -95,8 +95,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
     
     try {
-        // Use anonymous sign-in for mock users. This creates a valid Firebase session.
-        await signInAnonymously(auth);
+        // We use the carnet as the email username for this mock login
+        await signInWithEmailAndPassword(auth, `${carnet.toLowerCase()}@corp.local`, password);
         
         const userWithCountry = { ...user, pais };
         setUsuarioActual(userWithCountry);
@@ -107,8 +107,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         console.error("Firebase login error:", error);
          toast({
             variant: "destructive",
-            title: "Error de Servidor",
-            description: "No se pudo iniciar sesión en Firebase. " + error.message,
+            title: "Error de Autenticación",
+            description: "Credenciales incorrectas. Verifique su carnet y contraseña.",
         });
     }
   };
@@ -146,7 +146,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         loading: isUserLoading,
         pais,
         setPais,
-        loginFake, 
+        login, 
         logout,
         switchRole
     }}>
