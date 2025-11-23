@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useMemo } from 'react';
-import { useAuth } from '@/hooks/use-auth';
+import { useUserProfile } from '@/hooks/use-user-profile';
 import { CasoClinico, Paciente, Medico, TriajeIA } from '@/lib/types/domain';
 import { DataTable } from '@/components/shared/DataTable';
 import { Button } from '@/components/ui/button';
@@ -29,7 +29,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 type CasoConPaciente = CasoClinico & { paciente?: Paciente };
 
 export default function GestionCitasPage() {
-  const { pais } = useAuth();
+  const { pais } = useUserProfile();
   const { toast } = useToast();
   const [ConfirmDialog, confirm] = useConfirm();
 
@@ -43,6 +43,7 @@ export default function GestionCitasPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fetchData = async () => {
+    if (!pais) return;
     setIsLoading(true);
     try {
         const [casosRes, medicosRes] = await Promise.all([

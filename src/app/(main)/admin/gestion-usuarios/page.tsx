@@ -4,7 +4,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useAuth } from '@/hooks/use-auth';
+import { useUserProfile } from '@/hooks/use-user-profile';
 import { UsuarioAplicacion, EmpleadoEmp2024, Rol } from '@/lib/types/domain';
 import { DataTable } from '@/components/shared/DataTable';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -44,7 +44,7 @@ const userSchema = z.object({
 type UserFormValues = z.infer<typeof userSchema>;
 
 export default function GestionUsuariosPage() {
-  const { pais } = useAuth();
+  const { pais } = useUserProfile();
   const { toast } = useToast();
 
   const [isDialogOpen, setDialogOpen] = useState(false);
@@ -55,6 +55,7 @@ export default function GestionUsuariosPage() {
   const [isLoading, setIsLoading] = useState(true);
   
   const fetchData = async () => {
+      if (!pais) return;
       setIsLoading(true);
       try {
         const [usuariosRes, empleadosRes] = await Promise.all([
@@ -78,15 +79,16 @@ export default function GestionUsuariosPage() {
     
   useEffect(() => {
     fetchData();
-  }, [toast]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pais]);
   
   const usuariosDelPais = useMemo(() => {
-    if (!usuarios) return [];
+    if (!usuarios || !pais) return [];
     return usuarios.filter(u => u.pais === pais);
   }, [usuarios, pais]);
 
   const empleadosDisponibles = useMemo(() => {
-    if (!empleados || !usuarios) return [];
+    if (!empleados || !usuarios || !pais) return [];
     const userCarnets = new Set(usuarios.map(u => u.carnet));
     return empleados.filter(e => e.pais === pais && !userCarnets.has(e.carnet));
   }, [empleados, usuarios, pais]);
@@ -101,6 +103,7 @@ export default function GestionUsuariosPage() {
   const userType = form.watch('userType');
 
   const onSubmit = async (data: UserFormValues) => {
+    if (!pais) return;
     setIsSubmitting(true);
 
     let newUserData: Omit<UsuarioAplicacion, 'idUsuario' | 'id'>;

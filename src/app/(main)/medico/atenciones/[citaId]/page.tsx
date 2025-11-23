@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import * as api from '@/lib/services/api.mock';
-import { useAuth } from '@/hooks/use-auth';
+import { useUserProfile } from '@/hooks/use-user-profile';
 import type { CitaMedica, Paciente, CasoClinico } from '@/lib/types/domain';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -47,8 +47,8 @@ export default function AtencionMedicaPage() {
   const params = useParams();
   const router = useRouter();
   const { toast } = useToast();
-  const { usuarioActual } = useAuth();
-  const citaId = Number(params.citaId);
+  const { userProfile } = useUserProfile();
+  const citaId = params.citaId as string;
 
   const [data, setData] = useState<AtencionData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -74,14 +74,14 @@ export default function AtencionMedicaPage() {
   }, [citaId, form]);
 
   const onSubmit = async (formData: AtencionFormValues) => {
-    if (!data || !usuarioActual?.idMedico) return;
+    if (!data || !userProfile?.idMedico) return;
     try {
       await api.guardarAtencion({
         ...formData,
         fechaSugeridaSeguimiento: formData.fechaSugeridaSeguimiento?.toISOString().split('T')[0],
         idCita: citaId,
         idCaso: data.cita.idCaso!,
-        idMedico: usuarioActual.idMedico,
+        idMedico: userProfile.idMedico,
         fechaAtencion: new Date().toISOString(),
         estadoAtencion: 'Finalizada'
       });

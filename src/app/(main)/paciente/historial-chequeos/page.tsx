@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Eye } from 'lucide-react';
-import { useAuth } from '@/hooks/use-auth';
+import { useUserProfile } from '@/hooks/use-user-profile';
 import { ChequeoBienestar } from '@/lib/types/domain';
 import { DataTable } from '@/components/shared/DataTable';
 import { Button } from '@/components/ui/button';
@@ -17,15 +17,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 
 export default function HistorialChequeosPage() {
-  const { usuarioActual } = useAuth();
+  const { userProfile } = useUserProfile();
   const { toast } = useToast();
   const [chequeos, setChequeos] = useState<ChequeoBienestar[]>([]);
   const [selectedChequeo, setSelectedChequeo] = useState<ChequeoBienestar | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (usuarioActual?.idPaciente) {
-      fetch(`/api/pacientes/${usuarioActual.idPaciente}/chequeos`)
+    if (userProfile?.id) {
+      fetch(`/api/pacientes/${userProfile.id}/chequeos`)
         .then(res => res.json())
         .then(data => {
             setChequeos(data);
@@ -35,7 +35,7 @@ export default function HistorialChequeosPage() {
             setLoading(false);
         });
     }
-  }, [usuarioActual, toast]);
+  }, [userProfile, toast]);
 
   const columns = [
     {

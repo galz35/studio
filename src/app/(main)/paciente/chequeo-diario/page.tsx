@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useAuth } from '@/hooks/use-auth';
+import { useUserProfile } from '@/hooks/use-user-profile';
 import * as api from '@/lib/services/api.mock';
 import { EmpleadoEmp2024 } from '@/lib/types/domain';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -36,7 +36,7 @@ const chequeoSchema = z.object({
 type ChequeoFormValues = z.infer<typeof chequeoSchema>;
 
 export default function ChequeoDiarioPage() {
-  const { usuarioActual } = useAuth();
+  const { userProfile } = useUserProfile();
   const { toast } = useToast();
   const [empleado, setEmpleado] = useState<EmpleadoEmp2024 | null>(null);
 
@@ -60,21 +60,21 @@ export default function ChequeoDiarioPage() {
   const alergiasActivas = form.watch('alergiasActivas');
 
   useEffect(() => {
-    if (usuarioActual) {
+    if (userProfile) {
       api.getEmpleados().then(empleados => {
-        const info = empleados.find(e => e.carnet === usuarioActual.carnet);
+        const info = empleados.find(e => e.carnet === userProfile.carnet);
         if (info) setEmpleado(info);
       });
     }
-  }, [usuarioActual]);
+  }, [userProfile]);
 
   const onSubmit: SubmitHandler<ChequeoFormValues> = async (data) => {
-    if (!usuarioActual?.idPaciente) return;
+    if (!userProfile?.id) return;
     
     try {
       await api.crearChequeo({
         ...data,
-        idPaciente: usuarioActual.idPaciente,
+        idPaciente: userProfile.id,
         // Fake semaforo logic
         nivelSemaforo: data.calidadSueno === 'Mala' || data.estadoAnimo === 'Estresado(a)' ? 'A' : 'V',
         estadoChequeo: 'Completado',

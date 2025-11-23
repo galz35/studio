@@ -4,7 +4,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useAuth } from '@/hooks/use-auth';
+import { useUserProfile } from '@/hooks/use-user-profile';
 import { AtencionMedica, EmpleadoEmp2024, Paciente, Medico, CasoClinico } from '@/lib/types/domain';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
@@ -35,7 +35,7 @@ type FilterValues = z.infer<typeof reportFilterSchema>;
 type AtencionCompleta = AtencionMedica & { paciente: Paciente, medico: Medico, caso: CasoClinico, empleado: EmpleadoEmp2024 };
 
 export default function ReportesAdminPage() {
-  const { pais } = useAuth();
+  const { pais } = useUserProfile();
   const { toast } = useToast();
   const [atenciones, setAtenciones] = useState<AtencionCompleta[]>([]);
   const [filteredAtenciones, setFilteredAtenciones] = useState<AtencionCompleta[]>([]);
@@ -54,12 +54,14 @@ export default function ReportesAdminPage() {
   });
 
   useEffect(() => {
-    fetch('/api/atenciones?pais=' + pais)
-        .then(res => res.json())
-        .then(data => {
-            setAtenciones(data);
-            setLoading(false);
-        });
+    if (pais) {
+        fetch('/api/atenciones?pais=' + pais)
+            .then(res => res.json())
+            .then(data => {
+                setAtenciones(data);
+                setLoading(false);
+            });
+    }
   }, [pais]);
   
   const gerencias = useMemo(() => {

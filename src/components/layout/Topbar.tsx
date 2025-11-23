@@ -17,16 +17,15 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/use-auth";
+import { useUserProfile } from "@/hooks/use-user-profile";
 import type { Pais, Rol } from "@/lib/types/domain";
 
 export function Topbar({ toggleSidebar }: { toggleSidebar: () => void }) {
-  const { usuarioActual, logout, switchRole, pais, setPais } = useAuth();
+  const { logout } = useAuth();
+  const { userProfile, switchRole, pais, setPais } = useUserProfile();
 
   const getInitials = (name: string = "") => {
     return name
@@ -71,19 +70,19 @@ export function Topbar({ toggleSidebar }: { toggleSidebar: () => void }) {
           </DropdownMenu>
 
         {/* Role Switcher */}
-        {usuarioActual?.idUsuario && (
+        {userProfile && (
            <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="gap-2">
                 <Building className="h-4 w-4" />
-                <span>Rol: {usuarioActual?.rol}</span>
+                <span>Rol: {userProfile?.rol}</span>
                 <ChevronDown className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
               <DropdownMenuLabel>Cambiar Rol</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuRadioGroup value={usuarioActual?.rol} onValueChange={(r) => switchRole(r as Rol)}>
+              <DropdownMenuRadioGroup value={userProfile?.rol} onValueChange={(r) => switchRole(r as Rol)}>
                   <DropdownMenuRadioItem value="PACIENTE">Paciente</DropdownMenuRadioItem>
                   <DropdownMenuRadioItem value="MEDICO">Médico</DropdownMenuRadioItem>
                   <DropdownMenuRadioItem value="ADMIN">Administrador</DropdownMenuRadioItem>
@@ -98,14 +97,14 @@ export function Topbar({ toggleSidebar }: { toggleSidebar: () => void }) {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-10 w-10 rounded-full">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground font-semibold">
-                {getInitials(usuarioActual?.nombreCompleto)}
+                {getInitials(userProfile?.nombreCompleto)}
               </div>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>
-              <div className="font-medium">{usuarioActual?.nombreCompleto}</div>
-              <div className="text-xs text-muted-foreground">{usuarioActual?.carnet}</div>
+              <div className="font-medium">{userProfile?.nombreCompleto}</div>
+              <div className="text-xs text-muted-foreground">{userProfile?.carnet}</div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem>

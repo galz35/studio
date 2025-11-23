@@ -1,21 +1,21 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { useAuth } from '@/hooks/use-auth';
+import { useUserProfile } from '@/hooks/use-user-profile';
 import { VacunaAplicada } from '@/lib/types/domain';
 import { DataTable } from '@/components/shared/DataTable';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 
 export default function MisVacunasPage() {
-  const { usuarioActual } = useAuth();
+  const { userProfile } = useUserProfile();
   const { toast } = useToast();
   const [vacunas, setVacunas] = useState<VacunaAplicada[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (usuarioActual?.idPaciente) {
-      fetch(`/api/pacientes/${usuarioActual.idPaciente}/vacunas`)
+    if (userProfile?.id) {
+      fetch(`/api/pacientes/${userProfile.id}/vacunas`)
         .then(res => res.json())
         .then(data => {
           setVacunas(data);
@@ -25,7 +25,7 @@ export default function MisVacunasPage() {
           setLoading(false);
         });
     }
-  }, [usuarioActual, toast]);
+  }, [userProfile, toast]);
 
   const columns = [
     { accessor: 'fechaAplicacion', header: 'Fecha Aplicación' },

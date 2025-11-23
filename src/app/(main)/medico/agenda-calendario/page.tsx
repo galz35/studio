@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
-import { useAuth } from '@/hooks/use-auth';
+import { useUserProfile } from '@/hooks/use-user-profile';
 import * as api from '@/lib/services/api.mock';
 import { CitaMedica, SeguimientoPaciente } from '@/lib/types/domain';
 import { Card, CardContent } from '@/components/ui/card';
@@ -33,15 +33,15 @@ const EventBadge = ({ event }: { event: CalendarEvent }) => {
 };
 
 export default function AgendaCalendarioPage() {
-  const { usuarioActual, pais } = useAuth();
+  const { userProfile, pais } = useUserProfile();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
   useEffect(() => {
-    if (usuarioActual?.idMedico) {
+    if (userProfile?.idMedico) {
       Promise.all([
-        api.getCitasPorMedico(usuarioActual.idMedico, { pais }),
+        api.getCitasPorMedico(userProfile.idMedico, { pais }),
         api.getSeguimientos({ pais })
       ]).then(([citasRes, seguimientosRes]) => {
         
@@ -74,7 +74,7 @@ export default function AgendaCalendarioPage() {
     } else {
         setLoading(false);
     }
-  }, [usuarioActual, pais]);
+  }, [userProfile, pais]);
 
   const eventDays = useMemo(() => events.map(e => e.date), [events]);
   

@@ -22,7 +22,7 @@ import {
   Users2,
 } from "lucide-react";
 
-import { useAuth } from "@/hooks/use-auth";
+import { useUserProfile } from "@/hooks/use-user-profile";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -109,11 +109,12 @@ const commonMenu = [
 
 
 export function Sidebar({ isCollapsed, toggleSidebar }: { isCollapsed: boolean, toggleSidebar: () => void }) {
-  const { usuarioActual } = useAuth();
+  const { userProfile } = useUserProfile();
   const isMobile = useIsMobile();
 
   const getMenu = () => {
-    switch (usuarioActual?.rol) {
+    if (!userProfile) return [];
+    switch (userProfile?.rol) {
       case "PACIENTE":
         return pacienteMenu;
       case "MEDICO":

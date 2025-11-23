@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Eye } from 'lucide-react';
-import { useAuth } from '@/hooks/use-auth';
+import { useUserProfile } from '@/hooks/use-user-profile';
 import { ExamenMedico } from '@/lib/types/domain';
 import { DataTable } from '@/components/shared/DataTable';
 import { Button } from '@/components/ui/button';
@@ -19,15 +19,15 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 
 export default function MisExamenesPage() {
-  const { usuarioActual } = useAuth();
+  const { userProfile } = useUserProfile();
   const { toast } = useToast();
   const [examenes, setExamenes] = useState<ExamenMedico[]>([]);
   const [selectedExamen, setSelectedExamen] = useState<ExamenMedico | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (usuarioActual?.idPaciente) {
-      fetch(`/api/pacientes/${usuarioActual.idPaciente}/examenes`)
+    if (userProfile?.id) {
+      fetch(`/api/pacientes/${userProfile.id}/examenes`)
         .then(res => res.json())
         .then(data => {
             setExamenes(data);
@@ -37,7 +37,7 @@ export default function MisExamenesPage() {
             setLoading(false);
         });
     }
-  }, [usuarioActual, toast]);
+  }, [userProfile, toast]);
 
   const columns = [
     { accessor: 'fechaSolicitud', header: 'F. Solicitud' },

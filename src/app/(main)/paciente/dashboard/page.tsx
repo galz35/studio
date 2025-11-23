@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { HeartPulse, Calendar, Repeat, Activity } from 'lucide-react';
-import { useAuth } from '@/hooks/use-auth';
+import { useUserProfile } from '@/hooks/use-user-profile';
 import { KpiCard } from '@/components/shared/KpiCard';
 import { SemaforoBadge } from '@/components/shared/SemaforoBadge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,14 +22,14 @@ type DashboardData = {
 };
 
 export default function DashboardPacientePage() {
-  const { usuarioActual } = useAuth();
+  const { userProfile } = useUserProfile();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (usuarioActual?.idPaciente) {
+    if (userProfile?.id) {
         setLoading(true);
-        fetch(`/api/paciente/dashboard?idPaciente=${usuarioActual.idPaciente}`)
+        fetch(`/api/paciente/dashboard?idPaciente=${userProfile.id}`)
             .then(res => {
                 if(!res.ok) throw new Error("No se pudo cargar el panel del paciente.");
                 return res.json()
@@ -45,7 +45,7 @@ export default function DashboardPacientePage() {
     } else {
         setLoading(false);
     }
-  }, [usuarioActual]);
+  }, [userProfile]);
 
   if (loading) return (
       <div className="space-y-6">

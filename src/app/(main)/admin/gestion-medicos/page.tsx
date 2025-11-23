@@ -4,7 +4,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useAuth } from '@/hooks/use-auth';
+import { useUserProfile } from '@/hooks/use-user-profile';
 import { Medico, EmpleadoEmp2024 } from '@/lib/types/domain';
 import { DataTable } from '@/components/shared/DataTable';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -45,7 +45,7 @@ const medicoSchema = z.object({
 type MedicoFormValues = z.infer<typeof medicoSchema>;
 
 export default function GestionMedicosPage() {
-  const { pais } = useAuth();
+  const { pais } = useUserProfile();
   const { toast } = useToast();
   
   const [isDialogOpen, setDialogOpen] = useState(false);
@@ -56,6 +56,7 @@ export default function GestionMedicosPage() {
   const [isLoading, setIsLoading] = useState(true);
   
   const fetchData = async () => {
+      if (!pais) return;
       setIsLoading(true);
       try {
         const [medicosRes, empleadosRes] = await Promise.all([
@@ -79,10 +80,11 @@ export default function GestionMedicosPage() {
 
   useEffect(() => {
     fetchData();
-  }, [toast]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pais]);
   
   const medicosDelPais = useMemo(() => {
-    if (!medicos || !empleados) return [];
+    if (!medicos || !empleados || !pais) return [];
     
     // Get all external doctors
     const medicosExternos = medicos.filter(m => m.tipoMedico === 'EXTERNO');
@@ -98,7 +100,7 @@ export default function GestionMedicosPage() {
 
 
   const empleadosDisponibles = useMemo(() => {
-    if (!empleados || !medicos) return [];
+    if (!empleados || !medicos || !pais) return [];
     const medicoCarnets = new Set(medicos.map(m => m.carnet));
     return empleados.filter(e => e.pais === pais && !medicoCarnets.has(e.carnet));
   }, [empleados, medicos, pais]);

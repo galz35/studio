@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { useAuth } from '@/hooks/use-auth';
+import { useUserProfile } from '@/hooks/use-user-profile';
 import { CitaMedica, Medico } from '@/lib/types/domain';
 import { DataTable } from '@/components/shared/DataTable';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,14 +22,14 @@ const getStatusClass = (status: CitaMedica['estadoCita']) => {
 }
 
 export default function MisCitasPage() {
-  const { usuarioActual } = useAuth();
+  const { userProfile } = useUserProfile();
   const { toast } = useToast();
   const [citas, setCitas] = useState<CitaMedica[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (usuarioActual?.idPaciente) {
-      fetch(`/api/pacientes/${usuarioActual.idPaciente}/citas`)
+    if (userProfile?.id) {
+      fetch(`/api/pacientes/${userProfile.id}/citas`)
         .then(res => res.json())
         .then(data => {
           setCitas(data);
@@ -39,7 +39,7 @@ export default function MisCitasPage() {
           setLoading(false);
         });
     }
-  }, [usuarioActual, toast]);
+  }, [userProfile, toast]);
 
   const proximaCita = citas.filter(c => ['PROGRAMADA', 'CONFIRMADA'].includes(c.estadoCita) && new Date(c.fechaCita) >= new Date()).sort((a,b) => new Date(a.fechaCita).getTime() - new Date(b.fechaCita).getTime())[0];
 

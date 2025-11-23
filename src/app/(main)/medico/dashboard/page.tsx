@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { useAuth } from '@/hooks/use-auth';
+import { useUserProfile } from '@/hooks/use-user-profile';
 import { KpiCard } from '@/components/shared/KpiCard';
 import { CalendarCheck, UserX, Repeat, FlaskConical, AlertTriangle, Clock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,15 +28,15 @@ type DashboardData = {
 };
 
 export default function DashboardMedicoPage() {
-  const { usuarioActual, pais } = useAuth();
+  const { userProfile, pais } = useUserProfile();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    if (usuarioActual?.idMedico) {
+    if (userProfile?.idMedico && pais) {
       setLoading(true);
-      fetch(`/api/medico/dashboard?idMedico=${usuarioActual.idMedico}&pais=${pais}`)
+      fetch(`/api/medico/dashboard?idMedico=${userProfile.idMedico}&pais=${pais}`)
         .then(res => {
             if(!res.ok) throw new Error("No se pudo cargar el dashboard del médico.");
             return res.json();
@@ -49,7 +49,7 @@ export default function DashboardMedicoPage() {
             setLoading(false);
         });
     }
-  }, [usuarioActual, pais]);
+  }, [userProfile, pais]);
 
   if (loading) return (
     <div className="space-y-6">

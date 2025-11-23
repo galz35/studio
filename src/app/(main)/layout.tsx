@@ -5,22 +5,25 @@ import { useRouter } from "next/navigation";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Topbar } from "@/components/layout/Topbar";
 import { useAuth } from "@/hooks/use-auth";
+import { useUserProfile } from "@/hooks/use-user-profile";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, loading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const { userProfile, loading: profileLoading } = useUserProfile();
   const router = useRouter();
   const isMobile = useIsMobile();
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   useEffect(() => {
-    if (!loading && !isAuthenticated) {
+    // If auth has loaded and there's no user, redirect to login
+    if (!authLoading && !user) {
       router.push("/login");
     }
-  }, [isAuthenticated, loading, router]);
-  
+  }, [user, authLoading, router]);
+
   useEffect(() => {
     if (isMobile) {
       setSidebarCollapsed(true);
@@ -32,7 +35,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   }, [isMobile]);
 
   const toggleSidebar = () => {
-    if(isMobile) {
+    if (isMobile) {
       setSidebarOpen(!isSidebarOpen);
     } else {
       setSidebarCollapsed(!isSidebarCollapsed);
@@ -40,7 +43,9 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     }
   };
   
-  if (loading || !isAuthenticated) {
+  const loading = authLoading || profileLoading;
+
+  if (loading || !user || !userProfile) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
         Cargando...

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useMemo } from 'react';
-import { useAuth } from '@/hooks/use-auth';
+import { useUserProfile } from '@/hooks/use-user-profile';
 import { EmpleadoEmp2024 } from '@/lib/types/domain';
 import { DataTable } from '@/components/shared/DataTable';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,7 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 
 
 export default function GestionEmpleadosPage() {
-  const { pais } = useAuth();
+  const { pais } = useUserProfile();
   const { toast } = useToast();
   const [empleadosData, setEmpleadosData] = useState<EmpleadoEmp2024[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -45,7 +45,7 @@ export default function GestionEmpleadosPage() {
   }, [toast]);
 
   const empleadosDelPais = useMemo(() => {
-    if (!empleadosData) return [];
+    if (!empleadosData || !pais) return [];
     return empleadosData.filter(e => e.pais === pais);
   }, [empleadosData, pais]);
   

@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useAuth } from '@/hooks/use-auth';
+import { useUserProfile } from '@/hooks/use-user-profile';
 import type { Paciente } from '@/lib/types/domain';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -30,7 +30,7 @@ const vacunaSchema = z.object({
 type VacunaFormValues = z.infer<typeof vacunaSchema>;
 
 export default function RegistroVacunasPage() {
-    const { pais, usuarioActual } = useAuth();
+    const { pais, userProfile } = useUserProfile();
     const { toast } = useToast();
     const [pacientes, setPacientes] = useState<Paciente[]>([]);
     const [loading, setLoading] = useState(true);
@@ -43,16 +43,18 @@ export default function RegistroVacunasPage() {
     });
 
     useEffect(() => {
-        fetch(`/api/pacientes?pais=${pais}`)
-            .then(res => res.json())
-            .then(data => {
-                setPacientes(data);
-                setLoading(false);
-            });
+        if (pais) {
+            fetch(`/api/pacientes?pais=${pais}`)
+                .then(res => res.json())
+                .then(data => {
+                    setPacientes(data);
+                    setLoading(false);
+                });
+        }
     }, [pais]);
 
     const onSubmit = async (data: VacunaFormValues) => {
-        if (!usuarioActual?.idMedico) return;
+        if (!userProfile?.idMedico) return;
         
         try {
             await fetch('/api/vacunas', {
@@ -60,7 +62,7 @@ export default function RegistroVacunasPage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     ...data,
-                    idMedico: usuarioActual.idMedico,
+                    idMedico: userProfile.idMedico,
                     fechaAplicacion: data.fechaAplicacion.toISOString().split('T')[0],
                 })
             });

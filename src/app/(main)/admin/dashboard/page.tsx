@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useMemo } from 'react';
-import { useAuth } from '@/hooks/use-auth';
+import { useUserProfile } from '@/hooks/use-user-profile';
 import { KpiCard } from '@/components/shared/KpiCard';
 import { Users, Stethoscope, ClipboardList, CalendarCheck, Clock, AreaChart, PieChart, TrendingDown, Repeat } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -31,7 +31,7 @@ type DashboardData = {
 };
 
 export default function DashboardAdminPage() {
-  const { pais } = useAuth();
+  const { pais } = useUserProfile();
   const [data, setData] = useState<DashboardData>({ casos: [], atenciones: [], seguimientos: [], empleados: [] });
   const [loading, setLoading] = useState(true);
 
@@ -43,6 +43,7 @@ export default function DashboardAdminPage() {
   const [gerencia, setGerencia] = useState('all');
 
   useEffect(() => {
+    if (!pais) return;
     // This is a simplified fetch. In a real scenario, you'd fetch based on filters.
     // For this mock, we fetch all and then filter on the client.
     Promise.all([

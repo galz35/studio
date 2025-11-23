@@ -1,10 +1,11 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import Link from "next/link";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -34,7 +35,9 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
-  const { login, loading } = useAuth();
+  const { login, loading, user } = useAuth();
+  const router = useRouter();
+
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -43,8 +46,16 @@ export default function LoginPage() {
     },
   });
 
-  const onSubmit: SubmitHandler<LoginFormValues> = (data) => {
-    login(data.carnet, data.password);
+  useEffect(() => {
+    // If user is authenticated, redirect them to the main layout
+    // The main layout will handle role-based redirection
+    if (user) {
+      router.push("/paciente/dashboard"); // Default redirect
+    }
+  }, [user, router]);
+
+  const onSubmit: SubmitHandler<LoginFormValues> = async (data) => {
+    await login(data.carnet, data.password);
   };
 
   return (
