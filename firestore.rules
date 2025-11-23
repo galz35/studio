@@ -93,51 +93,37 @@ service cloud.firestore {
     // --------------------------------
 
     /**
-     * @description Manages application user profiles. Users can create and manage their own profile. Admins can manage any user profile.
+     * @description Manages application user profiles. This collection should be managed via a backend API. Direct client writes are disabled.
      * @path /usuariosAplicacion/{idUsuario}
-     * @allow (create) A new user creating their own profile document: `auth.uid == idUsuario`.
-     * @deny (update) A user trying to update another user's profile.
-     * @principle Enforces self-service for user profiles and administrative override.
+     * @principle Centralize user management in the backend to ensure data consistency and security.
      */
     match /usuariosAplicacion/{idUsuario} {
-      allow get: if isOwner(idUsuario) || isAdmin();
-      allow list: if isAdmin();
-      allow create: if isOwner(idUsuario);
-      allow update: if (isOwner(idUsuario) || isAdmin()) && isExistingDoc();
-      allow delete: if isAdmin() && isExistingDoc();
+      allow read: if isSignedIn(); // Allow reading for role checks, etc.
+      allow write: if false; // All writes must go through the API.
     }
 
     /**
-     * @description Stores patient information. Readable by the patient themselves, doctors, and admins. Writable only by admins.
+     * @description Stores patient information. This collection should be managed via a backend API. Direct client writes are disabled.
      * @path /pacientes/{idPaciente}
-     * @allow (get) A patient fetching their own patient record via their linked profile.
-     * @deny (list) A patient trying to list all other patients in the system.
-     * @principle Restricts access to sensitive patient data to authorized roles and the patient themselves.
+     * @principle Centralize patient data management.
      */
     match /pacientes/{idPaciente} {
-      allow get: if isOwnPaciente(idPaciente) || isMedico() || isAdmin();
-      allow list: if isMedico() || isAdmin();
-      allow create: if isAdmin();
-      allow update: if isAdmin() && isExistingDoc();
-      allow delete: if isAdmin() && isExistingDoc();
+      allow read: if isSignedIn(); // Broad read for now, can be tightened
+      allow write: if false; // All writes must go through the API.
     }
 
     /**
-     * @description Stores doctor information. This data is considered public to all authenticated users for purposes like booking. Writable only by admins.
+     * @description Stores doctor information. This collection should be managed via a backend API. Direct client writes are disabled.
      * @path /medicos/{idMedico}
-     * @allow (get, list) Any authenticated user (e.g., a patient) can view doctor profiles.
-     * @deny (create) A non-admin user trying to add a new doctor.
-     * @principle Allows public read access for discoverability while centralizing management under admins.
+     * @principle Centralize doctor data management.
      */
     match /medicos/{idMedico} {
-      allow get, list: if isSignedIn();
-      allow create: if isAdmin();
-      allow update: if isAdmin() && isExistingDoc();
-      allow delete: if isAdmin() && isExistingDoc();
+      allow read: if isSignedIn();
+      allow write: if false; // All writes must go through the API.
     }
 
     /**
-     * @description Stores patient-submitted wellness checks. Patients can manage their own checks. Doctors and admins have read-only access.
+     * @description Stores patient-submitted wellness checks. Patients can create their own checks. Doctors and admins have read-only access.
      * @path /chequeosBienestar/{idChequeo}
      * @allow (create) A patient creating a wellness check for themselves, ensuring the `idPaciente` in the document matches their profile.
      * @deny (update) A patient trying to change the `idPaciente` on an existing check.
@@ -229,28 +215,25 @@ service cloud.firestore {
     /**
      * @description Read-only collection of employee data, likely from an external HR system.
      * @path /empleadosEmp2024/{carnet}
-     * @allow (get, list) Any authenticated user can read this data.
-     * @deny (create, update, delete) All write operations are blocked to maintain data integrity from the source system.
+     * @allow (read) Any authenticated user can read this data.
+     * @deny (write) All write operations are blocked to maintain data integrity from the source system.
      * @principle Enforces a one-way data flow for externally managed information.
      */
     match /empleadosEmp2024/{carnet} {
-      allow get, list: if isSignedIn();
-      allow create: if false;
-      allow update: if false;
-      allow delete: if false;
+      allow read: if isSignedIn();
+      allow write: if false; // This data is managed by an external API
     }
     
     /**
-     * @description Stores audit and error logs. Writable by any authenticated user, readable only by admins.
+     * @description Stores audit and error logs. Writable only via a secure backend endpoint.
      * @path /logs/{logId}
-     * @allow (create) Any authenticated user can write a log entry (e.g., log a login attempt or an error).
-     * @deny (read, update, delete) Prevents users from reading or tampering with logs. Admins have full read access.
-     * @principle Allows for comprehensive auditing while maintaining the integrity and confidentiality of log data.
+     * @allow (read) Only admins can read logs.
+     * @deny (write) Direct client writes are forbidden. Must go through the backend API.
+     * @principle Centralizes and secures log creation.
      */
     match /logs/{logId} {
-        allow create: if isSignedIn();
-        allow get, list: if isAdmin();
-        allow update, delete: if false;
+        allow read: if isAdmin();
+        allow write: if false; // All writes must go through the backend API
     }
   }
 }

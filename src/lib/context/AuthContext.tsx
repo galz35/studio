@@ -35,6 +35,28 @@ const getDashboardUrl = (rol: Rol) => {
   }
 };
 
+const logAuditEvent = async (type: string, userCarnet: string, userId: string, message: string, details: object = {}) => {
+  try {
+    await fetch('/api/logs', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        type,
+        userCarnet,
+        userId,
+        message,
+        details,
+      }),
+    });
+  } catch (error) {
+    console.error("Failed to write to audit log:", error);
+    // Non-critical, so we don't show a toast to the user
+  }
+};
+
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [usuarioActual, setUsuarioActual] = useState<UsuarioAplicacion | null>(null);
   const [pais, setPaisState] = useState<Pais>('NI');
@@ -94,24 +116,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return;
     }
     
-    try {
-        // We use the carnet as the email username for this mock login
-        await signInWithEmailAndPassword(auth, `${carnet.toLowerCase()}@corp.local`, password);
-        
-        const userWithCountry = { ...user, pais };
+    const performLogin = async () => {
+        const userWithCountry = { ...user!, pais };
         setUsuarioActual(userWithCountry);
         localStorage.setItem('usuarioActual', JSON.stringify(userWithCountry));
-        router.push(getDashboardUrl(user.rol));
+        await logAuditEvent('LOGIN_SUCCESS', carnet, firebaseUser?.uid || "unknown", `User ${carnet} logged in successfully.`);
+        router.push(getDashboardUrl(user!.rol));
+    }
+
+    try {
+        await signInWithEmailAndPassword(auth, `${carnet.toLowerCase()}@corp.local`, password);
+        await performLogin();
 
     } catch (error: any) {
         if (error.code === 'auth/user-not-found') {
-            // If the user doesn't exist, try creating it. This is for demo purposes.
             try {
                 await createUserWithEmailAndPassword(auth, `${carnet.toLowerCase()}@corp.local`, password);
-                const userWithCountry = { ...user, pais };
-                setUsuarioActual(userWithCountry);
-                localStorage.setItem('usuarioActual', JSON.stringify(userWithCountry));
-                router.push(getDashboardUrl(user.rol));
+                await performLogin();
             } catch (creationError) {
                  toast({
                     variant: "destructive",
