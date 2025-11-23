@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { Eye } from 'lucide-react';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { ChequeoBienestar } from '@/lib/types/domain';
+import * as api from '@/lib/services/api.mock';
 import { DataTable } from '@/components/shared/DataTable';
 import { Button } from '@/components/ui/button';
 import { SemaforoBadge } from '@/components/shared/SemaforoBadge';
@@ -25,8 +26,7 @@ export default function HistorialChequeosPage() {
 
   useEffect(() => {
     if (userProfile?.idPaciente) {
-      fetch(`/api/pacientes/${userProfile.idPaciente}/chequeos`)
-        .then(res => res.json())
+      api.getChequeosPorPaciente(userProfile.idPaciente)
         .then(data => {
             setChequeos(data);
         }).catch(() => {
@@ -34,6 +34,8 @@ export default function HistorialChequeosPage() {
         }).finally(() => {
             setLoading(false);
         });
+    } else {
+        setLoading(false);
     }
   }, [userProfile, toast]);
 

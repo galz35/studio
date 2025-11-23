@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useUserProfile } from '@/hooks/use-user-profile';
+import * as api from '@/lib/services/api.mock';
 import { Medico, EmpleadoEmp2024 } from '@/lib/types/domain';
 import { DataTable } from '@/components/shared/DataTable';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -59,15 +60,10 @@ export default function GestionMedicosPage() {
       if (!pais) return;
       setIsLoading(true);
       try {
-        const [medicosRes, empleadosRes] = await Promise.all([
-          fetch('/api/medicos'),
-          fetch('/api/empleados')
+        const [medicosData, empleadosData] = await Promise.all([
+          api.getMedicos(),
+          api.getEmpleados()
         ]);
-        if (!medicosRes.ok || !empleadosRes.ok) {
-          throw new Error('Failed to fetch data');
-        }
-        const medicosData = await medicosRes.json();
-        const empleadosData = await empleadosRes.json();
         setMedicos(medicosData);
         setEmpleados(empleadosData);
       } catch (error) {
@@ -144,16 +140,7 @@ export default function GestionMedicosPage() {
     }
     
     try {
-        const response = await fetch('/api/medicos', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(newMedicoData),
-        });
-
-        if (!response.ok) {
-          throw new Error('Server responded with an error');
-        }
-
+        await api.crearMedico(newMedicoData);
         toast({ title: "Médico Creado", description: `El Dr./Dra. ${newMedicoData.nombreCompleto} ha sido añadido al sistema.`});
         setDialogOpen(false);
         form.reset({ userType: 'interno' });

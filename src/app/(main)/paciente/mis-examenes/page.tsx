@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { Eye } from 'lucide-react';
 import { useUserProfile } from '@/hooks/use-user-profile';
+import * as api from '@/lib/services/api.mock';
 import { ExamenMedico } from '@/lib/types/domain';
 import { DataTable } from '@/components/shared/DataTable';
 import { Button } from '@/components/ui/button';
@@ -27,8 +28,7 @@ export default function MisExamenesPage() {
 
   useEffect(() => {
     if (userProfile?.idPaciente) {
-      fetch(`/api/pacientes/${userProfile.idPaciente}/examenes`)
-        .then(res => res.json())
+      api.getExamenesPorPaciente(userProfile.idPaciente)
         .then(data => {
             setExamenes(data);
         }).catch(() => {
@@ -36,6 +36,8 @@ export default function MisExamenesPage() {
         }).finally(() => {
             setLoading(false);
         });
+    } else {
+        setLoading(false);
     }
   }, [userProfile, toast]);
 

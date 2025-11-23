@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
+import * as api from '@/lib/services/api.mock';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { KpiCard } from '@/components/shared/KpiCard';
 import { CalendarCheck, UserX, Repeat, FlaskConical, AlertTriangle, Clock } from 'lucide-react';
@@ -36,11 +37,7 @@ export default function DashboardMedicoPage() {
   useEffect(() => {
     if (userProfile?.idMedico && pais) {
       setLoading(true);
-      fetch(`/api/medico/dashboard?idMedico=${userProfile.idMedico}&pais=${pais}`)
-        .then(res => {
-            if(!res.ok) throw new Error("No se pudo cargar el dashboard del médico.");
-            return res.json();
-        })
+      api.getDashboardMedico(userProfile.idMedico, pais)
         .then(dashboardData => {
           setData(dashboardData);
           setLoading(false);

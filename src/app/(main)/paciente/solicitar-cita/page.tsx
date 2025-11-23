@@ -1,23 +1,26 @@
 "use client";
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { SolicitudCitaWizard } from '@/components/paciente/SolicitudCitaWizard';
-import { useDoc, useMemoFirebase } from '@/firebase';
-import { useFirebase } from '@/firebase/provider';
-import { doc } from 'firebase/firestore';
 import { EmpleadoEmp2024 } from '@/lib/types/domain';
+import * as api from '@/lib/services/api.mock';
 
 export default function SolicitarCitaPage() {
     const { userProfile } = useUserProfile();
-    const { firestore } = useFirebase();
+    const [empleado, setEmpleado] = useState<EmpleadoEmp2024 | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
 
-    const empleadoRef = useMemoFirebase(() => {
-        if (!firestore || !userProfile) return null;
-        return doc(firestore, 'empleadosEmp2024', userProfile.carnet);
-    }, [firestore, userProfile]);
-
-    const { data: empleado, isLoading } = useDoc<EmpleadoEmp2024>(empleadoRef);
+    useEffect(() => {
+        if (userProfile) {
+            setIsLoading(true);
+            api.getEmpleados().then(empleados => {
+                const info = empleados.find(e => e.carnet === userProfile.carnet);
+                if (info) setEmpleado(info);
+                setIsLoading(false);
+            });
+        }
+    }, [userProfile]);
 
     if (isLoading) return <div>Cargando datos del empleado...</div>
 

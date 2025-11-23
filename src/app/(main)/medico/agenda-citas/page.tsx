@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useMemo } from 'react';
 import { useUserProfile } from '@/hooks/use-user-profile';
+import * as api from '@/lib/services/api.mock';
 import { CasoClinico, Paciente, Medico, TriajeIA } from '@/lib/types/domain';
 import { DataTable } from '@/components/shared/DataTable';
 import { Button } from '@/components/ui/button';
@@ -46,17 +47,10 @@ export default function GestionCitasPage() {
     if (!pais) return;
     setIsLoading(true);
     try {
-        const [casosRes, medicosRes] = await Promise.all([
-            fetch(`/api/casos?pais=${pais}&estado=abierto&estado=Triaje-IA`),
-            fetch(`/api/medicos?pais=${pais}`)
+        const [casosData, medicosData] = await Promise.all([
+            api.getCasosClinicos({ pais, estado: 'Abierto' }),
+            api.getMedicos({ pais })
         ]);
-
-        if (!casosRes.ok || !medicosRes.ok) {
-            throw new Error('No se pudieron cargar los datos necesarios.');
-        }
-
-        const casosData = await casosRes.json();
-        const medicosData = await medicosRes.json();
 
         setCasos(casosData);
         setMedicos(medicosData);
@@ -84,20 +78,10 @@ export default function GestionCitasPage() {
         idMedico: formData.idMedico,
         fechaCita: formData.fechaCita,
         horaCita: formData.horaCita,
-        pais: pais,
     };
     
     try {
-        const response = await fetch('/api/citas', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body)
-        });
-
-        if (!response.ok) {
-            throw new Error(await response.text());
-        }
-
+        await api.agendarCita(body);
         toast({ title: 'Cita Agendada', description: `Se ha agendado una cita para el paciente.` });
         setAgendarOpen(false);
         setSelectedCaso(null);
@@ -119,13 +103,7 @@ export default function GestionCitasPage() {
      if (isConfirmed) {
         setIsSubmitting(true);
         try {
-            const response = await fetch(`/api/casos/${caso.id}`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ estadoCaso: 'Cancelado', notasCancelacion: 'Cancelado por médico durante triaje.' })
-            });
-            if (!response.ok) throw new Error('No se pudo cancelar la solicitud.');
-
+            await api.updateCaso(caso.id!, { estadoCaso: 'Cancelado' });
             toast({ title: 'Solicitud Cancelada', description: `Se ha cancelado la solicitud.`, variant: 'destructive'});
             fetchData(); // Refresh data
         } catch (e: any) {

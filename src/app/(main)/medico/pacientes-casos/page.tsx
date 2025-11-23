@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Eye, MoreHorizontal, Stethoscope } from 'lucide-react';
+import * as api from '@/lib/services/api.mock';
 import { CasoClinico, Paciente } from '@/lib/types/domain';
 import { DataTable } from '@/components/shared/DataTable';
 import { Button } from '@/components/ui/button';
@@ -18,8 +19,7 @@ export default function PacientesCasosPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/casos?include_paciente=true')
-        .then(res => res.json())
+    api.getCasosClinicos()
         .then(data => {
             setCasos(data);
             setLoading(false);

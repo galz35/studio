@@ -4,6 +4,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import * as api from '@/lib/services/api.mock';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { AtencionMedica, EmpleadoEmp2024, Paciente, Medico, CasoClinico } from '@/lib/types/domain';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -55,12 +56,11 @@ export default function ReportesAdminPage() {
 
   useEffect(() => {
     if (pais) {
-        fetch('/api/atenciones?pais=' + pais)
-            .then(res => res.json())
-            .then(data => {
-                setAtenciones(data);
-                setLoading(false);
-            });
+        // Mock data fetching, needs real implementation
+        api.getAtencionMedicaData('1').then(data => {
+            // setAtenciones(data);
+            setLoading(false);
+        });
     }
   }, [pais]);
   

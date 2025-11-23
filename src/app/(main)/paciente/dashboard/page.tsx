@@ -10,6 +10,8 @@ import { ChequeoBienestar } from '@/lib/types/domain';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
+import { casosClinicos, chequeos, citas, seguimientos, atenciones } from '@/lib/mock';
+import type { CitaMedica, AtencionMedica } from '@/lib/types/domain';
 
 type DashboardData = {
   kpis: {
@@ -23,37 +25,76 @@ type DashboardData = {
 };
 
 export default function DashboardPacientePage() {
-  const { userProfile } = useUserProfile();
+  const { userProfile, loading: profileLoading } = useUserProfile();
   const { toast } = useToast();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (profileLoading) return;
+    
     if (userProfile?.idPaciente) {
         setLoading(true);
-        fetch(`/api/paciente/dashboard?idPaciente=${userProfile.idPaciente}`)
-            .then(res => {
-                if(!res.ok) throw new Error("No se pudo cargar el panel del paciente.");
-                return res.json()
-            })
-            .then(data => {
-                setData(data);
-            })
-            .catch(err => {
-                console.error(err);
-                toast({
-                    title: 'Error',
-                    description: 'No se pudo cargar la información del panel.',
-                    variant: 'destructive'
-                });
-            }).finally(() => {
-                setLoading(false);
+        // Simulate fetching data with mock data
+        try {
+            const pacienteId = userProfile.idPaciente;
+
+            // KPI: Último Chequeo
+            const misChequeos = chequeos
+                .filter(c => c.idPaciente === pacienteId)
+                .sort((a,b) => new Date(b.fechaRegistro).getTime() - new Date(a.fechaRegistro).getTime());
+            const ultimoChequeoData = misChequeos[0] || null;
+
+            // KPI: Próxima Cita
+            const hoy = new Date();
+            const proximaCitaData = citas
+                .filter(c => c.idPaciente === pacienteId && ['PROGRAMADA', 'CONFIRMADA'].includes(c.estadoCita) && new Date(c.fechaCita) >= hoy)
+                .sort((a,b) => new Date(a.fechaCita).getTime() - new Date(b.fechaCita).getTime())[0];
+
+            // KPI: Seguimientos Activos
+            const seguimientosActivos = seguimientos.filter(s => s.idPaciente === pacienteId && ['PENDIENTE', 'EN_PROCESO'].includes(s.estadoSeguimiento)).length;
+
+            // Timeline
+            let timeline: { title: string; date: string }[] = [];
+            if (ultimoChequeoData) {
+                timeline.push({ title: `Chequeo de Bienestar`, date: ultimoChequeoData.fechaRegistro });
+            }
+            const misCasosIds = new Set(casosClinicos.filter(c => c.idPaciente === pacienteId).map(c => c.id));
+            const misAtenciones = atenciones
+                .filter(a => a.idCaso && misCasosIds.has(a.idCaso))
+                .sort((a,b) => new Date(b.fechaAtencion).getTime() - new Date(a.fechaAtencion).getTime());
+            
+            misAtenciones.slice(0, 3).forEach(a => {
+                timeline.push({ title: `Atención: ${a.diagnosticoPrincipal}`, date: a.fechaAtencion });
             });
-    } else if (userProfile && !userProfile.idPaciente) {
-        // Handle case where user is not a patient
+
+            const dashboardData = {
+                kpis: {
+                    estadoActual: userProfile.nivelSemaforo || 'V',
+                    ultimoChequeo: ultimoChequeoData ? new Date(ultimoChequeoData.fechaRegistro).toLocaleDateString('es-ES') : 'Ninguno',
+                    proximaCita: proximaCitaData ? `${proximaCitaData.fechaCita} a las ${proximaCitaData.horaCita}` : null,
+                    seguimientosActivos: seguimientosActivos,
+                },
+                ultimoChequeoData,
+                timeline: timeline.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 3),
+            };
+            
+            setData(dashboardData);
+
+        } catch (err) {
+            console.error(err);
+            toast({
+                title: 'Error',
+                description: 'No se pudo cargar la información del panel.',
+                variant: 'destructive'
+            });
+        } finally {
+            setLoading(false);
+        }
+    } else if (!profileLoading && !userProfile?.idPaciente) {
         setLoading(false);
     }
-  }, [userProfile?.idPaciente, toast]);
+  }, [userProfile, profileLoading, toast]);
 
   if (loading) return (
       <div className="space-y-6">

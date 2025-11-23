@@ -8,7 +8,8 @@ import { Loader2 } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 import type { RutaMotivo, TriageNivel, ModalidadTrabajo, DatosExtraJSON, SolicitudCitaPayload } from '@/lib/types/solicitud';
-import { useAuth } from '@/hooks/use-auth';
+import * as api from '@/lib/services/api.mock';
+import { useUserProfile } from '@/hooks/use-user-profile';
 import { useToast } from '@/hooks/use-toast';
 
 // Sub-components for steps
@@ -45,7 +46,7 @@ const initialDatosExtra: DatosExtraJSON = {
     Modalidad: null,
     Categorias: [],
     Sintomas: [],
-    SintomasKeys: [],
+    SintomasKeys: [], // keys internos de cada síntoma
     Detalles: {},
     Alergia: { activa: null },
     Habitos: { sueno: null, hidratacion: null },
@@ -54,7 +55,7 @@ const initialDatosExtra: DatosExtraJSON = {
 };
 
 export function SolicitudCitaWizard() {
-    const { usuarioActual, pais } = useAuth();
+    const { userProfile, pais } = useUserProfile();
     const { toast } = useToast();
 
     const [step, setStep] = useState(1);
@@ -121,7 +122,7 @@ export function SolicitudCitaWizard() {
     const handlePrev = () => setStep(prev => Math.max(prev - 1, 1));
     
     const handleSubmit = async () => {
-       if (!usuarioActual?.id) {
+       if (!userProfile?.id) {
             toast({ variant: 'destructive', title: 'Error de Usuario', description: 'No se pudo identificar al paciente.' });
             return;
         }
@@ -143,7 +144,7 @@ export function SolicitudCitaWizard() {
         setFinalPayload(payload);
         
         const nuevoCaso = {
-            idPaciente: usuarioActual.id,
+            idPaciente: userProfile.id,
             fechaCreacion: new Date().toISOString(),
             estadoCaso: 'Abierto',
             nivelSemaforo: payload.Triage || 'A',
@@ -156,15 +157,7 @@ export function SolicitudCitaWizard() {
         };
 
         try {
-            const response = await fetch('/api/casos', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(nuevoCaso)
-            });
-
-            if (!response.ok) {
-                throw new Error(await response.text());
-            }
+            await api.crearCasoClinico(nuevoCaso);
             setShowSummaryModal(true);
         } catch (error: any) {
             console.error("Error al guardar la solicitud", error);

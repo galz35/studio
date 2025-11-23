@@ -6,7 +6,8 @@ import { StepHeaderWizard } from './StepHeaderWizard';
 import { Button } from '@/components/ui/button';
 import { AtencionMedica, CitaMedica, Paciente, EmpleadoEmp2024, EstadoClinico, VacunaAplicada, RegistroPsicosocial, SeguimientoGenerado, CasoClinico } from '@/lib/types/domain';
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { useAuth } from '@/hooks/use-auth';
+import * as api from '@/lib/services/api.mock';
+import { useUserProfile } from '@/hooks/use-user-profile';
 import { useToast } from '@/hooks/use-toast';
 
 // Import steps
@@ -29,7 +30,7 @@ interface AtencionCitaWizardProps {
 }
 
 export function AtencionCitaWizard({ citaData }: AtencionCitaWizardProps) {
-    const { usuarioActual } = useAuth();
+    const { userProfile } = useUserProfile();
     const { toast } = useToast();
     const [step, setStep] = useState(1);
     const [showSummaryModal, setShowSummaryModal] = useState(false);
@@ -40,7 +41,7 @@ export function AtencionCitaWizard({ citaData }: AtencionCitaWizardProps) {
         idAtencion: Date.now(),
         idCita: citaData.cita.id!,
         idCaso: citaData.cita.idCaso,
-        idMedico: usuarioActual!.idMedico!,
+        idMedico: userProfile!.idMedico!,
         fechaAtencion: new Date().toISOString(),
         estadoClinico: 'BIEN',
         diagnosticoPrincipal: '',
@@ -76,14 +77,7 @@ export function AtencionCitaWizard({ citaData }: AtencionCitaWizardProps) {
             seguimientos
         };
         try {
-            const response = await fetch('/api/atenciones', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            if (!response.ok) {
-                throw new Error(await response.text());
-            }
+            await api.guardarAtencion(payload);
             setShowSummaryModal(true);
         } catch (error: any) {
             console.error("Error guardando la atención", error);

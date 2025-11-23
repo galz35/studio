@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useUserProfile } from '@/hooks/use-user-profile';
+import * as api from '@/lib/services/api.mock';
 import { VacunaAplicada } from '@/lib/types/domain';
 import { DataTable } from '@/components/shared/DataTable';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,8 +16,7 @@ export default function MisVacunasPage() {
 
   useEffect(() => {
     if (userProfile?.idPaciente) {
-      fetch(`/api/pacientes/${userProfile.idPaciente}/vacunas`)
-        .then(res => res.json())
+      api.getVacunasPorPaciente(userProfile.idPaciente)
         .then(data => {
           setVacunas(data);
         }).catch(() => {
@@ -24,6 +24,8 @@ export default function MisVacunasPage() {
         }).finally(() => {
           setLoading(false);
         });
+    } else {
+        setLoading(false);
     }
   }, [userProfile, toast]);
 

@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useUserProfile } from '@/hooks/use-user-profile';
+import * as api from '@/lib/services/api.mock';
 import { UsuarioAplicacion, EmpleadoEmp2024, Rol } from '@/lib/types/domain';
 import { DataTable } from '@/components/shared/DataTable';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -58,14 +59,10 @@ export default function GestionUsuariosPage() {
       if (!pais) return;
       setIsLoading(true);
       try {
-        const [usuariosRes, empleadosRes] = await Promise.all([
-          fetch('/api/usuarios'),
-          fetch('/api/empleados')
+        const [usuariosData, empleadosData] = await Promise.all([
+          api.getUsuarios(),
+          api.getEmpleados()
         ]);
-        if (!usuariosRes.ok || !empleadosRes.ok) throw new Error('Failed to fetch data');
-
-        const usuariosData = await usuariosRes.json();
-        const empleadosData = await empleadosRes.json();
 
         setUsuarios(usuariosData);
         setEmpleados(empleadosData);
@@ -132,16 +129,7 @@ export default function GestionUsuariosPage() {
     }
     
     try {
-        const response = await fetch('/api/usuarios', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(newUserData),
-        });
-
-        if (!response.ok) {
-          throw new Error(await response.text());
-        }
-        
+        await api.crearUsuario(newUserData);
         toast({ title: "Usuario Creado", description: `El usuario ${newUserData.nombreCompleto} ha sido añadido al sistema.`});
         setDialogOpen(false);
         form.reset({ userType: 'interno', rol: undefined });

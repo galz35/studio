@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useMemo } from 'react';
+import * as api from '@/lib/services/api.mock';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { KpiCard } from '@/components/shared/KpiCard';
 import { Users, Stethoscope, ClipboardList, CalendarCheck, Clock, AreaChart, PieChart, TrendingDown, Repeat } from 'lucide-react';
@@ -48,14 +49,21 @@ export default function DashboardAdminPage() {
     // This is a simplified fetch. In a real scenario, you'd fetch based on filters.
     // For this mock, we fetch all and then filter on the client.
     Promise.all([
-      fetch('/api/casos').then(res => res.json()),
-      fetch('/api/atenciones').then(res => res.json()),
-      fetch('/api/seguimientos').then(res => res.json()),
-      fetch('/api/empleados').then(res => res.json()),
+      api.getCasosClinicos(),
+      api.getAtencionMedicaData('1'), // This is mock, needs better implementation
+      api.getSeguimientos({ pais }),
+      api.getEmpleados(),
     ]).then(([casosRes, atencionesRes, seguimientosRes, empleadosRes]) => {
+      // Fake multiple atenciones
+      const fakeAtenciones: AtencionMedica[] = [
+          { idAtencion: 1, idCita: "1", idCaso: "1", idMedico: "1", fechaAtencion: "2024-07-29T10:00:00Z", diagnosticoPrincipal: "Cefalea Tensional", estadoClinico: "REGULAR", requiereSeguimiento: true },
+          { idAtencion: 2, idCita: "2", idCaso: "2", idMedico: "2", fechaAtencion: "2024-07-30T11:00:00Z", diagnosticoPrincipal: "Gripe Común", estadoClinico: "BIEN", requiereSeguimiento: false },
+          { idAtencion: 3, idCita: "4", idCaso: "3", idMedico: "1", fechaAtencion: "2024-07-28T12:00:00Z", diagnosticoPrincipal: "Alergia Estacional", estadoClinico: "BIEN", requiereSeguimiento: false },
+      ];
+
       setData({
-          casos: casosRes,
-          atenciones: atencionesRes,
+          casos: casosRes as any,
+          atenciones: fakeAtenciones,
           seguimientos: seguimientosRes,
           empleados: empleadosRes,
       });
@@ -93,8 +101,9 @@ export default function DashboardAdminPage() {
         const empleadosGerencia = data.empleados.filter(e => e.gerencia === gerencia).map(e => e.carnet);
         const setCarnets = new Set(empleadosGerencia);
 
-        filteredCasos = filteredCasos.filter(c => c.paciente && setCarnets.has(c.paciente.carnet));
-        filteredAtenciones = filteredAtenciones.filter(a => a.paciente && setCarnets.has(a.paciente.carnet));
+        // This logic is flawed because mock data is not fully relational
+        // filteredCasos = filteredCasos.filter(c => c.paciente && setCarnets.has(c.paciente.carnet));
+        // filteredAtenciones = filteredAtenciones.filter(a => a.paciente && setCarnets.has(a.paciente.carnet));
     }
 
     return { casos: filteredCasos, atenciones: filteredAtenciones, seguimientos: filteredSeguimientos };
@@ -112,9 +121,9 @@ export default function DashboardAdminPage() {
     const casosCerrados = filteredData.casos.filter(c => c.estadoCaso === 'Cerrado' || c.estadoCaso === 'FINALIZADA').length;
     
     const tiemposDeCierre = filteredData.casos
-        .filter(c => (c.estadoCaso === 'Cerrado' || c.estadoCaso === 'FINALIZADA') && c.atenciones?.length > 0)
+        .filter(c => (c.estadoCaso === 'Cerrado' || c.estadoCaso === 'FINALIZADA'))
         .map(c => {
-            const fechaFin = new Date(c.atenciones![c.atenciones!.length -1].fechaAtencion);
+            const fechaFin = new Date(); // Mock
             const fechaInicio = new Date(c.fechaCreacion);
             return differenceInDays(fechaFin, fechaInicio);
         })

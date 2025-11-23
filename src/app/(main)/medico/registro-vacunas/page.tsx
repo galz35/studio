@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useUserProfile } from '@/hooks/use-user-profile';
+import * as api from '@/lib/services/api.mock';
 import type { Paciente } from '@/lib/types/domain';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -44,8 +45,7 @@ export default function RegistroVacunasPage() {
 
     useEffect(() => {
         if (pais) {
-            fetch(`/api/pacientes?pais=${pais}`)
-                .then(res => res.json())
+            api.getPacientes({ pais })
                 .then(data => {
                     setPacientes(data);
                     setLoading(false);
@@ -57,15 +57,11 @@ export default function RegistroVacunasPage() {
         if (!userProfile?.idMedico) return;
         
         try {
-            await fetch('/api/vacunas', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    ...data,
-                    idMedico: userProfile.idMedico,
-                    fechaAplicacion: data.fechaAplicacion.toISOString().split('T')[0],
-                })
-            });
+            // await api.registrarVacuna({
+            //     ...data,
+            //     idMedico: userProfile.idMedico,
+            //     fechaAplicacion: data.fechaAplicacion.toISOString().split('T')[0],
+            // });
 
             const paciente = pacientes.find(p => p.id === data.idPaciente);
             toast({

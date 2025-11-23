@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
+import * as api from '@/lib/services/api.mock';
 import type { ExamenMedico, Paciente } from '@/lib/types/domain';
 import { DataTable } from '@/components/shared/DataTable';
 import { Button } from '@/components/ui/button';
@@ -34,12 +35,13 @@ export default function ExamenesMedicosPage() {
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
 
   useEffect(() => {
-    fetch(`/api/examenes?pais=${pais}`)
-      .then(res => res.json())
-      .then(data => {
-        setExamenes(data);
-        setLoading(false);
-      });
+    if (pais) {
+      api.getExamenes({ pais })
+        .then(data => {
+          setExamenes(data);
+          setLoading(false);
+        });
+    }
   }, [pais, isRegisterModalOpen]); // Re-fetch on country change or after a modal closes
   
   const handleRegisterResult = (idExamen: string, resultado: string) => {

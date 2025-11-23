@@ -2,85 +2,113 @@
 
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { User, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
-import { useFirebase } from '@/firebase';
+import { useFirebase } from '@/firebase/provider';
 import { useToast } from '@/hooks/use-toast';
+import { usuarios } from '@/lib/mock/usuarios.mock';
+import { UsuarioAplicacion, Pais } from '../types/domain';
 
 export interface AuthContextType {
-  user: User | null;
+  usuarioActual: UsuarioAplicacion | null;
   loading: boolean;
+  pais: Pais;
+  setPais: (pais: Pais) => void;
   login: (carnet: string) => Promise<void>;
   logout: () => void;
+  switchRole: (rol: 'PACIENTE' | 'MEDICO' | 'ADMIN') => void;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const getDashboardUrl = (rol: 'PACIENTE' | 'MEDICO' | 'ADMIN') => {
+  switch (rol) {
+    case 'PACIENTE': return '/paciente/dashboard';
+    case 'MEDICO': return '/medico/dashboard';
+    case 'ADMIN': return '/admin/dashboard';
+    default: return '/login';
+  }
+};
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const { auth, user: firebaseUser, isUserLoading } = useFirebase();
+  const [usuarioActual, setUsuarioActual] = useState<UsuarioAplicacion | null>(null);
   const [loading, setLoading] = useState(true);
+  const [pais, setPaisState] = useState<Pais>('NI');
   const router = useRouter();
   const { toast } = useToast();
 
   useEffect(() => {
-    setLoading(isUserLoading);
-  }, [isUserLoading]);
+    // Check for stored user on initial load
+    const storedUser = localStorage.getItem('usuarioActual');
+    const storedPais = localStorage.getItem('pais') as Pais;
+    if (storedUser) {
+      setUsuarioActual(JSON.parse(storedUser));
+    }
+    if (storedPais) {
+      setPaisState(storedPais);
+    }
+    setLoading(false);
+  }, []);
 
   const login = async (carnet: string) => {
     setLoading(true);
-    const email = `${carnet.toLowerCase()}@corp.local`;
-    // Hardcoded password for testing purposes
-    const password = "password"; 
-    
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-      // Redirection will be handled by the page after successful login
-    } catch (error: any) {
-      if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
-        try {
-          // If user doesn't exist, create it for testing purposes
-          await createUserWithEmailAndPassword(auth, email, password);
-        } catch (creationError: any) {
-          toast({
-            variant: "destructive",
-            title: "Error de Registro de Prueba",
-            description: `No se pudo crear la cuenta de prueba: ${creationError.message}`,
-          });
-        }
-      } else {
-        console.error("Firebase login error:", error);
-        toast({
-          variant: "destructive",
-          title: "Error Inesperado",
-          description: "Ocurrió un error al intentar iniciar sesión.",
-        });
-      }
-    } finally {
-      setLoading(false);
+    // Find the first matching user by carnet (simulating login)
+    const userToLogin = usuarios.find(u => u.carnet.toLowerCase() === carnet.toLowerCase());
+
+    if (userToLogin) {
+      setUsuarioActual(userToLogin);
+      setPaisState(userToLogin.pais);
+      localStorage.setItem('usuarioActual', JSON.stringify(userToLogin));
+      localStorage.setItem('pais', userToLogin.pais);
+      router.push(getDashboardUrl(userToLogin.rol));
+    } else {
+      toast({
+        variant: "destructive",
+        title: "Error de Autenticación",
+        description: "Carnet no encontrado. Por favor, verifique sus credenciales.",
+      });
     }
+    setLoading(false);
   };
 
   const logout = async () => {
     setLoading(true);
-    try {
-      await signOut(auth);
-      router.push('/login');
-    } catch (error: any) {
-       toast({
-          variant: "destructive",
-          title: "Error",
-          description: "No se pudo cerrar la sesión.",
-        });
-    } finally {
-       setLoading(false);
-    }
+    setUsuarioActual(null);
+    localStorage.removeItem('usuarioActual');
+    localStorage.removeItem('pais');
+    router.push('/login');
+    setLoading(false);
   };
+  
+  const setPais = (newPais: Pais) => {
+      setPaisState(newPais);
+      localStorage.setItem('pais', newPais);
+  }
+
+  const switchRole = (newRole: 'PACIENTE' | 'MEDICO' | 'ADMIN') => {
+    if (usuarioActual) {
+        const potentialUser = usuarios.find(u => u.carnet === usuarioActual.carnet && u.rol === newRole);
+        if (potentialUser) {
+            setUsuarioActual(potentialUser);
+            localStorage.setItem('usuarioActual', JSON.stringify(potentialUser));
+            router.push(getDashboardUrl(newRole));
+        } else {
+            toast({
+                variant: 'destructive',
+                title: 'Rol no disponible',
+                description: 'No tiene acceso a este rol.'
+            });
+        }
+    }
+  }
 
   return (
     <AuthContext.Provider value={{ 
-        user: firebaseUser, 
+        usuarioActual, 
         loading,
+        pais,
+        setPais,
         login, 
         logout,
+        switchRole
     }}>
       {children}
     </AuthContext.Provider>

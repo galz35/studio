@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useUserProfile } from '@/hooks/use-user-profile';
+import * as api from '@/lib/services/api.mock';
 import { CitaMedica, Medico } from '@/lib/types/domain';
 import { DataTable } from '@/components/shared/DataTable';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -29,8 +30,7 @@ export default function MisCitasPage() {
 
   useEffect(() => {
     if (userProfile?.idPaciente) {
-      fetch(`/api/pacientes/${userProfile.idPaciente}/citas`)
-        .then(res => res.json())
+      api.getCitasPorPaciente(userProfile.idPaciente)
         .then(data => {
           setCitas(data);
         }).catch(() => {
@@ -38,6 +38,8 @@ export default function MisCitasPage() {
         }).finally(() => {
           setLoading(false);
         });
+    } else {
+        setLoading(false);
     }
   }, [userProfile, toast]);
 

@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
+import * as api from '@/lib/services/api.mock';
 import type { CitaMedica, Paciente, EmpleadoEmp2024, CasoClinico } from '@/lib/types/domain';
 import { AtencionCitaWizard } from '@/components/medico/AtencionCitaWizard';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -29,11 +30,10 @@ export default function AtencionCitaPage() {
 
     const fetchData = async () => {
       try {
-        const res = await fetch(`/api/atenciones/${idCita}`);
-        if (!res.ok) {
-            throw new Error(await res.text());
+        const atencionData = await api.getAtencionMedicaData(idCita) as AtencionPageData;
+        if (!atencionData) {
+            throw new Error("No se encontraron los datos para la atención");
         }
-        const atencionData = await res.json();
         setData(atencionData);
       } catch (err: any) {
         setError(err.message || "Ocurrió un error al cargar los datos.");

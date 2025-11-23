@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useMemo } from 'react';
 import { useUserProfile } from '@/hooks/use-user-profile';
+import * as api from '@/lib/services/api.mock';
 import { EmpleadoEmp2024 } from '@/lib/types/domain';
 import { DataTable } from '@/components/shared/DataTable';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,11 +24,7 @@ export default function GestionEmpleadosPage() {
     const fetchEmpleados = async () => {
       setIsLoading(true);
       try {
-        const response = await fetch('/api/empleados');
-        if (!response.ok) {
-          throw new Error('Failed to fetch empleados');
-        }
-        const data: EmpleadoEmp2024[] = await response.json();
+        const data: EmpleadoEmp2024[] = await api.getEmpleados();
         setEmpleadosData(data);
       } catch (error) {
         console.error(error);
