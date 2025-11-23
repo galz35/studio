@@ -1,18 +1,8 @@
 import { NextResponse } from 'next/server';
+import { initializeFirebase } from '@/firebase';
+import { collection, query, where, getDocs, doc, getDoc, orderBy } from 'firebase/firestore';
 import type { CitaMedica, Medico } from '@/lib/types/domain';
 
-// --- Hardcoded Mock Data for this specific API endpoint ---
-const medicos: Medico[] = [
-    { id: "medico-001", idMedico: 1, nombreCompleto: "Dr. Carlos Herrera", especialidad: "Medicina General", tipoMedico: "INTERNO", estadoMedico: "A" },
-    { id: "medico-002", idMedico: 2, nombreCompleto: "Dra. Isabel Castillo", especialidad: "Salud Ocupacional", tipoMedico: "INTERNO", estadoMedico: "A" },
-];
-
-const citas: CitaMedica[] = [
-    { idCita: 1, id: "cita-001", idPaciente: "paciente-001", idMedico: "medico-001", fechaCita: "2024-08-05", horaCita: "10:00", estadoCita: "PROGRAMADA", canalOrigen: "CHEQUEO", motivoResumen: "Control Anual", nivelSemaforoPaciente: "V", pais: "NI" },
-    { idCita: 2, id: "cita-002", idPaciente: "paciente-001", idMedico: "medico-002", fechaCita: "2024-07-20", horaCita: "14:00", estadoCita: "FINALIZADA", canalOrigen: "CHEQUEO", motivoResumen: "Revisión de gripe", nivelSemaforoPaciente: "A", pais: "NI" },
-    { idCita: 3, id: "cita-003", idPaciente: "paciente-002", idMedico: "medico-001", fechaCita: "2024-08-06", horaCita: "09:00", estadoCita: "PROGRAMADA", canalOrigen: "SOLICITUD", motivoResumen: "Migraña", nivelSemaforoPaciente: "R", pais: "CR" },
-];
-// --- End of Mock Data ---
 
 // GET: /api/pacientes/[id]/citas
 export async function GET(request: Request, { params }: { params: { id: string } }) {
@@ -20,16 +10,31 @@ export async function GET(request: Request, { params }: { params: { id: string }
   if (!idPaciente) {
     return NextResponse.json({ message: 'ID de paciente no proporcionado.' }, { status: 400 });
   }
-
-  await new Promise(resolve => setTimeout(resolve, 300));
   
-  try {
-    const citasPaciente = citas.filter(c => c.idPaciente === idPaciente);
+  const { firestore } = initializeFirebase();
 
-    const citasConMedico = citasPaciente.map(cita => {
-        const medico = medicos.find(m => m.id === cita.idMedico);
+  try {
+    const citasQuery = query(
+        collection(firestore, 'citasMedicas'),
+        where('idPaciente', '==', idPaciente),
+        orderBy('fechaCita', 'desc')
+    );
+    const citasSnap = await getDocs(citasQuery);
+    
+    if (citasSnap.empty) {
+        return NextResponse.json([]);
+    }
+
+    const citas = citasSnap.docs.map(d => ({ id: d.id, ...d.data() } as CitaMedica));
+
+    const citasConMedico = await Promise.all(citas.map(async (cita) => {
+        if (!cita.idMedico) return cita;
+        
+        const medicoRef = doc(firestore, 'medicos', cita.idMedico);
+        const medicoSnap = await getDoc(medicoRef);
+        const medico = medicoSnap.exists() ? { id: medicoSnap.id, ...medicoSnap.data() } as Medico : undefined;
         return { ...cita, medico };
-    });
+    }));
     
     return NextResponse.json(citasConMedico);
   } catch (error) {

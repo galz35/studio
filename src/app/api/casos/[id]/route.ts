@@ -1,28 +1,7 @@
 import { NextResponse } from 'next/server';
-import type { CasoClinico, Paciente, AtencionMedica, ExamenMedico, SeguimientoPaciente, Medico } from '@/lib/types/domain';
-
-// --- Hardcoded Mock Data for this specific API endpoint ---
-const pacientes: Paciente[] = [
-  { id: "paciente-001", idPaciente: 1, carnet: "P001", nombreCompleto: "Ana Sofía Pérez", gerencia: "Marketing", area: "Digital", telefono: "8888-1111", correo: "ana.perez@corp.com", estadoPaciente: "A", nivelSemaforo: "V", pais: "NI" },
-  { id: "paciente-002", idPaciente: 2, carnet: "P002", nombreCompleto: "Luis Fernando García", gerencia: "Tecnología", area: "Desarrollo", telefono: "8888-2222", correo: "luis.garcia@corp.com", estadoPaciente: "A", nivelSemaforo: "R", pais: "CR" },
-];
-
-const casosClinicos: CasoClinico[] = [
-  { id: "caso-001", idCaso: 1, codigoCaso: "CC-2024-001", idPaciente: "paciente-001", idCita: "cita-001", fechaCreacion: "2024-07-29", estadoCaso: "Cerrado", nivelSemaforo: "V", motivoConsulta: "Revisión general anual", pais: "NI" },
-  { id: "caso-002", idCaso: 2, codigoCaso: "CC-2024-002", idPaciente: "paciente-002", idCita: "cita-002", fechaCreacion: "2024-07-30", estadoCaso: "Abierto", nivelSemaforo: "R", motivoConsulta: "Migraña severa", pais: "CR" },
-];
-
-const atenciones: AtencionMedica[] = [
-    { idAtencion: 1, id: "atencion-001", idCita: "cita-001", idCaso: "caso-001", idMedico: "medico-001", fechaAtencion: "2024-07-29T10:00:00Z", diagnosticoPrincipal: "Condición saludable", requiereSeguimiento: false, estadoClinico: "BIEN" },
-];
-
-const examenes: ExamenMedico[] = [
-    { idExamen: 1, id: "examen-001", idCaso: "caso-001", idPaciente: "paciente-001", tipoExamen: "Hemograma Completo", fechaSolicitud: "2024-07-29", estadoExamen: "ENTREGADO", laboratorio: "LabCorp", fechaResultado: "2024-07-30", resultadoResumen: "Valores normales." },
-];
-
-const seguimientos: SeguimientoPaciente[] = [];
-// --- End of Mock Data ---
-
+import { initializeFirebase } from '@/firebase';
+import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import type { CasoClinico, Paciente, AtencionMedica, ExamenMedico, SeguimientoPaciente } from '@/lib/types/domain';
 
 export async function GET(request: Request, { params }: { params: { id: string } }) {
   const { id } = params;
@@ -30,27 +9,54 @@ export async function GET(request: Request, { params }: { params: { id: string }
     return NextResponse.json({ message: 'ID de caso no proporcionado.' }, { status: 400 });
   }
 
-  // Simulating fetching from mock data
-  await new Promise(resolve => setTimeout(resolve, 300));
+  const { firestore } = initializeFirebase();
   
-  const caso = casosClinicos.find(c => c.id === id);
+  try {
+    const casoRef = doc(firestore, 'casosClinicos', id);
+    const casoSnap = await getDoc(casoRef);
 
-  if (!caso) {
-    return NextResponse.json({ message: 'Caso clínico no encontrado.' }, { status: 404 });
+    if (!casoSnap.exists()) {
+      return NextResponse.json({ message: 'Caso clínico no encontrado.' }, { status: 404 });
+    }
+
+    const caso = { id: casoSnap.id, ...casoSnap.data() } as CasoClinico;
+
+    // Obtener datos relacionados
+    const pacienteRef = doc(firestore, 'pacientes', caso.idPaciente);
+    const pacienteSnap = await getDoc(pacienteRef);
+
+    if (!pacienteSnap.exists()) {
+        return NextResponse.json({ message: `Paciente con ID ${caso.idPaciente} no encontrado para este caso.` }, { status: 404 });
+    }
+    const paciente = { id: pacienteSnap.id, ...pacienteSnap.data() } as Paciente;
+
+    const atencionesQuery = query(collection(firestore, 'atencionesMedicas'), where('idCaso', '==', id));
+    const examenesQuery = query(collection(firestore, 'examenesMedicos'), where('idCaso', '==', id));
+    const seguimientosQuery = query(collection(firestore, 'seguimientosPacientes'), where('idCaso', '==', id));
+
+    const [atencionesSnap, examenesSnap, seguimientosSnap] = await Promise.all([
+        getDocs(atencionesQuery),
+        getDocs(examenesQuery),
+        getDocs(seguimientosQuery),
+    ]);
+
+    const atenciones = atencionesSnap.docs.map(d => ({ id: d.id, ...d.data() } as AtencionMedica));
+    const examenes = examenesSnap.docs.map(d => ({ id: d.id, ...d.data() } as ExamenMedico));
+    const seguimientos = seguimientosSnap.docs.map(d => ({ id: d.id, ...d.data() } as SeguimientoPaciente));
+
+    const response = {
+      ...caso,
+      paciente,
+      atenciones,
+      examenes,
+      seguimientos,
+    };
+
+    return NextResponse.json(response);
+
+  } catch (error) {
+    console.error(`Error fetching case details for ${id}:`, error);
+    const errorMessage = error instanceof Error ? error.message : 'Ocurrió un error desconocido';
+    return NextResponse.json({ message: 'Error al obtener el detalle del caso.', error: errorMessage }, { status: 500 });
   }
-
-  const paciente = pacientes.find(p => p.id === caso.idPaciente);
-  if (!paciente) {
-    return NextResponse.json({ message: `Paciente con ID ${caso.idPaciente} no encontrado para este caso.` }, { status: 404 });
-  }
-
-  const response = {
-    ...caso,
-    paciente: paciente,
-    atenciones: atenciones.filter(a => a.idCaso === caso.id),
-    examenes: examenes.filter(e => e.idCaso === caso.id),
-    seguimientos: seguimientos.filter(s => s.idCaso === caso.id),
-  };
-
-  return NextResponse.json(response);
 }

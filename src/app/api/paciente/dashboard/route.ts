@@ -1,27 +1,7 @@
 import { NextResponse } from 'next/server';
+import { initializeFirebase } from '@/firebase';
+import { collection, query, where, getDocs, doc, getDoc, orderBy, limit } from 'firebase/firestore';
 import type { Paciente, ChequeoBienestar, CitaMedica, SeguimientoPaciente, AtencionMedica, CasoClinico } from '@/lib/types/domain';
-
-// --- Hardcoded Mock Data for this specific API endpoint ---
-const mockData: { [key: string]: any } = {
-    "paciente-001": {
-        paciente: { id: "paciente-001", nombreCompleto: "Ana Sofía Pérez", nivelSemaforo: "V", pais: "NI" },
-        chequeos: [
-            { id: "chq-001", idPaciente: "paciente-001", fechaRegistro: "2024-07-30T09:00:00Z", estadoAnimo: "Contento(a)", calidadSueno: "Buena", comentarioGeneral: "Todo bien esta semana.", nivelSemaforo: "V" }
-        ],
-        citas: [
-            { id: "cita-003", idPaciente: "paciente-001", fechaCita: "2024-08-05", horaCita: "10:00", estadoCita: "PROGRAMADA" }
-        ],
-        seguimientos: [],
-        atenciones: [
-            { id: "atencion-001", idPaciente: "paciente-001", fechaAtencion: "2024-07-20T11:00:00Z", diagnosticoPrincipal: "Revisión de rutina", idCaso: "caso-001" }
-        ],
-        casos: [
-             { id: "caso-001", idPaciente: "paciente-001" }
-        ]
-    }
-};
-// --- End of Mock Data ---
-
 
 // GET: /api/paciente/dashboard?idPaciente=...
 export async function GET(request: Request) {
@@ -31,35 +11,71 @@ export async function GET(request: Request) {
     if (!idPaciente) {
         return NextResponse.json({ message: 'idPaciente es requerido' }, { status: 400 });
     }
-    
-    await new Promise(resolve => setTimeout(resolve, 500));
 
-    const dataForPatient = mockData[idPaciente];
-
-    if (!dataForPatient) {
-        return NextResponse.json({ message: `No mock data found for patient ${idPaciente}` }, { status: 404 });
-    }
+    const { firestore } = initializeFirebase();
 
     try {
-        const { paciente, chequeos, citas, seguimientos, atenciones } = dataForPatient;
-
-        const ultimoChequeoData = chequeos.length > 0 ? chequeos[0] : null;
+        // --- Obtener datos principales ---
+        const pacienteRef = doc(firestore, 'pacientes', idPaciente);
+        const pacienteSnap = await getDoc(pacienteRef);
+        if (!pacienteSnap.exists()) {
+             return NextResponse.json({ message: `Paciente no encontrado.` }, { status: 404 });
+        }
+        const paciente = { id: pacienteSnap.id, ...pacienteSnap.data() } as Paciente;
         
-        const hoy = new Date();
-        const proximaCitaData = citas
-            .filter((c: CitaMedica) => new Date(c.fechaCita) >= hoy && c.estadoCita === 'PROGRAMADA')
-            .sort((a: CitaMedica, b: CitaMedica) => new Date(a.fechaCita).getTime() - new Date(b.fechaCita).getTime())[0] || null;
+        // --- KPIs ---
+        // Último Chequeo
+        const chequeoQuery = query(collection(firestore, 'chequeosBienestar'), where('idPaciente', '==', idPaciente), orderBy('fechaRegistro', 'desc'), limit(1));
+        const chequeoSnap = await getDocs(chequeoQuery);
+        const ultimoChequeoData = chequeoSnap.empty ? null : { id: chequeoSnap.docs[0].id, ...chequeoSnap.docs[0].data() } as ChequeoBienestar;
 
-        const seguimientosActivos = seguimientos.filter((s: SeguimientoPaciente) => ['PENDIENTE', 'EN_PROCESO'].includes(s.estadoSeguimiento)).length;
-        
+        // Próxima Cita
+        const hoyStr = new Date().toISOString().split('T')[0];
+        const proximaCitaQuery = query(
+            collection(firestore, 'citasMedicas'), 
+            where('idPaciente', '==', idPaciente), 
+            where('estadoCita', 'in', ['PROGRAMADA', 'CONFIRMADA']),
+            where('fechaCita', '>=', hoyStr),
+            orderBy('fechaCita', 'asc'),
+            limit(1)
+        );
+        const proximaCitaSnap = await getDocs(proximaCitaQuery);
+        const proximaCitaData = proximaCitaSnap.empty ? null : proximaCitaSnap.docs[0].data() as CitaMedica;
+
+        // Seguimientos Activos
+        const seguimientosQuery = query(
+            collection(firestore, 'seguimientosPacientes'),
+            where('idPaciente', '==', idPaciente),
+            where('estadoSeguimiento', 'in', ['PENDIENTE', 'EN_PROCESO'])
+        );
+        const seguimientosSnap = await getDocs(seguimientosQuery);
+        const seguimientosActivos = seguimientosSnap.size;
+
+        // --- Línea de Tiempo ---
         let timeline: { title: string; date: string }[] = [];
         if (ultimoChequeoData) {
             timeline.push({ title: `Chequeo de Bienestar`, date: ultimoChequeoData.fechaRegistro });
         }
-        atenciones.forEach((a: AtencionMedica) => {
-            timeline.push({ title: `Atención: ${a.diagnosticoPrincipal}`, date: a.fechaAtencion });
-        });
 
+        // Para las atenciones, primero necesitamos los casos del paciente
+        const casosQuery = query(collection(firestore, 'casosClinicos'), where('idPaciente', '==', idPaciente));
+        const casosSnap = await getDocs(casosQuery);
+        const casosIds = casosSnap.docs.map(d => d.id);
+
+        if (casosIds.length > 0) {
+            const atencionesQuery = query(
+                collection(firestore, 'atencionesMedicas'), 
+                where('idCaso', 'in', casosIds),
+                orderBy('fechaAtencion', 'desc'),
+                limit(3)
+            );
+            const atencionesSnap = await getDocs(atencionesQuery);
+            atencionesSnap.forEach(d => {
+                const a = d.data() as AtencionMedica;
+                timeline.push({ title: `Atención: ${a.diagnosticoPrincipal}`, date: a.fechaAtencion });
+            });
+        }
+        
         const responseData = {
             kpis: {
                 estadoActual: paciente.nivelSemaforo || 'V',
