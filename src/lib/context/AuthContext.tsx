@@ -49,15 +49,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const login = async (carnet: string) => {
     setLoading(true);
-    // Find the first matching user by carnet (simulating login)
+    // Find the user to log in from 'usuarios'
     const userToLogin = usuarios.find(u => u.carnet.toLowerCase() === carnet.toLowerCase());
 
     if (userToLogin) {
-      setUsuarioActual(userToLogin);
-      setPaisState(userToLogin.pais);
-      localStorage.setItem('usuarioActual', JSON.stringify(userToLogin));
-      localStorage.setItem('pais', userToLogin.pais);
-      router.push(getDashboardUrl(userToLogin.rol));
+        setUsuarioActual(userToLogin);
+        setPaisState(userToLogin.pais);
+        localStorage.setItem('usuarioActual', JSON.stringify(userToLogin));
+        localStorage.setItem('pais', userToLogin.pais);
+        router.push(getDashboardUrl(userToLogin.rol));
     } else {
       toast({
         variant: "destructive",
