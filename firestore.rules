@@ -225,15 +225,16 @@ service cloud.firestore {
     }
     
     /**
-     * @description Stores audit and error logs. Writable only via a secure backend endpoint.
+     * @description Stores audit and error logs. Writable by any signed-in user for their own actions. Readable only by ADMIN.
      * @path /logs/{logId}
-     * @allow (read) Only admins can read logs.
-     * @deny (write) Direct client writes are forbidden. Must go through the backend API.
-     * @principle Centralizes and secures log creation.
+     * @allow (create) Any authenticated user can create a log entry. The API should enforce that userId matches the authenticated user.
+     * @allow (read) Only ADMINs can read the logs for auditing purposes.
+     * @principle Centralizes and secures log creation and access.
      */
     match /logs/{logId} {
         allow read: if isAdmin();
-        allow write: if false; // All writes must go through the backend API
+        allow create: if isSignedIn();
+        allow write: if false;
     }
   }
 }

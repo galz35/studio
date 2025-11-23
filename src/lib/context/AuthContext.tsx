@@ -44,18 +44,17 @@ const logAuditEvent = (firestore: any, type: string, userCarnet: string, userId:
       userId,
       message,
       details,
-      timestamp: new Date().toISOString(), // Use client time for simplicity here
+      timestamp: new Date().toISOString(),
   };
-  const logRef = doc(collection(firestore, 'logs'));
-
-  // Use a non-blocking setDoc and catch permission errors
-  setDoc(logRef, logEntry).catch(error => {
-      const contextualError = new FirestorePermissionError({
-          path: logRef.path,
-          operation: 'create',
-          requestResourceData: logEntry,
-      });
-      errorEmitter.emit('permission-error', contextualError);
+  // "Fire-and-forget" call to the log API
+  fetch('/api/logs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(logEntry),
+  }).catch(error => {
+      // If the log fails, we don't want to block the user flow.
+      // We can log this to the console for client-side debugging if needed.
+      console.warn("Log submission failed:", error);
   });
 };
 
@@ -65,6 +64,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [allUsers, setAllUsers] = useState<UsuarioAplicacion[]>([]);
   const [pais, setPaisState] = useState<Pais>('NI');
   const [loading, setLoading] = useState(true);
+  const [authLoading, setAuthLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
   const { auth, firestore, user: firebaseUser, isUserLoading } = useFirebase();
@@ -100,7 +100,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             setPaisState(storedPais);
           }
         } else {
-            // Fallback to find user in our fetched list
             const baseUser = allUsers.find(u => u.carnet.toLowerCase() === (firebaseUser.email?.split('@')[0] || ''));
             if(baseUser) {
                 setUsuarioActual(baseUser);
@@ -126,48 +125,49 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         localStorage.setItem('usuarioActual', JSON.stringify(updatedUser));
     }
   };
+  
+  const performLogin = (authedUser: User, userProfile: UsuarioAplicacion) => {
+    const userWithCountry = { ...userProfile, pais };
+    setUsuarioActual(userWithCountry);
+    localStorage.setItem('usuarioActual', JSON.stringify(userWithCountry));
+    
+    // Log the event without waiting for it
+    logAuditEvent(firestore, 'LOGIN_SUCCESS', userProfile.carnet, authedUser.uid, `User ${userProfile.carnet} logged in successfully.`);
+    
+    router.push(getDashboardUrl(userProfile.rol));
+    setAuthLoading(false);
+  };
 
   const login = async (carnet: string, password: string) => {
+    setAuthLoading(true);
     const lowerCaseCarnet = carnet.toLowerCase();
-    
-    // Find user from the comprehensive list fetched from Firestore
-    let user = allUsers.find(u => u.carnet.toLowerCase() === lowerCaseCarnet);
-    
-    if (!user) {
+    const userProfile = allUsers.find(u => u.carnet.toLowerCase() === lowerCaseCarnet);
+
+    if (!userProfile) {
         toast({
             variant: "destructive",
             title: "Error de Autenticación",
-            description: "El carnet ingresado no fue encontrado. Por favor, verifique e intente de nuevo.",
+            description: "El carnet ingresado no fue encontrado.",
         });
+        setAuthLoading(false);
         return;
-    }
-    
-    const userForLogin = user;
-
-    const performLogin = async (authedUser: User) => {
-        const userWithCountry = { ...userForLogin, pais };
-        setUsuarioActual(userWithCountry);
-        localStorage.setItem('usuarioActual', JSON.stringify(userWithCountry));
-        logAuditEvent(firestore, 'LOGIN_SUCCESS', carnet, authedUser.uid, `User ${carnet} logged in successfully.`);
-        router.push(getDashboardUrl(userForLogin.rol));
     }
 
     try {
         const userCredential = await signInWithEmailAndPassword(auth, `${lowerCaseCarnet}@corp.local`, password);
-        await performLogin(userCredential.user);
-
+        performLogin(userCredential.user, userProfile);
     } catch (error: any) {
         if (error.code === 'auth/user-not-found') {
             try {
-                // If user doesn't exist in Firebase Auth, create them using the profile from Firestore
-                const userCredential = await createUserWithEmailAndPassword(auth, `${lowerCaseCarnet}@corp.local`, password);
-                await performLogin(userCredential.user);
+                const newUserCredential = await createUserWithEmailAndPassword(auth, `${lowerCaseCarnet}@corp.local`, password);
+                performLogin(newUserCredential.user, userProfile);
             } catch (creationError: any) {
                  toast({
                     variant: "destructive",
                     title: "Error de Registro de Prueba",
                     description: `No se pudo crear la cuenta de prueba: ${creationError.message}`,
                 });
+                setAuthLoading(false);
             }
         } else if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
             toast({
@@ -175,6 +175,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 title: "Error de Autenticación",
                 description: "Credenciales incorrectas. Verifique su carnet y contraseña.",
             });
+            setAuthLoading(false);
         } else {
             console.error("Firebase login error:", error);
             toast({
@@ -182,6 +183,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 title: "Error Inesperado",
                 description: "Ocurrió un error al intentar iniciar sesión.",
             });
+            setAuthLoading(false);
         }
     }
   };
@@ -216,7 +218,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     <AuthContext.Provider value={{ 
         usuarioActual, 
         isAuthenticated: !!firebaseUser && !!usuarioActual,
-        loading: loading,
+        loading: loading || authLoading,
         pais,
         setPais,
         login, 
