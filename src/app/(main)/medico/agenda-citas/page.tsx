@@ -21,101 +21,114 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { CalendarPlus, Ban, Loader2, Sparkles } from 'lucide-react';
-import { useFirebase } from '@/firebase';
-import { collection, query, where, addDoc, updateDoc, doc, limit } from 'firebase/firestore';
-import { useCollection, useMemoFirebase } from '@/firebase';
 import { useConfirm } from '@/hooks/use-confirm';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { Skeleton } from '@/components/ui/skeleton';
 
-type CasoConPaciente = CasoClinico & { paciente?: Paciente, id?: string };
+type CasoConPaciente = CasoClinico & { paciente?: Paciente };
 
 export default function GestionCitasPage() {
   const { pais } = useAuth();
   const { toast } = useToast();
-  const { firestore } = useFirebase();
   const [ConfirmDialog, confirm] = useConfirm();
+
+  const [casos, setCasos] = useState<CasoConPaciente[]>([]);
+  const [medicos, setMedicos] = useState<Medico[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const [selectedCaso, setSelectedCaso] = useState<CasoConPaciente | null>(null);
   const [isAgendarOpen, setAgendarOpen] = useState(false);
   const [isAnalisisOpen, setAnalisisOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [motivoCancelacion, setMotivoCancelacion] = useState("");
 
-  const casosQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'casosClinicos'), where('estadoCaso', 'in', ['Abierto', 'Triaje-IA']), where('pais', '==', pais), limit(50)) : null, [firestore, pais]);
-  const { data: casosData, isLoading: isLoadingCasos } = useCollection<CasoClinico>(casosQuery);
+  const fetchData = async () => {
+    setIsLoading(true);
+    try {
+        const [casosRes, medicosRes] = await Promise.all([
+            fetch(`/api/casos?pais=${pais}&estado=abierto`),
+            fetch(`/api/medicos`)
+        ]);
 
-  const pacientesQuery = useMemoFirebase(() => firestore ? collection(firestore, 'pacientes') : null, [firestore]);
-  const { data: pacientesData, isLoading: isLoadingPacientes } = useCollection<Paciente>(pacientesQuery);
+        if (!casosRes.ok || !medicosRes.ok) {
+            throw new Error('No se pudieron cargar los datos necesarios.');
+        }
 
-  const medicosQuery = useMemoFirebase(() => firestore ? collection(firestore, 'medicos') : null, [firestore]);
-  const { data: medicosData, isLoading: isLoadingMedicos } = useCollection<Medico>(medicosQuery);
+        const casosData = await casosRes.json();
+        const medicosData = await medicosRes.json();
 
-  const casosConPaciente = useMemo<CasoConPaciente[]>(() => {
-    if (!casosData || !pacientesData) return [];
-    return casosData.map(caso => ({
-      ...caso,
-      paciente: pacientesData.find(p => p.id === caso.idPaciente),
-    }));
-  }, [casosData, pacientesData]);
+        setCasos(casosData);
+        setMedicos(medicosData);
+
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Error de Carga', description: error.message });
+    } finally {
+        setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, [pais]);
+  
 
   const handleAgendar = async (formData: any) => {
-    if (!selectedCaso || !firestore) return;
+    if (!selectedCaso) return;
     setIsSubmitting(true);
 
-    const nuevaCita = {
+    const body = {
         idCaso: selectedCaso.id!,
         idPaciente: selectedCaso.idPaciente,
         idMedico: formData.idMedico,
         fechaCita: formData.fechaCita,
         horaCita: formData.horaCita,
-        canalOrigen: 'AGENDADA_POR_MEDICO',
-        estadoCita: 'PROGRAMADA',
-        motivoResumen: selectedCaso.motivoConsulta,
-        nivelSemaforoPaciente: selectedCaso.nivelSemaforo,
         pais: pais,
     };
     
     try {
-        const citaRef = await addDoc(collection(firestore, 'citasMedicas'), nuevaCita);
-        const casoDocRef = doc(firestore, 'casosClinicos', selectedCaso.id!);
-        await updateDoc(casoDocRef, {
-            estadoCaso: 'Agendado',
-            idCita: citaRef.id,
+        const response = await fetch('/api/citas', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
         });
+
+        if (!response.ok) {
+            throw new Error(await response.text());
+        }
 
         toast({ title: 'Cita Agendada', description: `Se ha agendado una cita para ${selectedCaso.paciente?.nombreCompleto}.` });
         setAgendarOpen(false);
         setSelectedCaso(null);
-    } catch(e) {
+        fetchData(); // Refresh data
+    } catch(e: any) {
         console.error(e);
-        toast({ variant: 'destructive', title: 'Error', description: 'No se pudo agendar la cita.' });
+        toast({ variant: 'destructive', title: 'Error', description: e.message || 'No se pudo agendar la cita.' });
     } finally {
         setIsSubmitting(false);
     }
   };
   
-  const handleCancelar = async () => {
-     if (!selectedCaso) return;
+  const handleCancelar = async (caso: CasoConPaciente) => {
      const isConfirmed = await confirm({
         title: '¿Confirmar Cancelación?',
-        description: `Esta acción marcará la solicitud de ${selectedCaso.paciente?.nombreCompleto} como cancelada. No se puede deshacer.`
+        description: `Esta acción marcará la solicitud de ${caso.paciente?.nombreCompleto} como cancelada. No se puede deshacer.`
      });
 
-     if (isConfirmed && firestore) {
+     if (isConfirmed) {
         setIsSubmitting(true);
         try {
-            const casoDocRef = doc(firestore, 'casosClinicos', selectedCaso.id!);
-            await updateDoc(casoDocRef, {
-                estadoCaso: 'Cancelado',
-                notasCancelacion: motivoCancelacion,
+            const response = await fetch(`/api/casos/${caso.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ estadoCaso: 'Cancelado', notasCancelacion: 'Cancelado por médico durante triaje.' })
             });
-            toast({ title: 'Solicitud Cancelada', description: `Se ha cancelado la solicitud de ${selectedCaso.paciente?.nombreCompleto}.`, variant: 'destructive'});
-            setMotivoCancelacion("");
-            setSelectedCaso(null);
-        } catch (e) {
+            if (!response.ok) throw new Error('No se pudo cancelar la solicitud.');
+
+            toast({ title: 'Solicitud Cancelada', description: `Se ha cancelado la solicitud de ${caso.paciente?.nombreCompleto}.`, variant: 'destructive'});
+            fetchData(); // Refresh data
+        } catch (e: any) {
             console.error(e);
-            toast({ variant: 'destructive', title: 'Error', description: 'No se pudo cancelar la solicitud.' });
+            toast({ variant: 'destructive', title: 'Error', description: e.message });
         } finally {
             setIsSubmitting(false);
         }
@@ -168,18 +181,7 @@ export default function GestionCitasPage() {
             <Button size="sm" variant="outline" className="gap-2" onClick={() => { setSelectedCaso(row); setAgendarOpen(true); }}>
               <CalendarPlus className="h-4 w-4"/> <span>Agendar</span>
             </Button>
-            <ConfirmDialog />
-            <Button size="sm" variant="destructive" className="gap-2" onClick={async () => { 
-                setSelectedCaso(row);
-                const confirmed = await confirm({
-                    title: '¿Confirmar Cancelación?',
-                    description: `Esta acción marcará la solicitud de ${row.paciente?.nombreCompleto} como cancelada y no se podrá deshacer.`
-                });
-                if (confirmed) {
-                    // Implement cancellation logic
-                     toast({ title: 'Acción confirmada', description: 'La solicitud será cancelada.' });
-                }
-             }}>
+            <Button size="sm" variant="destructive" className="gap-2" onClick={() => handleCancelar(row)}>
                 <Ban className="h-4 w-4"/> <span>Cancelar</span>
             </Button>
         </div>
@@ -187,7 +189,24 @@ export default function GestionCitasPage() {
     },
   ];
 
-  if (isLoadingCasos || isLoadingPacientes || isLoadingMedicos) return <div>Cargando solicitudes...</div>;
+  if (isLoading) return (
+      <div className="space-y-6">
+        <Skeleton className="h-9 w-72" />
+        <Card>
+            <CardHeader>
+                <Skeleton className="h-6 w-52" />
+                <Skeleton className="h-4 w-96 mt-2" />
+            </CardHeader>
+            <CardContent>
+                <div className="space-y-2">
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-12 w-full" />
+                    <Skeleton className="h-12 w-full" />
+                </div>
+            </CardContent>
+        </Card>
+    </div>
+  );
 
   return (
     <div className="space-y-6">
@@ -202,7 +221,7 @@ export default function GestionCitasPage() {
           <CardDescription>Casos abiertos y casos con análisis de IA pendientes de ser agendados.</CardDescription>
         </CardHeader>
         <CardContent>
-          <DataTable columns={columns} data={casosConPaciente} filterColumn="motivoConsulta" filterPlaceholder='Filtrar por motivo...' />
+          <DataTable columns={columns} data={casos} filterColumn="motivoConsulta" filterPlaceholder='Filtrar por motivo...' />
         </CardContent>
       </Card>
       
@@ -235,7 +254,7 @@ export default function GestionCitasPage() {
                         <Select name="idMedico" required>
                             <SelectTrigger id="medico-cita"><SelectValue placeholder="Seleccione un médico" /></SelectTrigger>
                             <SelectContent>
-                                {medicosData?.map(m => <SelectItem key={m.id} value={String(m.id)}>{m.nombreCompleto}</SelectItem>)}
+                                {medicos?.map(m => <SelectItem key={m.id} value={String(m.id)}>{m.nombreCompleto}</SelectItem>)}
                             </SelectContent>
                         </Select>
                      </div>

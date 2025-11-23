@@ -9,8 +9,6 @@ import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescript
 
 import type { RutaMotivo, TriageNivel, ModalidadTrabajo, DatosExtraJSON, SolicitudCitaPayload } from '@/lib/types/solicitud';
 import { useAuth } from '@/hooks/use-auth';
-import { useFirebase } from '@/firebase';
-import { collection, addDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 
 // Sub-components for steps
@@ -57,7 +55,6 @@ const initialDatosExtra: DatosExtraJSON = {
 
 export function SolicitudCitaWizard() {
     const { usuarioActual, pais } = useAuth();
-    const { firestore } = useFirebase();
     const { toast } = useToast();
 
     const [step, setStep] = useState(1);
@@ -124,12 +121,8 @@ export function SolicitudCitaWizard() {
     const handlePrev = () => setStep(prev => Math.max(prev - 1, 1));
     
     const handleSubmit = async () => {
-       if (!usuarioActual?.idPaciente) {
+       if (!usuarioActual?.id) {
             toast({ variant: 'destructive', title: 'Error de Usuario', description: 'No se pudo identificar al paciente.' });
-            return;
-        }
-        if (!firestore) {
-            toast({ variant: 'destructive', title: 'Error de Conexión', description: 'No se pudo conectar a la base de datos.' });
             return;
         }
         
@@ -150,7 +143,7 @@ export function SolicitudCitaWizard() {
         setFinalPayload(payload);
         
         const nuevoCaso = {
-            idPaciente: usuarioActual.idPaciente,
+            idPaciente: usuarioActual.id,
             fechaCreacion: new Date().toISOString(),
             estadoCaso: 'Abierto',
             nivelSemaforo: payload.Triage || 'A',
@@ -163,11 +156,19 @@ export function SolicitudCitaWizard() {
         };
 
         try {
-            await addDoc(collection(firestore, 'casosClinicos'), nuevoCaso);
+            const response = await fetch('/api/casos', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(nuevoCaso)
+            });
+
+            if (!response.ok) {
+                throw new Error(await response.text());
+            }
             setShowSummaryModal(true);
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error al guardar la solicitud", error);
-            toast({ variant: 'destructive', title: 'Error', description: 'Hubo un error al guardar tu solicitud. Inténtalo de nuevo.'})
+            toast({ variant: 'destructive', title: 'Error', description: error.message || 'Hubo un error al guardar tu solicitud. Inténtalo de nuevo.'})
         } finally {
             setIsLoading(false);
         }
