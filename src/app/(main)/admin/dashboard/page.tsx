@@ -44,6 +44,7 @@ export default function DashboardAdminPage() {
 
   useEffect(() => {
     if (!pais) return;
+    setLoading(true);
     // This is a simplified fetch. In a real scenario, you'd fetch based on filters.
     // For this mock, we fetch all and then filter on the client.
     Promise.all([

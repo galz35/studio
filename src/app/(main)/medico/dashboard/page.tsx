@@ -49,7 +49,7 @@ export default function DashboardMedicoPage() {
             setLoading(false);
         });
     }
-  }, [userProfile, pais]);
+  }, [userProfile?.idMedico, pais]);
 
   if (loading) return (
     <div className="space-y-6">
