@@ -5,7 +5,7 @@ import React, { createContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { User, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 import type { UsuarioAplicacion, Rol, Pais } from '@/lib/types/domain';
-import { usuarios as mockUsuarios } from '@/lib/mock/usuarios.mock'; // Re-introduced mock data
+import { usuarios as mockUsuarios } from '@/lib/mock/usuarios.mock';
 import { useToast } from '@/hooks/use-toast';
 import { useFirebase } from '@/firebase';
 
@@ -41,35 +41,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [authLoading, setAuthLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
-  const { auth, firestore, user: firebaseUser, isUserLoading } = useFirebase();
+  const { auth, user: firebaseUser, isUserLoading } = useFirebase();
 
   useEffect(() => {
     if (!isUserLoading && firebaseUser) {
       try {
         const storedUser = localStorage.getItem('usuarioActual');
-        const storedPais = localStorage.getItem('pais') as Pais;
         if (storedUser) {
           const user = JSON.parse(storedUser);
           setUsuarioActual(user);
-          if (storedPais) {
-            setPaisState(storedPais);
-          }
-        } else {
-            // If no user in local storage, try to find from mock and set it
-            const baseUser = mockUsuarios.find(u => u.carnet.toLowerCase() === (firebaseUser.email?.split('@')[0] || ''));
-             if(baseUser) {
-                setUsuarioActual(baseUser);
-                localStorage.setItem('usuarioActual', JSON.stringify(baseUser));
-            }
+        }
+        const storedPais = localStorage.getItem('pais') as Pais;
+        if (storedPais) {
+          setPaisState(storedPais);
         }
       } catch (error) {
         console.error("Failed to parse user from localStorage", error);
         logout();
       }
     } else if (!isUserLoading && !firebaseUser) {
-        setUsuarioActual(null);
-        localStorage.removeItem('usuarioActual');
+      setUsuarioActual(null);
+      localStorage.removeItem('usuarioActual');
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [firebaseUser, isUserLoading]);
 
   const setPais = (newPais: Pais) => {
@@ -86,19 +80,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const userWithCountry = { ...userProfile, pais };
     setUsuarioActual(userWithCountry);
     localStorage.setItem('usuarioActual', JSON.stringify(userWithCountry));
-    
-    // Log audit event - "fire and forget"
-    fetch('/api/logs', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            type: 'LOGIN_SUCCESS',
-            userCarnet: userProfile.carnet,
-            userId: authedUser.uid,
-            message: `User ${userProfile.carnet} logged in successfully.`
-        }),
-    }).catch(console.warn);
-
     router.push(getDashboardUrl(userProfile.rol));
     setAuthLoading(false);
   };
@@ -106,14 +87,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = async (carnet: string, password: string) => {
     setAuthLoading(true);
     const lowerCaseCarnet = carnet.toLowerCase();
-    // Find user from the mock data array
+    
+    // Find user profile from mock data. This is crucial to avoid Firestore read on login.
     const userProfile = mockUsuarios.find(u => u.carnet.toLowerCase() === lowerCaseCarnet);
 
     if (!userProfile) {
         toast({
             variant: "destructive",
             title: "Error de Autenticación",
-            description: "El carnet ingresado no fue encontrado.",
+            description: "El carnet ingresado no fue encontrado en la lista de usuarios de prueba.",
         });
         setAuthLoading(false);
         return;
@@ -124,8 +106,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         performLogin(userCredential.user, userProfile);
     } catch (error: any) {
         if (error.code === 'auth/user-not-found') {
+            // If user doesn't exist in Firebase Auth, create it for testing purposes
             try {
-                // If user doesn't exist in Firebase Auth, create it for testing purposes
                 const newUserCredential = await createUserWithEmailAndPassword(auth, `${lowerCaseCarnet}@corp.local`, password);
                 performLogin(newUserCredential.user, userProfile);
             } catch (creationError: any) {
