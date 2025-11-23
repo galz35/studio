@@ -285,3 +285,12 @@ export const getDashboardAdmin = (pais: Pais): Promise<{
 
     return Promise.resolve({ kpis, chequeosPorRuta, citasPorEstado });
 }
+
+export const getCasos = (): Promise<CasoClinico[]> => {
+    const casosConDetalle = mockCasos.map(caso => {
+        const atenciones = mockAtenciones.filter(a => a.idCaso === caso.idCaso);
+        const paciente = mockPacientes.find(p => p.idPaciente === caso.idPaciente);
+        return {...caso, atenciones, paciente };
+    })
+    return Promise.resolve(casosConDetalle);
+}
