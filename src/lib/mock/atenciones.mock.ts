@@ -3,9 +3,10 @@ import type { AtencionMedica } from "@/lib/types/domain";
 export const atenciones: AtencionMedica[] = [
   {
     idAtencion: 1,
-    idCita: "4",
-    idCaso: "3",
-    idMedico: "2",
+    id: "atencion-001",
+    idCita: "cita-004",
+    idCaso: "caso-003",
+    idMedico: "medico-002",
     fechaAtencion: "2024-07-28T11:30:00Z",
     pesoKg: 65,
     alturaM: 1.65,
@@ -20,9 +21,10 @@ export const atenciones: AtencionMedica[] = [
   },
    {
     idAtencion: 2,
-    idCita: "1",
-    idCaso: "1",
-    idMedico: "1",
+    id: "atencion-002",
+    idCita: "cita-001",
+    idCaso: "caso-001",
+    idMedico: "medico-001",
     fechaAtencion: "2024-07-29T14:15:00Z",
     pesoKg: 72,
     alturaM: 1.78,

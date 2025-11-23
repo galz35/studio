@@ -55,11 +55,13 @@ export default function PacientesCasosPage() {
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-                <DropdownMenuItem asChild>
-                   <Link href={`/medico/atencion/${row.idCita || 1}`}>
-                        <Stethoscope className="mr-2 h-4 w-4" /> Iniciar Atención / Nota
-                    </Link>
-                </DropdownMenuItem>
+                {row.idCita && (
+                  <DropdownMenuItem asChild>
+                    <Link href={`/medico/atencion/${row.idCita}`}>
+                          <Stethoscope className="mr-2 h-4 w-4" /> Iniciar Atención / Nota
+                      </Link>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem asChild>
                    <Link href={`/medico/casos/${row.id}`}>
                         <Eye className="mr-2 h-4 w-4" /> Ver Detalle del Caso

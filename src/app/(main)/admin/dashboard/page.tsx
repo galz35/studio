@@ -26,7 +26,7 @@ import type { CasoClinico, AtencionMedica, SeguimientoPaciente, EmpleadoEmp2024 
 
 type DashboardData = {
     casos: CasoClinico[];
-    atenciones: AtencionMedica[];
+    atenciones: (AtencionMedica & { paciente?: { carnet: string } })[]; // Paciente can be optional
     seguimientos: SeguimientoPaciente[];
     empleados: EmpleadoEmp2024[];
 };
@@ -50,20 +50,13 @@ export default function DashboardAdminPage() {
     // For this mock, we fetch all and then filter on the client.
     Promise.all([
       api.getCasosClinicos(),
-      api.getAtencionMedicaData('1'), // This is mock, needs better implementation
+      api.getAtencionMedicaData(),
       api.getSeguimientos({ pais }),
       api.getEmpleados(),
     ]).then(([casosRes, atencionesRes, seguimientosRes, empleadosRes]) => {
-      // Fake multiple atenciones
-      const fakeAtenciones: AtencionMedica[] = [
-          { idAtencion: 1, idCita: "1", idCaso: "1", idMedico: "1", fechaAtencion: "2024-07-29T10:00:00Z", diagnosticoPrincipal: "Cefalea Tensional", estadoClinico: "REGULAR", requiereSeguimiento: true },
-          { idAtencion: 2, idCita: "2", idCaso: "2", idMedico: "2", fechaAtencion: "2024-07-30T11:00:00Z", diagnosticoPrincipal: "Gripe Común", estadoClinico: "BIEN", requiereSeguimiento: false },
-          { idAtencion: 3, idCita: "4", idCaso: "3", idMedico: "1", fechaAtencion: "2024-07-28T12:00:00Z", diagnosticoPrincipal: "Alergia Estacional", estadoClinico: "BIEN", requiereSeguimiento: false },
-      ];
-
       setData({
           casos: casosRes as any,
-          atenciones: fakeAtenciones,
+          atenciones: atencionesRes as any,
           seguimientos: seguimientosRes,
           empleados: empleadosRes,
       });
@@ -88,6 +81,7 @@ export default function DashboardAdminPage() {
     });
 
     let filteredAtenciones = data.atenciones.filter(atencion => {
+        if (!atencion.fechaAtencion) return false;
         const atencionDate = new Date(atencion.fechaAtencion);
         return atencionDate >= fromDate && atencionDate <= toDate;
     });
@@ -103,7 +97,7 @@ export default function DashboardAdminPage() {
 
         // This logic is flawed because mock data is not fully relational
         // filteredCasos = filteredCasos.filter(c => c.paciente && setCarnets.has(c.paciente.carnet));
-        // filteredAtenciones = filteredAtenciones.filter(a => a.paciente && setCarnets.has(a.paciente.carnet));
+        filteredAtenciones = filteredAtenciones.filter(a => a.paciente && setCarnets.has(a.paciente.carnet));
     }
 
     return { casos: filteredCasos, atenciones: filteredAtenciones, seguimientos: filteredSeguimientos };
@@ -143,6 +137,7 @@ export default function DashboardAdminPage() {
   }, [filteredData]);
   
   const atencionesPorGerencia = useMemo(() => {
+    if (!filteredData.atenciones || !data.empleados) return [];
     return filteredData.atenciones.reduce((acc, atencion) => {
       const empleado = data.empleados.find(e => e.carnet === atencion.paciente?.carnet);
       const gerencia = empleado?.gerencia || 'Desconocida';
@@ -157,6 +152,7 @@ export default function DashboardAdminPage() {
   }, [filteredData.atenciones, data.empleados]);
   
   const topDiagnosticos = useMemo(() => {
+      if (!filteredData.atenciones) return [];
       const allDiagnosticos = filteredData.atenciones.map(a => a.diagnosticoPrincipal).filter(Boolean);
       const counts = allDiagnosticos.reduce((acc, value) => {
           acc[value] = (acc[value] || 0) + 1;

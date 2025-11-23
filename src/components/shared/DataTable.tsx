@@ -59,6 +59,8 @@ export function DataTable<T extends { [key: string]: any }>({ columns, data, fil
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
+  
+  const actionsColumn = columns.find(c => String(c.accessor) === 'actions' || c.header.toLowerCase() === 'acciones');
 
   return (
     <div className="space-y-4">
@@ -102,9 +104,9 @@ export function DataTable<T extends { [key: string]: any }>({ columns, data, fil
                   );
                 })}
                  {/* Render actions at the bottom of the card */}
-                 {columns.find(c => String(c.accessor) === 'actions' || c.header.toLowerCase() === 'acciones') && (
+                 {actionsColumn && (
                     <div className="flex justify-end border-t pt-3 mt-3">
-                      {columns.find(c => String(c.accessor) === 'actions' || c.header.toLowerCase() === 'acciones')!.cell!(row)}
+                      {actionsColumn.cell!(row)}
                     </div>
                  )}
               </CardContent>

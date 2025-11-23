@@ -3,7 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
 interface SemaforoBadgeProps {
-  nivel: 'V' | 'A' | 'R' | string;
+  nivel: 'V' | 'A' | 'R' | string | null | undefined;
   className?: string;
 }
 
@@ -15,6 +15,9 @@ const statusConfig = {
 
 
 export function SemaforoBadge({ nivel, className }: SemaforoBadgeProps) {
+  if (!nivel) {
+    return <Badge variant="outline" className={cn("font-normal bg-gray-100 text-gray-800 border-gray-200", className)}>N/A</Badge>;
+  }
   const config = statusConfig[nivel as keyof typeof statusConfig] || { text: nivel, className: "bg-gray-100 text-gray-800 border-gray-200" };
 
   return (

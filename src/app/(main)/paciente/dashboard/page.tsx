@@ -60,6 +60,7 @@ export default function DashboardPacientePage() {
                 timeline.push({ title: `Chequeo de Bienestar`, date: ultimoChequeoData.fechaRegistro });
             }
             const misCasosIds = new Set(casosClinicos.filter(c => c.idPaciente === pacienteId).map(c => c.id));
+            
             const misAtenciones = atenciones
                 .filter(a => a.idCaso && misCasosIds.has(a.idCaso))
                 .sort((a,b) => new Date(b.fechaAtencion).getTime() - new Date(a.fechaAtencion).getTime());
@@ -94,7 +95,7 @@ export default function DashboardPacientePage() {
     } else if (!profileLoading && !userProfile?.idPaciente) {
         setLoading(false);
     }
-  }, [userProfile, profileLoading, toast]);
+  }, [userProfile?.idPaciente, profileLoading, toast]);
 
   if (loading) return (
       <div className="space-y-6">

@@ -49,13 +49,13 @@ export default function AgendaCalendarioPage() {
           id: `cita-${cita.idCita}`,
           date: new Date(cita.fechaCita),
           type: cita.estadoCita === 'FINALIZADA' ? 'atencion' : 'cita',
-          title: `${cita.horaCita} - ${cita.paciente.nombreCompleto}`,
+          title: `${cita.horaCita} - ${cita.paciente?.nombreCompleto || 'Paciente'}`,
           description: cita.motivoResumen,
           data: cita
         }));
 
         const seguimientosEvents = seguimientosRes
-          .filter(s => s.estadoSeguimiento === 'PENDIENTE')
+          .filter(s => s.estadoSeguimiento === 'PENDIENTE' && s.usuarioResponsable.includes(userProfile.nombreCompleto))
           .map((seg): CalendarEvent => ({
             id: `seg-${seg.idSeguimiento}`,
             date: new Date(seg.fechaProgramada),
@@ -65,7 +65,21 @@ export default function AgendaCalendarioPage() {
             data: seg
         }));
 
-        setEvents([...citasEvents, ...seguimientosEvents]);
+        const allEvents = [...citasEvents, ...seguimientosEvents];
+        allEvents.sort((a,b) => {
+            const dateA = new Date(a.date);
+            const dateB = new Date(b.date);
+            if (dateA.getTime() !== dateB.getTime()) {
+                return dateA.getTime() - dateB.getTime();
+            }
+            // If dates are same, sort by time (from title)
+            const timeA = (a.title.match(/(\d{2}:\d{2})/) || [])[0];
+            const timeB = (b.title.match(/(\d{2}:\d{2})/) || [])[0];
+            if (timeA && timeB) return timeA.localeCompare(timeB);
+            return 0;
+        });
+
+        setEvents(allEvents);
         setLoading(false);
       }).catch(err => {
         console.error("Failed to load calendar data:", err);
