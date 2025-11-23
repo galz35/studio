@@ -67,6 +67,13 @@ export interface ChequeoBienestar {
   estadoChequeo: string;
 }
 
+export interface TriajeIA {
+    nivel_urgencia: "Baja" | "Moderada" | "Alta" | "Emergencia";
+    especialidad_sugerida: string;
+    resumen_medico: string;
+    accion_recomendada: string;
+}
+
 export interface CasoClinico {
   idCaso?: number;
   id?: string;
@@ -81,6 +88,7 @@ export interface CasoClinico {
   diagnosticoUsuario?: string;
   datosExtra?: any; // To store the full payload from the wizard
   pais: Pais;
+  triajeIA?: TriajeIA | null;
 }
 
 export interface CitaMedica {

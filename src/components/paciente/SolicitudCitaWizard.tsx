@@ -159,6 +159,7 @@ export function SolicitudCitaWizard() {
             diagnosticoUsuario: 'Autodiagnóstico por solicitud',
             datosExtra: payload.DatosExtraJSON,
             pais: pais,
+            triajeIA: null, // Campo para el análisis de la IA
         };
 
         try {
@@ -214,7 +215,7 @@ export function SolicitudCitaWizard() {
                         </Button>
                     ) : (
                         <Button onClick={handleSubmit} disabled={isLoading}>
-                            {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Solicitando...</> : 'Solicitar Cita'}
+                            {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Enviando Chequeo...</> : 'Enviar Chequeo'}
                         </Button>
                     )}
                 </div>
@@ -225,7 +226,7 @@ export function SolicitudCitaWizard() {
                     <AlertDialogHeader>
                         <AlertDialogTitle>¡Solicitud Registrada!</AlertDialogTitle>
                         <AlertDialogDescription>
-                           Hemos recibido tu solicitud. El equipo médico se pondrá en contacto contigo pronto.
+                           Hemos recibido tu solicitud. Nuestro sistema de IA la pre-analizará y el equipo médico se pondrá en contacto contigo pronto.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <div className="text-sm space-y-3 max-h-60 overflow-y-auto">
@@ -242,7 +243,7 @@ export function SolicitudCitaWizard() {
                         </div>
                     </div>
                     <AlertDialogFooter>
-                        <AlertDialogAction onClick={resetWizard}>Nueva Solicitud</AlertDialogAction>
+                        <AlertDialogAction onClick={resetWizard}>Cerrar</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
