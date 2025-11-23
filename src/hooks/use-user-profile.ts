@@ -8,7 +8,7 @@ import { useFirebase } from '@/firebase/provider';
 import { doc } from 'firebase/firestore';
 import { UsuarioAplicacion, Pais, Rol } from '@/lib/types/domain';
 import { useToast } from './use-toast';
-import { mockUsuarios } from '@/lib/mock/usuarios.mock';
+import { usuarios } from '@/lib/mock/usuarios.mock';
 
 const getDashboardUrl = (rol: Rol) => {
   switch (rol) {
@@ -53,9 +53,9 @@ export const useUserProfile = () => {
         const carnet = email.split('@')[0].toUpperCase();
         // Use the role that was last stored, or default to the first one found
         const storedRole = localStorage.getItem('activeRole') as Rol;
-        let profile = mockUsuarios.find(u => u.carnet === carnet && u.rol === storedRole);
+        let profile = usuarios.find(u => u.carnet === carnet && u.rol === storedRole);
         if (!profile) {
-            profile = mockUsuarios.find(u => u.carnet === carnet);
+            profile = usuarios.find(u => u.carnet === carnet);
         }
 
         if (profile) {
@@ -90,7 +90,7 @@ export const useUserProfile = () => {
         const email = user?.email;
         if(email) {
             const carnet = email.split('@')[0].toUpperCase();
-            const newProfile = mockUsuarios.find(u => u.carnet === carnet && u.rol === newRole);
+            const newProfile = usuarios.find(u => u.carnet === carnet && u.rol === newRole);
             if (newProfile) {
                 setUserProfile(newProfile);
                 setActiveRole(newRole);
