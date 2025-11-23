@@ -34,7 +34,7 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
-  const { login, loading, user } = useAuth();
+  const { login, loading, usuarioActual } = useAuth();
   const router = useRouter();
 
   const form = useForm<LoginFormValues>({
@@ -47,10 +47,10 @@ export default function LoginPage() {
   useEffect(() => {
     // If user is authenticated, redirect them to the main layout
     // The main layout will handle role-based redirection
-    if (user) {
+    if (usuarioActual) {
       router.push("/paciente/dashboard"); // Default redirect
     }
-  }, [user, router]);
+  }, [usuarioActual, router]);
 
   const onSubmit: SubmitHandler<LoginFormValues> = async (data) => {
     await login(data.carnet);

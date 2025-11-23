@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
-  const { user, loading: authLoading } = useAuth();
+  const { usuarioActual, loading: authLoading } = useAuth();
   const { userProfile, loading: profileLoading } = useUserProfile();
   const router = useRouter();
   const isMobile = useIsMobile();
@@ -19,10 +19,10 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
   useEffect(() => {
     // If auth has loaded and there's no user, redirect to login
-    if (!authLoading && !user) {
+    if (!authLoading && !usuarioActual) {
       router.push("/login");
     }
-  }, [user, authLoading, router]);
+  }, [usuarioActual, authLoading, router]);
 
   useEffect(() => {
     if (isMobile) {
@@ -45,7 +45,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   
   const loading = authLoading || profileLoading;
 
-  if (loading || !user || !userProfile) {
+  if (loading || !usuarioActual || !userProfile) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
         Cargando...
