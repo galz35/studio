@@ -56,12 +56,26 @@ export async function GET(request: Request) {
         const seguimientosActivos = seguimientosSnap.size;
 
         // 5. Construir Timeline (ejemplo)
-        const atencionesQuery = query(collection(firestore, 'atencionesMedicas'), where('idPaciente', '==', idPaciente), orderBy('fechaAtencion', 'desc'), limit(2));
-        const atencionesSnap = await getDocs(atencionesQuery);
-        const timeline = atencionesSnap.docs.map(d => {
-            const data = d.data() as AtencionMedica;
-            return { title: `Atención: ${data.diagnosticoPrincipal}`, date: data.fechaAtencion };
-        });
+        const casosQuery = query(collection(firestore, 'casosClinicos'), where('idPaciente', '==', idPaciente));
+        const casosSnap = await getDocs(casosQuery);
+        const casosIds = casosSnap.docs.map(d => d.id);
+        
+        let timeline: { title: string; date: string }[] = [];
+
+        if (casosIds.length > 0) {
+            const atencionesQuery = query(
+                collection(firestore, 'atencionesMedicas'), 
+                where('idCaso', 'in', casosIds), 
+                orderBy('fechaAtencion', 'desc'), 
+                limit(2)
+            );
+            const atencionesSnap = await getDocs(atencionesQuery);
+            timeline = atencionesSnap.docs.map(d => {
+                const data = d.data() as AtencionMedica;
+                return { title: `Atención: ${data.diagnosticoPrincipal}`, date: data.fechaAtencion };
+            });
+        }
+
         if (ultimoChequeoData) {
             timeline.push({ title: `Chequeo de Bienestar`, date: ultimoChequeoData.fechaRegistro });
         }
