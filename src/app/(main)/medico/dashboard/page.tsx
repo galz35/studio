@@ -12,6 +12,9 @@ import { CitaMedica, Paciente, CasoClinico } from '@/lib/types/domain';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { Skeleton } from '@/components/ui/skeleton';
+
+type PopulatedCita = CitaMedica & { paciente: Paciente | null, caso: CasoClinico | null, id: string };
 
 type DashboardData = {
   kpis: {
@@ -20,7 +23,7 @@ type DashboardData = {
     seguimientosPendientes: number;
     examenesSinResultado: number;
   };
-  citasDelDia: (CitaMedica & { paciente: Paciente, caso: CasoClinico | null })[];
+  citasDelDia: PopulatedCita[];
   alertas: { message: string, type: 'danger' | 'warning' }[];
 };
 
@@ -32,38 +35,43 @@ export default function DashboardMedicoPage() {
 
   useEffect(() => {
     if (usuarioActual?.idMedico) {
-      // In a real app, you would fetch this data from your API
-      // For now, we simulate a fetch and construct the data
-      Promise.all([
-        fetch(`/api/citas?idMedico=${usuarioActual.idMedico}&pais=${pais}`).then(res => res.json()),
-        fetch(`/api/seguimientos?pais=${pais}`).then(res => res.json()),
-        fetch(`/api/examenes?pais=${pais}`).then(res => res.json()),
-        fetch(`/api/pacientes?pais=${pais}`).then(res => res.json()),
-      ]).then(([citas, seguimientos, examenes, pacientes]) => {
-        const hoy = new Date().toISOString().split('T')[0];
-        const citasDelDia = citas.filter((c: CitaMedica) => c.fechaCita === hoy);
-        
-        const dashboardData = {
-          kpis: {
-            citasHoy: citasDelDia.length,
-            pacientesEnRojo: pacientes.filter((p: Paciente) => p.nivelSemaforo === 'R').length,
-            seguimientosPendientes: seguimientos.filter((s: any) => s.estadoSeguimiento === 'PENDIENTE').length,
-            examenesSinResultado: examenes.filter((e: any) => e.estadoExamen === 'PENDIENTE').length,
-          },
-          citasDelDia: citasDelDia,
-          alertas: [
-            // Mock alerts
-            { message: 'Luis García ha reportado semáforo ROJO por 3 días seguidos.', type: 'danger' as const },
-            { message: 'Seguimiento de Mariana López está vencido.', type: 'warning' as const },
-          ]
-        };
-        setData(dashboardData);
-        setLoading(false);
-      });
+      setLoading(true);
+      fetch(`/api/medico/dashboard?idMedico=${usuarioActual.idMedico}&pais=${pais}`)
+        .then(res => {
+            if(!res.ok) throw new Error("No se pudo cargar el dashboard del médico.");
+            return res.json();
+        })
+        .then(dashboardData => {
+          setData(dashboardData);
+          setLoading(false);
+        }).catch(err => {
+            console.error(err);
+            setLoading(false);
+        });
     }
   }, [usuarioActual, pais]);
 
-  if (loading) return <div>Cargando dashboard...</div>;
+  if (loading) return (
+    <div className="space-y-6">
+        <Skeleton className="h-9 w-72" />
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <Skeleton className="h-28 w-full" />
+            <Skeleton className="h-28 w-full" />
+            <Skeleton className="h-28 w-full" />
+            <Skeleton className="h-28 w-full" />
+        </div>
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+             <Card className="lg:col-span-2">
+                <CardHeader><Skeleton className="h-6 w-48" /></CardHeader>
+                <CardContent><Skeleton className="h-40 w-full" /></CardContent>
+            </Card>
+             <Card>
+                <CardHeader><Skeleton className="h-6 w-32" /></CardHeader>
+                <CardContent><Skeleton className="h-40 w-full" /></CardContent>
+            </Card>
+        </div>
+    </div>
+  );
   if (!data) return <div>No se pudo cargar la información.</div>;
   
   const { kpis, citasDelDia, alertas } = data;
@@ -96,14 +104,14 @@ export default function DashboardMedicoPage() {
               </TableHeader>
               <TableBody>
                 {citasDelDia.length > 0 ? citasDelDia.map(cita => (
-                  <TableRow key={cita.idCita}>
+                  <TableRow key={cita.id}>
                     <TableCell>{cita.horaCita}</TableCell>
                     <TableCell>{cita.paciente?.nombreCompleto || 'N/A'}</TableCell>
                     <TableCell>{cita.motivoResumen || "N/A"}</TableCell>
                     <TableCell>{cita.estadoCita}</TableCell>
                     <TableCell><SemaforoBadge nivel={cita.paciente?.nivelSemaforo!} /></TableCell>
                     <TableCell>
-                      <Button size="sm" onClick={() => router.push(`/medico/atencion/${cita.idCita}`)}>
+                      <Button size="sm" onClick={() => router.push(`/medico/atencion/${cita.id}`)}>
                         Atender
                       </Button>
                     </TableCell>

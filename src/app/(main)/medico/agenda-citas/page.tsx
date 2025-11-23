@@ -46,8 +46,8 @@ export default function GestionCitasPage() {
     setIsLoading(true);
     try {
         const [casosRes, medicosRes] = await Promise.all([
-            fetch(`/api/casos?pais=${pais}&estado=abierto`),
-            fetch(`/api/medicos`)
+            fetch(`/api/casos?pais=${pais}&estado=abierto&estado=Triaje-IA`),
+            fetch(`/api/medicos?pais=${pais}`)
         ]);
 
         if (!casosRes.ok || !medicosRes.ok) {
@@ -69,6 +69,7 @@ export default function GestionCitasPage() {
 
   useEffect(() => {
     fetchData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pais]);
   
 
@@ -96,7 +97,7 @@ export default function GestionCitasPage() {
             throw new Error(await response.text());
         }
 
-        toast({ title: 'Cita Agendada', description: `Se ha agendado una cita para ${selectedCaso.paciente?.nombreCompleto}.` });
+        toast({ title: 'Cita Agendada', description: `Se ha agendado una cita para el paciente.` });
         setAgendarOpen(false);
         setSelectedCaso(null);
         fetchData(); // Refresh data
@@ -111,7 +112,7 @@ export default function GestionCitasPage() {
   const handleCancelar = async (caso: CasoConPaciente) => {
      const isConfirmed = await confirm({
         title: '¿Confirmar Cancelación?',
-        description: `Esta acción marcará la solicitud de ${caso.paciente?.nombreCompleto} como cancelada. No se puede deshacer.`
+        description: `Esta acción marcará la solicitud del paciente como cancelada. No se puede deshacer.`
      });
 
      if (isConfirmed) {
@@ -124,7 +125,7 @@ export default function GestionCitasPage() {
             });
             if (!response.ok) throw new Error('No se pudo cancelar la solicitud.');
 
-            toast({ title: 'Solicitud Cancelada', description: `Se ha cancelado la solicitud de ${caso.paciente?.nombreCompleto}.`, variant: 'destructive'});
+            toast({ title: 'Solicitud Cancelada', description: `Se ha cancelado la solicitud.`, variant: 'destructive'});
             fetchData(); // Refresh data
         } catch (e: any) {
             console.error(e);

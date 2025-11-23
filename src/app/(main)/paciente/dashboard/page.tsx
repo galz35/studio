@@ -8,6 +8,7 @@ import { SemaforoBadge } from '@/components/shared/SemaforoBadge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChequeoBienestar } from '@/lib/types/domain';
 import { EmptyState } from '@/components/shared/EmptyState';
+import { Skeleton } from '@/components/ui/skeleton';
 
 type DashboardData = {
   kpis: {
@@ -26,22 +27,42 @@ export default function DashboardPacientePage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (usuarioActual?.id) {
-        fetch(`/api/pacientes/${usuarioActual.id}/dashboard`)
-            .then(res => res.json())
+    if (usuarioActual?.idPaciente) {
+        setLoading(true);
+        fetch(`/api/paciente/dashboard?idPaciente=${usuarioActual.idPaciente}`)
+            .then(res => {
+                if(!res.ok) throw new Error("No se pudo cargar el panel del paciente.");
+                return res.json()
+            })
             .then(data => {
                 setData(data);
-                setLoading(false);
             })
             .catch(err => {
                 console.error(err);
+            }).finally(() => {
                 setLoading(false);
             });
+    } else {
+        setLoading(false);
     }
   }, [usuarioActual]);
 
-  if (loading) return <div>Cargando panel...</div>;
-  if (!data) return <EmptyState title="No se pudo cargar el panel" />;
+  if (loading) return (
+      <div className="space-y-6">
+        <Skeleton className="h-9 w-64" />
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <Skeleton className="h-28 w-full" />
+            <Skeleton className="h-28 w-full" />
+            <Skeleton className="h-28 w-full" />
+            <Skeleton className="h-28 w-full" />
+        </div>
+        <div className="grid gap-6 md:grid-cols-2">
+            <Skeleton className="h-48 w-full" />
+            <Skeleton className="h-48 w-full" />
+        </div>
+      </div>
+  );
+  if (!data) return <EmptyState title="No se pudo cargar el panel" message="Por favor, intenta de nuevo más tarde."/>;
 
   const { kpis, ultimoChequeoData, timeline } = data;
 
@@ -89,6 +110,7 @@ export default function DashboardPacientePage() {
                   </div>
                 </li>
               ))}
+              {timeline.length === 0 && <p className="text-sm text-muted-foreground">No hay eventos recientes.</p>}
             </ul>
           </CardContent>
         </Card>
