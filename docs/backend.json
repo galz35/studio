@@ -629,6 +629,44 @@
         "carnetJefe",
         "pais"
       ]
+    },
+    "Log": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "Log",
+        "type": "object",
+        "description": "Represents a generic log entry for auditing and debugging.",
+        "properties": {
+            "idLog": {
+                "type": "string",
+                "description": "Unique identifier for the log entry."
+            },
+            "timestamp": {
+                "type": "string",
+                "format": "date-time",
+                "description": "The date and time when the event occurred."
+            },
+            "userId": {
+                "type": "string",
+                "description": "The ID of the user who triggered the event."
+            },
+            "userCarnet": {
+                "type": "string",
+                "description": "The carnet of the user."
+            },
+            "type": {
+                "type": "string",
+                "description": "The type of log entry (e.g., 'LOGIN_SUCCESS', 'LOGIN_FAILURE', 'DATA_UPDATE', 'APP_ERROR')."
+            },
+            "message": {
+                "type": "string",
+                "description": "A human-readable message describing the event."
+            },
+            "details": {
+                "type": "object",
+                "description": "A JSON object containing additional details, like the error stack trace or the data that was changed."
+            }
+        },
+        "required": ["idLog", "timestamp", "userId", "type", "message"]
     }
   },
   "auth": {
@@ -795,6 +833,22 @@
             {
               "name": "carnet",
               "description": "The unique employee identification number."
+            }
+          ]
+        }
+      },
+       {
+        "path": "/logs/{logId}",
+        "definition": {
+          "entityName": "Log",
+          "schema": {
+            "$ref": "#/backend/entities/Log"
+          },
+          "description": "Stores audit and error logs for the application.",
+          "params": [
+            {
+              "name": "logId",
+              "description": "The unique identifier for the log entry."
             }
           ]
         }

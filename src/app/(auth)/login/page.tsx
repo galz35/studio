@@ -112,9 +112,10 @@ export default function LoginPage() {
             <CardTitle className="text-base">Usuarios de Prueba</CardTitle>
         </CardHeader>
         <CardContent className="text-sm space-y-2">
-            <p><strong>Paciente:</strong> carnet `P001` (password: `password`)</p>
-            <p><strong>Médico:</strong> carnet `M001` (password: `password`)</p>
-            <p><strong>Admin:</strong> carnet `A001` (password: `password`)</p>
+            <p><strong>Paciente:</strong> carnet `P001`</p>
+            <p><strong>Médico:</strong> carnet `M001`</p>
+            <p><strong>Admin:</strong> carnet `A001`</p>
+            <p className="font-semibold">Contraseña para todos: <code className="bg-muted px-2 py-1 rounded">12345</code></p>
         </CardContent>
       </Card>
     </Card>

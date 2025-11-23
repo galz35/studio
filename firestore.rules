@@ -239,5 +239,18 @@ service cloud.firestore {
       allow update: if false;
       allow delete: if false;
     }
+    
+    /**
+     * @description Stores audit and error logs. Writable by any authenticated user, readable only by admins.
+     * @path /logs/{logId}
+     * @allow (create) Any authenticated user can write a log entry (e.g., log a login attempt or an error).
+     * @deny (read, update, delete) Prevents users from reading or tampering with logs. Admins have full read access.
+     * @principle Allows for comprehensive auditing while maintaining the integrity and confidentiality of log data.
+     */
+    match /logs/{logId} {
+        allow create: if isSignedIn();
+        allow get, list: if isAdmin();
+        allow update, delete: if false;
+    }
   }
 }
