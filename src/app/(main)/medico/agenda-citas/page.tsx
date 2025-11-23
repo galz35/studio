@@ -18,6 +18,16 @@ import {
   DialogClose,
   DialogFooter
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -37,6 +47,7 @@ export default function GestionCitasPage() {
   const [selectedCaso, setSelectedCaso] = useState<CasoConPaciente | null>(null);
   const [isAgendarOpen, setAgendarOpen] = useState(false);
   const [isCancelarOpen, setCancelarOpen] = useState(false);
+  const [motivoCancelacion, setMotivoCancelacion] = useState("");
 
 
   useEffect(() => {
@@ -71,13 +82,18 @@ export default function GestionCitasPage() {
     setSelectedCaso(null);
   };
   
-  const handleCancelar = (motivo: string) => {
+  const handleCancelar = () => {
      if (!selectedCaso) return;
-     console.log(`Caso ${selectedCaso.idCaso} cancelado por: ${motivo}`);
+     if (!motivoCancelacion) {
+        toast({ title: 'Error', description: 'Debe especificar un motivo para la cancelación.', variant: 'destructive'});
+        return;
+     }
+     console.log(`Caso ${selectedCaso.idCaso} cancelado por: ${motivoCancelacion}`);
      toast({ title: 'Solicitud Cancelada', description: `Se ha cancelado la solicitud de ${selectedCaso.paciente.nombreCompleto}.`, variant: 'destructive'});
      setCasos(prev => prev.filter(c => c.idCaso !== selectedCaso.idCaso));
      setCancelarOpen(false);
      setSelectedCaso(null);
+     setMotivoCancelacion("");
   }
 
 
@@ -172,27 +188,30 @@ export default function GestionCitasPage() {
       </Dialog>
       
       {/* Cancelar Modal */}
-      <Dialog open={isCancelarOpen} onOpenChange={(open) => { if(!open) setSelectedCaso(null); setCancelarOpen(open); }}>
-        <DialogContent>
-             <DialogHeader>
-                <DialogTitle>Cancelar Solicitud de {selectedCaso?.paciente.nombreCompleto}</DialogTitle>
-             </DialogHeader>
-             <form id="cancelar-form" onSubmit={(e) => {
-                 e.preventDefault();
-                 const motivo = (e.currentTarget.elements.namedItem('motivo-cancelacion') as HTMLTextAreaElement).value;
-                 handleCancelar(motivo);
-             }}>
-                <div className="space-y-4 py-4">
-                     <Label htmlFor="motivo-cancelacion">Motivo de la cancelación</Label>
-                     <Textarea id="motivo-cancelacion" name="motivo-cancelacion" placeholder="Especifique por qué se cancela la solicitud (ej: datos insuficientes, contactado por otro medio, etc.)" required/>
-                </div>
-                 <DialogFooter>
-                    <DialogClose asChild><Button type="button" variant="ghost">Cerrar</Button></DialogClose>
-                    <Button type="submit" variant="destructive">Confirmar Cancelación</Button>
-                </DialogFooter>
-             </form>
-        </DialogContent>
-      </Dialog>
+      <AlertDialog open={isCancelarOpen} onOpenChange={(open) => { if(!open) setSelectedCaso(null); setCancelarOpen(open); }}>
+        <AlertDialogContent>
+             <AlertDialogHeader>
+                <AlertDialogTitle>¿Está seguro que desea cancelar la solicitud?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Esta acción no se puede deshacer. La solicitud de {selectedCaso?.paciente.nombreCompleto} será marcada como cancelada.
+                </AlertDialogDescription>
+             </AlertDialogHeader>
+             <div className="space-y-2">
+                 <Label htmlFor="motivo-cancelacion">Motivo de la cancelación (requerido)</Label>
+                 <Textarea 
+                    id="motivo-cancelacion" 
+                    name="motivo-cancelacion" 
+                    placeholder="Especifique por qué se cancela la solicitud (ej: datos insuficientes, contactado por otro medio, etc.)"
+                    value={motivoCancelacion}
+                    onChange={(e) => setMotivoCancelacion(e.target.value)}
+                  />
+             </div>
+             <AlertDialogFooter>
+                <AlertDialogCancel onClick={() => setMotivoCancelacion("")}>Cerrar</AlertDialogCancel>
+                <AlertDialogAction onClick={handleCancelar} disabled={!motivoCancelacion}>Confirmar Cancelación</AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
     </div>
   );
