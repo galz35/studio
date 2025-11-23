@@ -3,7 +3,9 @@
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { User, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, doc, setDoc } from 'firebase/firestore';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 import type { UsuarioAplicacion, Rol, Pais } from '@/lib/types/domain';
 import { useToast } from '@/hooks/use-toast';
@@ -35,25 +37,26 @@ const getDashboardUrl = (rol: Rol) => {
   }
 };
 
-const logAuditEvent = async (type: string, userCarnet: string, userId: string, message: string, details: object = {}) => {
-  try {
-    await fetch('/api/logs', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        type,
-        userCarnet,
-        userId,
-        message,
-        details,
-      }),
-    });
-  } catch (error) {
-    console.error("Failed to write to audit log:", error);
-    // Non-critical, so we don't show a toast to the user
-  }
+const logAuditEvent = (firestore: any, type: string, userCarnet: string, userId: string, message: string, details: object = {}) => {
+  const logEntry = {
+      type,
+      userCarnet,
+      userId,
+      message,
+      details,
+      timestamp: new Date().toISOString(), // Use client time for simplicity here
+  };
+  const logRef = doc(collection(firestore, 'logs'));
+
+  // Use a non-blocking setDoc and catch permission errors
+  setDoc(logRef, logEntry).catch(error => {
+      const contextualError = new FirestorePermissionError({
+          path: logRef.path,
+          operation: 'create',
+          requestResourceData: logEntry,
+      });
+      errorEmitter.emit('permission-error', contextualError);
+  });
 };
 
 
@@ -83,7 +86,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
 
   useEffect(() => {
-    const internalLoading = isUserLoading || !auth;
+    const internalLoading = isUserLoading || !auth || allUsers.length === 0;
     setLoading(internalLoading);
 
     if (!internalLoading && firebaseUser) {
@@ -145,7 +148,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const userWithCountry = { ...userForLogin, pais };
         setUsuarioActual(userWithCountry);
         localStorage.setItem('usuarioActual', JSON.stringify(userWithCountry));
-        await logAuditEvent('LOGIN_SUCCESS', carnet, authedUser.uid, `User ${carnet} logged in successfully.`);
+        logAuditEvent(firestore, 'LOGIN_SUCCESS', carnet, authedUser.uid, `User ${carnet} logged in successfully.`);
         router.push(getDashboardUrl(userForLogin.rol));
     }
 
@@ -184,7 +187,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const logout = () => {
-    auth.signOut();
+    if(auth) auth.signOut();
     setUsuarioActual(null);
     localStorage.removeItem('usuarioActual');
     localStorage.removeItem('pais');
