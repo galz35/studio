@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { initializeFirebase } from '@/firebase';
-import { collection, addDoc, doc, updateDoc, writeBatch } from 'firebase/firestore';
+import { collection, doc, writeBatch } from 'firebase/firestore';
 
 // POST: /api/atenciones
 // Guarda un registro de atención médica completo, incluyendo vacunas y seguimientos.
