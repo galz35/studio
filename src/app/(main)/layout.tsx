@@ -50,32 +50,25 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <div className="flex min-h-screen w-full bg-background">
-       {/* Mobile Sidebar */}
-      <div 
-        className={cn(
-            "fixed inset-y-0 left-0 z-50 h-full w-64 bg-primary text-primary-foreground flex-col border-r border-primary-foreground/10 transition-transform duration-300 ease-in-out md:hidden",
-            isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-        )}
-      >
-        <Sidebar isCollapsed={false} toggleSidebar={toggleSidebar} />
-      </div>
-      
+      {/* Mobile Sidebar Overlay */}
       {isMobile && isSidebarOpen && (
          <div className="fixed inset-0 z-40 bg-black/60" onClick={toggleSidebar} />
       )}
-
-      {/* Desktop Sidebar */}
-      <div className={cn(
-        "hidden md:flex transition-all duration-300 ease-in-out",
-        isSidebarCollapsed ? "w-20" : "w-64"
-      )}>
-         <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
+      
+      {/* Sidebar Container */}
+      <div 
+        className={cn(
+            "fixed inset-y-0 left-0 z-50 h-full bg-primary text-primary-foreground flex-col border-r border-primary-foreground/10 transition-transform duration-300 ease-in-out md:relative md:translate-x-0",
+            // Mobile state
+            isMobile && (isSidebarOpen ? "translate-x-0" : "-translate-x-full"),
+            // Desktop state
+            !isMobile && (isSidebarCollapsed ? "w-20" : "w-64")
+        )}
+      >
+        <Sidebar isCollapsed={isMobile ? false : isSidebarCollapsed} toggleSidebar={toggleSidebar} />
       </div>
 
-      <div className={cn(
-        "flex flex-1 flex-col transition-all duration-300 ease-in-out",
-        isMobile ? 'w-full' : (isSidebarCollapsed ? "md:ml-20" : "md:ml-64")
-      )}>
+      <div className="flex flex-1 flex-col">
         <Topbar toggleSidebar={toggleSidebar} />
         <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
            {children}
