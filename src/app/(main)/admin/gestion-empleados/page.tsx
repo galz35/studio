@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/hooks/use-auth';
-import * as api from '@/lib/services/api.mock';
 import { EmpleadoEmp2024 } from '@/lib/types/domain';
 import { DataTable } from '@/components/shared/DataTable';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,20 +9,26 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { UploadCloud } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useCollection, useMemoFirebase } from '@/firebase';
+import { useFirebase } from '@/firebase/provider';
+import { collection } from 'firebase/firestore';
 
 export default function GestionEmpleadosPage() {
   const { pais } = useAuth();
-  const [empleados, setEmpleados] = useState<EmpleadoEmp2024[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { firestore } = useFirebase();
 
-  useEffect(() => {
-    setLoading(true);
-    api.getEmpleados().then(empleadosRes => {
-      const empleadosDelPais = empleadosRes.filter(e => e.pais === pais);
-      setEmpleados(empleadosDelPais);
-      setLoading(false);
-    });
-  }, [pais]);
+  const empleadosQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return collection(firestore, 'empleadosEmp2024');
+  }, [firestore]);
+
+  const { data: empleadosData, isLoading } = useCollection<EmpleadoEmp2024>(empleadosQuery);
+
+  const empleadosDelPais = useMemo(() => {
+    if (!empleadosData) return [];
+    return empleadosData.filter(e => e.pais === pais);
+  }, [empleadosData, pais]);
+  
 
   const columns = [
     { accessor: 'carnet', header: 'Carnet' },
@@ -44,7 +49,7 @@ export default function GestionEmpleadosPage() {
     },
   ];
 
-  if (loading) return <div>Cargando empleados...</div>;
+  if (isLoading) return <div>Cargando empleados...</div>;
 
   return (
     <div className="space-y-6">
@@ -66,7 +71,7 @@ export default function GestionEmpleadosPage() {
             </CardDescription>
         </CardHeader>
         <CardContent>
-          <DataTable columns={columns} data={empleados} filterColumn="nombreCompleto" filterPlaceholder="Filtrar por nombre, carnet, etc..." />
+          <DataTable columns={columns} data={empleadosDelPais} filterColumn="nombreCompleto" filterPlaceholder="Filtrar por nombre, carnet, etc..." />
         </CardContent>
       </Card>
     </div>
