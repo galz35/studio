@@ -10,3 +10,4 @@ export * from './seguimientosGenerados.mock';
 export * from './usuarios.mock';
 export * from './vacunas.mock';
 export * from './psicosocial.mock';
+export * from './empleados.mock';

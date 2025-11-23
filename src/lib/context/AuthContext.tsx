@@ -2,10 +2,9 @@
 
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { useFirebase } from '@/firebase/provider';
 import { useToast } from '@/hooks/use-toast';
-import { usuarios } from '@/lib/mock/usuarios.mock';
-import { UsuarioAplicacion, Pais } from '../types/domain';
+import { usuarios } from '@/lib/mock';
+import { UsuarioAplicacion, Pais, Rol } from '../types/domain';
 
 export interface AuthContextType {
   usuarioActual: UsuarioAplicacion | null;
@@ -14,7 +13,7 @@ export interface AuthContextType {
   setPais: (pais: Pais) => void;
   login: (carnet: string) => Promise<void>;
   logout: () => void;
-  switchRole: (rol: 'PACIENTE' | 'MEDICO' | 'ADMIN') => void;
+  switchRole: (rol: Rol) => void;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -83,19 +82,37 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       localStorage.setItem('pais', newPais);
   }
 
-  const switchRole = (newRole: 'PACIENTE' | 'MEDICO' | 'ADMIN') => {
+  const switchRole = (newRole: Rol) => {
     if (usuarioActual) {
+        // Find a user profile that matches the original carnet but has the new role
         const potentialUser = usuarios.find(u => u.carnet === usuarioActual.carnet && u.rol === newRole);
+        
         if (potentialUser) {
             setUsuarioActual(potentialUser);
             localStorage.setItem('usuarioActual', JSON.stringify(potentialUser));
             router.push(getDashboardUrl(newRole));
         } else {
-            toast({
-                variant: 'destructive',
-                title: 'Rol no disponible',
-                description: 'No tiene acceso a este rol.'
-            });
+            // If no specific user for that role, we create a temporary one for navigation,
+            // but this logic might need to be more robust depending on requirements.
+            const baseUser = usuarios.find(u => u.carnet === usuarioActual.carnet);
+            if (baseUser) {
+                 const tempUser: UsuarioAplicacion = {
+                    ...baseUser,
+                    rol: newRole,
+                    // Reset role-specific IDs
+                    idPaciente: newRole === 'PACIENTE' ? baseUser.idPaciente : undefined,
+                    idMedico: newRole === 'MEDICO' ? baseUser.idMedico : undefined,
+                };
+                setUsuarioActual(tempUser);
+                localStorage.setItem('usuarioActual', JSON.stringify(tempUser));
+                router.push(getDashboardUrl(newRole));
+            } else {
+                 toast({
+                    variant: 'destructive',
+                    title: 'Rol no disponible',
+                    description: 'No tiene acceso a este rol.'
+                });
+            }
         }
     }
   }
