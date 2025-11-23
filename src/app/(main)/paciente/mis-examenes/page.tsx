@@ -26,8 +26,8 @@ export default function MisExamenesPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (userProfile?.id) {
-      fetch(`/api/pacientes/${userProfile.id}/examenes`)
+    if (userProfile?.idPaciente) {
+      fetch(`/api/pacientes/${userProfile.idPaciente}/examenes`)
         .then(res => res.json())
         .then(data => {
             setExamenes(data);

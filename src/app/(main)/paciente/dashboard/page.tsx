@@ -29,9 +29,9 @@ export default function DashboardPacientePage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (userProfile?.id) {
+    if (userProfile?.idPaciente) {
         setLoading(true);
-        fetch(`/api/paciente/dashboard?idPaciente=${userProfile.id}`)
+        fetch(`/api/paciente/dashboard?idPaciente=${userProfile.idPaciente}`)
             .then(res => {
                 if(!res.ok) throw new Error("No se pudo cargar el panel del paciente.");
                 return res.json()
@@ -49,10 +49,11 @@ export default function DashboardPacientePage() {
             }).finally(() => {
                 setLoading(false);
             });
-    } else {
+    } else if (userProfile && !userProfile.idPaciente) {
+        // Handle case where user is not a patient
         setLoading(false);
     }
-  }, [userProfile?.id, toast]);
+  }, [userProfile?.idPaciente, toast]);
 
   if (loading) return (
       <div className="space-y-6">
@@ -69,6 +70,7 @@ export default function DashboardPacientePage() {
         </div>
       </div>
   );
+  if (!userProfile?.idPaciente) return <EmptyState title="Perfil no es de Paciente" message="Este perfil no tiene un rol de paciente asociado."/>;
   if (!data) return <EmptyState title="No se pudo cargar el panel" message="Por favor, intenta de nuevo más tarde."/>;
 
   const { kpis, ultimoChequeoData, timeline } = data;

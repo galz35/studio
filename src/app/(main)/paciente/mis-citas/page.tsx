@@ -28,8 +28,8 @@ export default function MisCitasPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (userProfile?.id) {
-      fetch(`/api/pacientes/${userProfile.id}/citas`)
+    if (userProfile?.idPaciente) {
+      fetch(`/api/pacientes/${userProfile.idPaciente}/citas`)
         .then(res => res.json())
         .then(data => {
           setCitas(data);

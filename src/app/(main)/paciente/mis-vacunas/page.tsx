@@ -14,8 +14,8 @@ export default function MisVacunasPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (userProfile?.id) {
-      fetch(`/api/pacientes/${userProfile.id}/vacunas`)
+    if (userProfile?.idPaciente) {
+      fetch(`/api/pacientes/${userProfile.idPaciente}/vacunas`)
         .then(res => res.json())
         .then(data => {
           setVacunas(data);

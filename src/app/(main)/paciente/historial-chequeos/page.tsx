@@ -24,8 +24,8 @@ export default function HistorialChequeosPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (userProfile?.id) {
-      fetch(`/api/pacientes/${userProfile.id}/chequeos`)
+    if (userProfile?.idPaciente) {
+      fetch(`/api/pacientes/${userProfile.idPaciente}/chequeos`)
         .then(res => res.json())
         .then(data => {
             setChequeos(data);
