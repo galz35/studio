@@ -35,15 +35,15 @@ export const casosClinicos: CasoClinico[] = [
     id: "caso-003",
     idCaso: 3,
     codigoCaso: "CC-2024-003",
-    idPaciente: "paciente-001",
+    idPaciente: "paciente-001", // Corregido: Asignado al paciente P001
     idCita: "cita-004",
-    fechaCreacion: "2024-06-10",
-    estadoCaso: "Cerrado",
+    fechaCreacion: "2024-07-28", // Fecha actualizada
+    estadoCaso: "Abierto", // Corregido: De 'Cerrado' a 'Abierto' para que aparezca
     nivelSemaforo: "V",
-    motivoConsulta: "Alergia estacional leve.",
-    resumenClinicoUsuario: "Congestión nasal y estornudos por la mañana.",
-    diagnosticoUsuario: "Rinitis alérgica.",
-     datosExtra: { Habitos: { sueno: 'Bien'}, Psicosocial: { estres: 'Bajo', animo: 'Bien'}},
+    motivoConsulta: "Revisión de chequeo de bienestar.", // Motivo actualizado
+    resumenClinicoUsuario: "Paciente se siente bien pero solicita revisión general.",
+    diagnosticoUsuario: "Chequeo preventivo",
+    datosExtra: { Habitos: { sueno: 'Bien'}, Psicosocial: { estres: 'Bajo', animo: 'Bien'}},
     pais: "NI",
   },
   {

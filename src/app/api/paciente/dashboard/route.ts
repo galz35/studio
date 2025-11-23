@@ -62,6 +62,7 @@ export async function GET(request: Request) {
         const casosSnap = await getDocs(casosQuery);
         const casosIds = casosSnap.docs.map(d => d.id);
         
+        // Robustez: Solo buscar atenciones si existen casos clínicos.
         if (casosIds.length > 0) {
             const atencionesQuery = query(
                 collection(firestore, 'atencionesMedicas'), 
