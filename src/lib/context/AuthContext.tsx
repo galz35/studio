@@ -60,12 +60,16 @@ const logAuditEvent = async (type: string, userCarnet: string, userId: string, m
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [usuarioActual, setUsuarioActual] = useState<UsuarioAplicacion | null>(null);
   const [pais, setPaisState] = useState<Pais>('NI');
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
   const { toast } = useToast();
   const { auth, user: firebaseUser, isUserLoading } = useFirebase();
 
   useEffect(() => {
-    if (!isUserLoading && firebaseUser) {
+    const internalLoading = isUserLoading || !auth;
+    setLoading(internalLoading);
+
+    if (!internalLoading && firebaseUser) {
       try {
         const storedUser = localStorage.getItem('usuarioActual');
         const storedPais = localStorage.getItem('pais') as Pais;
@@ -76,8 +80,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             setPaisState(storedPais);
           }
         } else {
-            // This might happen if user is logged in to Firebase but localStorage is cleared
-            // We find the base user from mocks and set it.
             const baseUser = mockUsuarios.find(u => u.carnet.startsWith(firebaseUser.uid || ''));
             if(baseUser) {
                 setUsuarioActual(baseUser);
@@ -88,11 +90,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         console.error("Failed to parse user from localStorage", error);
         logout();
       }
-    } else if (!isUserLoading && !firebaseUser) {
+    } else if (!internalLoading && !firebaseUser) {
         setUsuarioActual(null);
         localStorage.removeItem('usuarioActual');
     }
-  }, [firebaseUser, isUserLoading]);
+  }, [firebaseUser, isUserLoading, auth]);
 
   const setPais = (newPais: Pais) => {
     setPaisState(newPais);
@@ -117,7 +119,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return;
     }
     
-    // Use a generic user object for login, then specify role for dashboard
     const userForLogin = user;
 
     const performLogin = async (authedUser: User) => {
@@ -135,6 +136,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch (error: any) {
         if (error.code === 'auth/user-not-found') {
             try {
+                // Pass the password to create the user correctly
                 const userCredential = await createUserWithEmailAndPassword(auth, `${lowerCaseCarnet}@corp.local`, password);
                 await performLogin(userCredential.user);
             } catch (creationError) {
@@ -191,7 +193,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     <AuthContext.Provider value={{ 
         usuarioActual, 
         isAuthenticated: !!firebaseUser && !!usuarioActual,
-        loading: isUserLoading,
+        loading: loading,
         pais,
         setPais,
         login, 
