@@ -44,17 +44,16 @@ const logAuditEvent = (firestore: any, type: string, userCarnet: string, userId:
       userId,
       message,
       details,
-      timestamp: new Date().toISOString(),
   };
+  
   // "Fire-and-forget" call to the log API
   fetch('/api/logs', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(logEntry),
   }).catch(error => {
-      // If the log fails, we don't want to block the user flow.
-      // We can log this to the console for client-side debugging if needed.
-      console.warn("Log submission failed:", error);
+      // This catch is for network errors, not for application-level errors from the API response.
+      console.warn("Log submission network request failed:", error);
   });
 };
 
@@ -79,6 +78,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             setAllUsers(usersList);
         } catch (error) {
             console.error("Failed to fetch all users:", error);
+            const permissionError = new FirestorePermissionError({
+                path: 'usuariosAplicacion',
+                operation: 'list',
+            });
+            errorEmitter.emit('permission-error', permissionError);
         }
     };
     fetchAllUsers();
