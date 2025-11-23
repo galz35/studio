@@ -3,9 +3,9 @@
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { User, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+import { collection, getDocs } from 'firebase/firestore';
 
 import type { UsuarioAplicacion, Rol, Pais } from '@/lib/types/domain';
-import { usuarios as mockUsuarios } from '@/lib/mock/usuarios.mock';
 import { useToast } from '@/hooks/use-toast';
 import { useFirebase } from '@/firebase';
 
@@ -59,11 +59,28 @@ const logAuditEvent = async (type: string, userCarnet: string, userId: string, m
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [usuarioActual, setUsuarioActual] = useState<UsuarioAplicacion | null>(null);
+  const [allUsers, setAllUsers] = useState<UsuarioAplicacion[]>([]);
   const [pais, setPaisState] = useState<Pais>('NI');
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const { toast } = useToast();
-  const { auth, user: firebaseUser, isUserLoading } = useFirebase();
+  const { auth, firestore, user: firebaseUser, isUserLoading } = useFirebase();
+
+  // Fetch all users from Firestore on initial load
+  useEffect(() => {
+    if (!firestore) return;
+    const fetchAllUsers = async () => {
+        try {
+            const usersSnapshot = await getDocs(collection(firestore, 'usuariosAplicacion'));
+            const usersList = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as UsuarioAplicacion));
+            setAllUsers(usersList);
+        } catch (error) {
+            console.error("Failed to fetch all users:", error);
+        }
+    };
+    fetchAllUsers();
+  }, [firestore]);
+
 
   useEffect(() => {
     const internalLoading = isUserLoading || !auth;
@@ -80,7 +97,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             setPaisState(storedPais);
           }
         } else {
-            const baseUser = mockUsuarios.find(u => u.carnet.startsWith(firebaseUser.uid || ''));
+            // Fallback to find user in our fetched list
+            const baseUser = allUsers.find(u => u.carnet.toLowerCase() === (firebaseUser.email?.split('@')[0] || ''));
             if(baseUser) {
                 setUsuarioActual(baseUser);
                 localStorage.setItem('usuarioActual', JSON.stringify(baseUser));
@@ -94,7 +112,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUsuarioActual(null);
         localStorage.removeItem('usuarioActual');
     }
-  }, [firebaseUser, isUserLoading, auth]);
+  }, [firebaseUser, isUserLoading, auth, allUsers]);
 
   const setPais = (newPais: Pais) => {
     setPaisState(newPais);
@@ -108,7 +126,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const login = async (carnet: string, password: string) => {
     const lowerCaseCarnet = carnet.toLowerCase();
-    let user = mockUsuarios.find(u => u.carnet.toLowerCase() === lowerCaseCarnet);
+    
+    // Find user from the comprehensive list fetched from Firestore
+    let user = allUsers.find(u => u.carnet.toLowerCase() === lowerCaseCarnet);
     
     if (!user) {
         toast({
@@ -136,17 +156,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch (error: any) {
         if (error.code === 'auth/user-not-found') {
             try {
-                // Pass the password to create the user correctly
+                // If user doesn't exist in Firebase Auth, create them using the profile from Firestore
                 const userCredential = await createUserWithEmailAndPassword(auth, `${lowerCaseCarnet}@corp.local`, password);
                 await performLogin(userCredential.user);
-            } catch (creationError) {
+            } catch (creationError: any) {
                  toast({
                     variant: "destructive",
-                    title: "Error de Registro",
-                    description: "No se pudo crear la cuenta de prueba.",
+                    title: "Error de Registro de Prueba",
+                    description: `No se pudo crear la cuenta de prueba: ${creationError.message}`,
                 });
             }
-        } else if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
+        } else if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
             toast({
                 variant: "destructive",
                 title: "Error de Autenticación",
@@ -173,7 +193,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   
   const switchRole = (newRole: Rol) => {
     if (usuarioActual) {
-        const baseUser = mockUsuarios.find(u => u.carnet === usuarioActual.carnet && u.rol === newRole);
+        const baseUser = allUsers.find(u => u.carnet === usuarioActual.carnet && u.rol === newRole);
         if(baseUser){
             const userWithCountry = { ...baseUser, pais };
             setUsuarioActual(userWithCountry);
