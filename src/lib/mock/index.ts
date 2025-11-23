@@ -2,7 +2,6 @@ export * from './atenciones.mock';
 export * from './casosClinicos.mock';
 export * from './chequeos.mock';
 export * from './citas.mock';
-export * from './empleadosEmp2024.mock';
 export * from './examenes.mock';
 export * from './medicos.mock';
 export * from './pacientes.mock';
