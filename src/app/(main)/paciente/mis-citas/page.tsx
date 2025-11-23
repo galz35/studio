@@ -2,9 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
-import * as api from '@/lib/services/api.mock';
 import { CitaMedica, Medico } from '@/lib/types/domain';
-import { medicos as mockMedicos } from '@/lib/mock/medicos.mock';
 import { DataTable } from '@/components/shared/DataTable';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -29,13 +27,15 @@ export default function MisCitasPage() {
   const [medicos, setMedicos] = useState<Medico[]>([]);
 
   useEffect(() => {
-    if (usuarioActual?.idPaciente) {
+    if (usuarioActual?.id) {
       Promise.all([
-        api.getCitasPorPaciente(usuarioActual.idPaciente),
-        api.getMedicos()
-      ]).then(([citasRes, medicosRes]) => {
-        setCitas(citasRes);
-        setMedicos(medicosRes);
+        fetch(`/api/pacientes/${usuarioActual.id}/citas`),
+        fetch('/api/medicos')
+      ]).then(async ([citasRes, medicosRes]) => {
+        const citasData = await citasRes.json();
+        const medicosData = await medicosRes.json();
+        setCitas(citasData);
+        setMedicos(medicosData);
         setLoading(false);
       });
     }
@@ -49,7 +49,7 @@ export default function MisCitasPage() {
     { 
       accessor: 'idMedico', 
       header: 'Médico',
-      cell: (row: CitaMedica) => medicos.find(m => m.idMedico === row.idMedico)?.nombreCompleto || 'N/A'
+      cell: (row: CitaMedica) => medicos.find(m => m.id === row.idMedico)?.nombreCompleto || 'N/A'
     },
     { 
       accessor: 'estadoCita',
@@ -80,7 +80,7 @@ export default function MisCitasPage() {
           {proximaCita ? (
             <div className='space-y-1'>
               <p className='text-lg'><strong>Fecha:</strong> {proximaCita.fechaCita} a las {proximaCita.horaCita}</p>
-              <p><strong>Médico:</strong> {medicos.find(m => m.idMedico === proximaCita.idMedico)?.nombreCompleto}</p>
+              <p><strong>Médico:</strong> {medicos.find(m => m.id === proximaCita.idMedico)?.nombreCompleto}</p>
               <div className="flex items-center gap-2">
                 <strong>Estado:</strong> <Badge className={cn("border-transparent", getStatusClass(proximaCita.estadoCita))}>{proximaCita.estadoCita}</Badge>
               </div>

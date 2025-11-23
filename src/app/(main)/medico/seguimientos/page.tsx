@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
-import * as api from '@/lib/services/api.mock';
 import type { SeguimientoPaciente, Paciente, CasoClinico } from '@/lib/types/domain';
 import { DataTable } from '@/components/shared/DataTable';
 import { Button } from '@/components/ui/button';
@@ -30,10 +29,12 @@ export default function SeguimientosPage() {
   const [isNoteModalOpen, setNoteModalOpen] = useState(false);
 
   useEffect(() => {
-    api.getSeguimientos({ pais }).then(res => {
-      setSeguimientos(res);
-      setLoading(false);
-    });
+    fetch(`/api/seguimientos?pais=${pais}`)
+      .then(res => res.json())
+      .then(data => {
+        setSeguimientos(data);
+        setLoading(false);
+      });
   }, [pais]);
 
   const handleUpdateSeguimiento = (formData: { notas: string, estado: SeguimientoPaciente['estadoSeguimiento'] }) => {

@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/hooks/use-auth';
-import * as api from '@/lib/services/api.mock';
 import { KpiCard } from '@/components/shared/KpiCard';
 import { Users, Stethoscope, ClipboardList, CalendarCheck, Clock, AreaChart, PieChart, TrendingDown, Repeat } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -21,18 +20,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { CasoClinico, AtencionMedica, SeguimientoPaciente } from '@/lib/types/domain';
+import type { CasoClinico, AtencionMedica, SeguimientoPaciente, EmpleadoEmp2024 } from '@/lib/types/domain';
 
 
 type DashboardData = {
     casos: CasoClinico[];
-    atenciones: (AtencionMedica & { caso?: CasoClinico })[];
+    atenciones: AtencionMedica[];
     seguimientos: SeguimientoPaciente[];
+    empleados: EmpleadoEmp2024[];
 };
 
 export default function DashboardAdminPage() {
   const { pais } = useAuth();
-  const [data, setData] = useState<DashboardData>({ casos: [], atenciones: [], seguimientos: [] });
+  const [data, setData] = useState<DashboardData>({ casos: [], atenciones: [], seguimientos: [], empleados: [] });
   const [loading, setLoading] = useState(true);
 
   // State for filters
@@ -46,20 +46,16 @@ export default function DashboardAdminPage() {
     // This is a simplified fetch. In a real scenario, you'd fetch based on filters.
     // For this mock, we fetch all and then filter on the client.
     Promise.all([
-      api.getCasos(),
-      api.getAllAtenciones(pais),
-      api.getSeguimientos({ pais })
-    ]).then(([casosRes, atencionesRes, seguimientosRes]) => {
-      
-      const atencionesConCaso = atencionesRes.map(a => ({
-        ...a,
-        caso: casosRes.find(c => c.idCaso === a.idCaso)
-      }))
-
+      fetch('/api/casos').then(res => res.json()),
+      fetch('/api/atenciones').then(res => res.json()),
+      fetch('/api/seguimientos').then(res => res.json()),
+      fetch('/api/empleados').then(res => res.json()),
+    ]).then(([casosRes, atencionesRes, seguimientosRes, empleadosRes]) => {
       setData({
           casos: casosRes,
-          atenciones: atencionesConCaso,
+          atenciones: atencionesRes,
           seguimientos: seguimientosRes,
+          empleados: empleadosRes,
       });
 
       setLoading(false);
@@ -68,7 +64,7 @@ export default function DashboardAdminPage() {
 
 
   const filteredData = useMemo(() => {
-    if (!data.casos.length || !data.atenciones.length) return { casos: [], atenciones: [], seguimientos: [] };
+    if (!data.casos.length) return { casos: [], atenciones: [], seguimientos: [] };
 
     const fromDate = date?.from ? new Date(date.from) : new Date('1970-01-01');
     const toDate = date?.to ? new Date(date.to) : new Date();
@@ -92,9 +88,11 @@ export default function DashboardAdminPage() {
     });
     
     if (gerencia !== 'all') {
-        const empleadosGerencia = ["P001", "P002"]; // Mock: empleados de una gerencia
-        filteredCasos = filteredCasos.filter(c => c.paciente && empleadosGerencia.includes(c.paciente.carnet));
-        filteredAtenciones = filteredAtenciones.filter(a => a.paciente && empleadosGerencia.includes(a.paciente.carnet));
+        const empleadosGerencia = data.empleados.filter(e => e.gerencia === gerencia).map(e => e.carnet);
+        const setCarnets = new Set(empleadosGerencia);
+
+        filteredCasos = filteredCasos.filter(c => c.paciente && setCarnets.has(c.paciente.carnet));
+        filteredAtenciones = filteredAtenciones.filter(a => a.paciente && setCarnets.has(a.paciente.carnet));
     }
 
     return { casos: filteredCasos, atenciones: filteredAtenciones, seguimientos: filteredSeguimientos };
@@ -102,10 +100,10 @@ export default function DashboardAdminPage() {
   }, [data, date, gerencia]);
   
   const gerenciasUnicas = useMemo(() => {
-     if (!data.atenciones) return [];
-     const gerencias = data.atenciones.map(a => a.empleado?.gerencia).filter(Boolean);
+     if (!data.empleados) return [];
+     const gerencias = data.empleados.map(e => e.gerencia).filter(Boolean);
      return ['all', ...Array.from(new Set(gerencias))];
-  }, [data.atenciones]);
+  }, [data.empleados]);
 
   const kpis = useMemo(() => {
     const totalCasos = filteredData.casos.length;
@@ -135,7 +133,8 @@ export default function DashboardAdminPage() {
   
   const atencionesPorGerencia = useMemo(() => {
     return filteredData.atenciones.reduce((acc, atencion) => {
-      const gerencia = atencion.empleado?.gerencia || 'Desconocida';
+      const empleado = data.empleados.find(e => e.carnet === atencion.paciente?.carnet);
+      const gerencia = empleado?.gerencia || 'Desconocida';
       const found = acc.find(item => item.name === gerencia);
       if (found) {
         found.value += 1;
@@ -144,7 +143,7 @@ export default function DashboardAdminPage() {
       }
       return acc;
     }, [] as { name: string; value: number }[]);
-  }, [filteredData.atenciones]);
+  }, [filteredData.atenciones, data.empleados]);
   
   const topDiagnosticos = useMemo(() => {
       const allDiagnosticos = filteredData.atenciones.map(a => a.diagnosticoPrincipal).filter(Boolean);

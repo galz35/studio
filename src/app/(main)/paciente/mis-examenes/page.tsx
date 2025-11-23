@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from 'react';
 import { Eye } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
-import * as api from '@/lib/services/api.mock';
 import { ExamenMedico, Paciente } from '@/lib/types/domain';
 import { DataTable } from '@/components/shared/DataTable';
 import { Button } from '@/components/ui/button';
@@ -19,8 +18,6 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
-type ExamenConPaciente = ExamenMedico & { paciente: Paciente };
-
 export default function MisExamenesPage() {
   const { usuarioActual } = useAuth();
   const [examenes, setExamenes] = useState<ExamenMedico[]>([]);
@@ -28,11 +25,13 @@ export default function MisExamenesPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (usuarioActual?.idPaciente) {
-      api.getExamenesPorPaciente(usuarioActual.idPaciente).then(res => {
-        setExamenes(res);
-        setLoading(false);
-      });
+    if (usuarioActual?.id) {
+      fetch(`/api/pacientes/${usuarioActual.id}/examenes`)
+        .then(res => res.json())
+        .then(data => {
+            setExamenes(data);
+            setLoading(false);
+        });
     }
   }, [usuarioActual]);
 

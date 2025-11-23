@@ -10,10 +10,12 @@ import { Badge } from '@/components/ui/badge';
 import { UploadCloud } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useToast } from '@/hooks/use-toast';
 
 
 export default function GestionEmpleadosPage() {
   const { pais } = useAuth();
+  const { toast } = useToast();
   const [empleadosData, setEmpleadosData] = useState<EmpleadoEmp2024[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -29,14 +31,18 @@ export default function GestionEmpleadosPage() {
         setEmpleadosData(data);
       } catch (error) {
         console.error(error);
-        // Aquí podrías usar un toast para notificar el error
+        toast({
+            variant: 'destructive',
+            title: 'Error',
+            description: 'No se pudieron cargar los datos de los empleados.'
+        });
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchEmpleados();
-  }, []); // Se ejecuta una sola vez al montar el componente
+  }, [toast]);
 
   const empleadosDelPais = useMemo(() => {
     if (!empleadosData) return [];

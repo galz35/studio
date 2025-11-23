@@ -5,7 +5,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useAuth } from '@/hooks/use-auth';
-import * as api from '@/lib/services/api.mock';
 import { AtencionMedica, EmpleadoEmp2024, Paciente, Medico, CasoClinico } from '@/lib/types/domain';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
@@ -55,10 +54,12 @@ export default function ReportesAdminPage() {
   });
 
   useEffect(() => {
-    api.getAllAtenciones(pais).then(data => {
-      setAtenciones(data);
-      setLoading(false);
-    });
+    fetch('/api/atenciones?pais=' + pais)
+        .then(res => res.json())
+        .then(data => {
+            setAtenciones(data);
+            setLoading(false);
+        });
   }, [pais]);
   
   const gerencias = useMemo(() => {
@@ -72,7 +73,8 @@ export default function ReportesAdminPage() {
       const initialValues = form.getValues();
       onSubmit(initialValues);
     }
-  }, [atenciones, form]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [atenciones]);
 
 
   const onSubmit = (values: FilterValues) => {

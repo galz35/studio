@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from 'react';
 import { HeartPulse, Calendar, Repeat, Activity } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
-import * as api from '@/lib/services/api.mock';
 import { KpiCard } from '@/components/shared/KpiCard';
 import { SemaforoBadge } from '@/components/shared/SemaforoBadge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -27,11 +26,17 @@ export default function DashboardPacientePage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (usuarioActual?.idPaciente) {
-      api.getDashboardPaciente(usuarioActual.idPaciente).then(res => {
-        setData(res);
-        setLoading(false);
-      });
+    if (usuarioActual?.id) {
+        fetch(`/api/pacientes/${usuarioActual.id}/dashboard`)
+            .then(res => res.json())
+            .then(data => {
+                setData(data);
+                setLoading(false);
+            })
+            .catch(err => {
+                console.error(err);
+                setLoading(false);
+            });
     }
   }, [usuarioActual]);
 

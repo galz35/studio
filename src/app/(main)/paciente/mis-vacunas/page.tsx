@@ -2,11 +2,9 @@
 
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
-import * as api from '@/lib/services/api.mock';
 import { VacunaAplicada, Medico } from '@/lib/types/domain';
 import { DataTable } from '@/components/shared/DataTable';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { medicos as mockMedicos } from '@/lib/mock/medicos.mock';
 
 export default function MisVacunasPage() {
   const { usuarioActual } = useAuth();
@@ -15,13 +13,15 @@ export default function MisVacunasPage() {
   const [medicos, setMedicos] = useState<Medico[]>([]);
 
   useEffect(() => {
-    if (usuarioActual?.idPaciente) {
+    if (usuarioActual?.id) {
       Promise.all([
-        api.getVacunasPorPaciente(usuarioActual.idPaciente),
-        api.getMedicos()
-      ]).then(([vacunasRes, medicosRes]) => {
-        setVacunas(vacunasRes);
-        setMedicos(medicosRes);
+        fetch(`/api/pacientes/${usuarioActual.id}/vacunas`),
+        fetch('/api/medicos')
+      ]).then(async ([vacunasRes, medicosRes]) => {
+        const vacunasData = await vacunasRes.json();
+        const medicosData = await medicosRes.json();
+        setVacunas(vacunasData);
+        setMedicos(medicosData);
         setLoading(false);
       });
     }
@@ -34,7 +34,7 @@ export default function MisVacunasPage() {
     {
       accessor: 'idMedico',
       header: 'Registrado por',
-      cell: (row: VacunaAplicada) => medicos.find(m => m.idMedico === row.idMedico)?.nombreCompleto || 'Sistema'
+      cell: (row: VacunaAplicada) => medicos.find(m => m.id === row.idMedico)?.nombreCompleto || 'Sistema'
     },
     { accessor: 'observaciones', header: 'Observaciones' },
   ];

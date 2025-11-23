@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { User, FileText, FlaskConical, Repeat, Calendar } from 'lucide-react';
-import * as api from '@/lib/services/api.mock';
 import type { CasoClinico, Paciente, AtencionMedica, ExamenMedico, SeguimientoPaciente } from '@/lib/types/domain';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { SemaforoBadge } from '@/components/shared/SemaforoBadge';
@@ -18,16 +17,25 @@ type CasoDetalle = CasoClinico & {
 
 export default function DetalleCasoClinicoPage() {
   const params = useParams();
-  const id = Number(params.id);
+  const id = params.id;
   const [caso, setCaso] = useState<CasoDetalle | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (id) {
-      api.getCasoClinicoDetalle(id).then(res => {
-        setCaso(res);
-        setLoading(false);
-      });
+        fetch(`/api/casos/${id}`)
+            .then(res => {
+                if (!res.ok) throw new Error('Caso no encontrado');
+                return res.json();
+            })
+            .then(data => {
+                setCaso(data);
+                setLoading(false);
+            })
+            .catch(err => {
+                console.error(err);
+                setLoading(false);
+            })
     }
   }, [id]);
 

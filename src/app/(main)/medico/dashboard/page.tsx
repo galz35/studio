@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
-import * as api from '@/lib/services/api.mock';
 import { KpiCard } from '@/components/shared/KpiCard';
 import { CalendarCheck, UserX, Repeat, FlaskConical, AlertTriangle, Clock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -33,8 +32,32 @@ export default function DashboardMedicoPage() {
 
   useEffect(() => {
     if (usuarioActual?.idMedico) {
-      api.getDashboardMedico(usuarioActual.idMedico, pais).then(res => {
-        setData(res);
+      // In a real app, you would fetch this data from your API
+      // For now, we simulate a fetch and construct the data
+      Promise.all([
+        fetch(`/api/citas?idMedico=${usuarioActual.idMedico}&pais=${pais}`).then(res => res.json()),
+        fetch(`/api/seguimientos?pais=${pais}`).then(res => res.json()),
+        fetch(`/api/examenes?pais=${pais}`).then(res => res.json()),
+        fetch(`/api/pacientes?pais=${pais}`).then(res => res.json()),
+      ]).then(([citas, seguimientos, examenes, pacientes]) => {
+        const hoy = new Date().toISOString().split('T')[0];
+        const citasDelDia = citas.filter((c: CitaMedica) => c.fechaCita === hoy);
+        
+        const dashboardData = {
+          kpis: {
+            citasHoy: citasDelDia.length,
+            pacientesEnRojo: pacientes.filter((p: Paciente) => p.nivelSemaforo === 'R').length,
+            seguimientosPendientes: seguimientos.filter((s: any) => s.estadoSeguimiento === 'PENDIENTE').length,
+            examenesSinResultado: examenes.filter((e: any) => e.estadoExamen === 'PENDIENTE').length,
+          },
+          citasDelDia: citasDelDia,
+          alertas: [
+            // Mock alerts
+            { message: 'Luis García ha reportado semáforo ROJO por 3 días seguidos.', type: 'danger' as const },
+            { message: 'Seguimiento de Mariana López está vencido.', type: 'warning' as const },
+          ]
+        };
+        setData(dashboardData);
         setLoading(false);
       });
     }
@@ -75,10 +98,10 @@ export default function DashboardMedicoPage() {
                 {citasDelDia.length > 0 ? citasDelDia.map(cita => (
                   <TableRow key={cita.idCita}>
                     <TableCell>{cita.horaCita}</TableCell>
-                    <TableCell>{cita.paciente.nombreCompleto}</TableCell>
+                    <TableCell>{cita.paciente?.nombreCompleto || 'N/A'}</TableCell>
                     <TableCell>{cita.motivoResumen || "N/A"}</TableCell>
                     <TableCell>{cita.estadoCita}</TableCell>
-                    <TableCell><SemaforoBadge nivel={cita.paciente.nivelSemaforo!} /></TableCell>
+                    <TableCell><SemaforoBadge nivel={cita.paciente?.nivelSemaforo!} /></TableCell>
                     <TableCell>
                       <Button size="sm" onClick={() => router.push(`/medico/atencion/${cita.idCita}`)}>
                         Atender

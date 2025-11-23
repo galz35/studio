@@ -51,13 +51,11 @@ export default function GestionMedicosPage() {
   const [isDialogOpen, setDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // State for data fetched from our API
   const [medicos, setMedicos] = useState<Medico[]>([]);
   const [empleados, setEmpleados] = useState<EmpleadoEmp2024[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
-  useEffect(() => {
-    const fetchData = async () => {
+  const fetchData = async () => {
       setIsLoading(true);
       try {
         const [medicosRes, empleadosRes] = await Promise.all([
@@ -79,6 +77,7 @@ export default function GestionMedicosPage() {
       }
     };
 
+  useEffect(() => {
     fetchData();
   }, [toast]);
   
@@ -153,12 +152,10 @@ export default function GestionMedicosPage() {
           throw new Error('Server responded with an error');
         }
 
-        const createdMedico = await response.json();
-        setMedicos(prev => [...prev, createdMedico]);
-
         toast({ title: "Médico Creado", description: `El Dr./Dra. ${newMedicoData.nombreCompleto} ha sido añadido al sistema.`});
         setDialogOpen(false);
         form.reset({ userType: 'interno' });
+        fetchData(); // Refresh data
     } catch (error) {
         console.error("Error creating medico:", error);
         toast({ variant: 'destructive', title: 'Error', description: 'No se pudo crear el médico.'})

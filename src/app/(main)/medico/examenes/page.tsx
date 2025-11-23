@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
-import * as api from '@/lib/services/api.mock';
 import type { ExamenMedico, Paciente } from '@/lib/types/domain';
 import { DataTable } from '@/components/shared/DataTable';
 import { Button } from '@/components/ui/button';
@@ -35,15 +34,17 @@ export default function ExamenesMedicosPage() {
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
 
   useEffect(() => {
-    api.getExamenesMedicos({ pais }).then(res => {
-      setExamenes(res);
-      setLoading(false);
-    });
+    fetch(`/api/examenes?pais=${pais}`)
+      .then(res => res.json())
+      .then(data => {
+        setExamenes(data);
+        setLoading(false);
+      });
   }, [pais, isRegisterModalOpen]); // Re-fetch on country change or after a modal closes
   
-  const handleRegisterResult = (idExamen: number, resultado: string) => {
+  const handleRegisterResult = (idExamen: string, resultado: string) => {
     // Mock update
-    setExamenes(prev => prev.map(ex => ex.idExamen === idExamen ? { ...ex, estadoExamen: 'ENTREGADO', resultadoResumen: resultado, fechaResultado: new Date().toISOString().split('T')[0] } : ex));
+    setExamenes(prev => prev.map(ex => ex.id === idExamen ? { ...ex, estadoExamen: 'ENTREGADO', resultadoResumen: resultado, fechaResultado: new Date().toISOString().split('T')[0] } : ex));
     toast({ title: 'Resultado Registrado', description: 'El resultado del examen se ha guardado.' });
     setIsRegisterModalOpen(false);
     setSelectedExamen(null);
@@ -157,7 +158,7 @@ export default function ExamenesMedicosPage() {
                     if (selectedExamen.estadoExamen === 'PENDIENTE') {
                         const formData = new FormData(e.currentTarget);
                         const resultado = formData.get('resultado') as string;
-                        handleRegisterResult(selectedExamen.idExamen, resultado);
+                        handleRegisterResult(selectedExamen.id!, resultado);
                     } else {
                         setIsRegisterModalOpen(false);
                     }

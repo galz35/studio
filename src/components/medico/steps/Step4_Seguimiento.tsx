@@ -14,7 +14,7 @@ interface Step4Props {
     atencion: AtencionMedica;
     handleChange: (field: keyof AtencionMedica, value: any) => void;
     setSeguimientos: React.Dispatch<React.SetStateAction<SeguimientoGenerado[]>>;
-    idPaciente: number;
+    idPaciente: string;
 }
 
 export function Step4_Seguimiento({ atencion, handleChange, setSeguimientos, idPaciente }: Step4Props) {
@@ -24,6 +24,7 @@ export function Step4_Seguimiento({ atencion, handleChange, setSeguimientos, idP
         if (atencion.estadoClinico === 'REGULAR' || atencion.estadoClinico === 'MAL') {
             handleChange('requiereSeguimiento', true);
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [atencion.estadoClinico]);
 
     const generarSeguimientoAutomatico = () => {
@@ -32,7 +33,7 @@ export function Step4_Seguimiento({ atencion, handleChange, setSeguimientos, idP
         const nuevoSeguimiento: SeguimientoGenerado = {
             idSeguimiento: Date.now(),
             idCaso: atencion.idCaso,
-            idAtencion: atencion.idAtencion,
+            idAtencion: atencion.idAtencion.toString(),
             idPaciente: idPaciente,
             fechaProgramada: atencion.fechaSiguienteCita,
             motivo: `Seguimiento por: ${atencion.diagnosticoPrincipal || 'Revisión'}`,

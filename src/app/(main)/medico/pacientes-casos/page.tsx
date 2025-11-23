@@ -3,10 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Eye, MoreHorizontal, Stethoscope } from 'lucide-react';
-import * as api from '@/lib/services/api.mock';
 import { CasoClinico, Paciente } from '@/lib/types/domain';
-import { casosClinicos as mockCasos } from '@/lib/mock/casosClinicos.mock';
-import { pacientes as mockPacientes } from '@/lib/mock/pacientes.mock';
 import { DataTable } from '@/components/shared/DataTable';
 import { Button } from '@/components/ui/button';
 import { SemaforoBadge } from '@/components/shared/SemaforoBadge';
@@ -21,13 +18,12 @@ export default function PacientesCasosPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // In a real app, this would be a filtered API call
-    const casosConPaciente = mockCasos.map(caso => ({
-      ...caso,
-      paciente: mockPacientes.find(p => p.idPaciente === caso.idPaciente)!,
-    }));
-    setCasos(casosConPaciente);
-    setLoading(false);
+    fetch('/api/casos?include_paciente=true')
+        .then(res => res.json())
+        .then(data => {
+            setCasos(data);
+            setLoading(false);
+        });
   }, []);
 
   const columns = [
@@ -65,7 +61,7 @@ export default function PacientesCasosPage() {
                     </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                   <Link href={`/medico/casos/${row.idCaso}`}>
+                   <Link href={`/medico/casos/${row.id}`}>
                         <Eye className="mr-2 h-4 w-4" /> Ver Detalle del Caso
                     </Link>
                 </DropdownMenuItem>

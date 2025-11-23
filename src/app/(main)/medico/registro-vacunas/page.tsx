@@ -5,7 +5,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useAuth } from '@/hooks/use-auth';
-import * as api from '@/lib/services/api.mock';
 import type { Paciente } from '@/lib/types/domain';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -44,28 +43,29 @@ export default function RegistroVacunasPage() {
     });
 
     useEffect(() => {
-        // Mock: fetch all patients from the current country
-        api.getUsuarios({ pais, rol: 'PACIENTE' }).then(usuarios => {
-             const pacientesPromises = usuarios.map(u => api.getPacientePorId(u.idPaciente!));
-             Promise.all(pacientesPromises).then(pacientesData => {
-                 setPacientes(pacientesData.filter(p => p !== null) as Paciente[]);
-                 setLoading(false);
-             })
-        });
+        fetch(`/api/pacientes?pais=${pais}`)
+            .then(res => res.json())
+            .then(data => {
+                setPacientes(data);
+                setLoading(false);
+            });
     }, [pais]);
 
     const onSubmit = async (data: VacunaFormValues) => {
         if (!usuarioActual?.idMedico) return;
         
         try {
-            await api.registrarVacuna({
-                ...data,
-                idPaciente: Number(data.idPaciente),
-                idMedico: usuarioActual.idMedico,
-                fechaAplicacion: data.fechaAplicacion.toISOString().split('T')[0],
+            await fetch('/api/vacunas', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ...data,
+                    idMedico: usuarioActual.idMedico,
+                    fechaAplicacion: data.fechaAplicacion.toISOString().split('T')[0],
+                })
             });
 
-            const paciente = pacientes.find(p => p.idPaciente === Number(data.idPaciente));
+            const paciente = pacientes.find(p => p.id === data.idPaciente);
             toast({
                 title: "Vacuna Registrada",
                 description: `Se ha registrado la vacuna a ${paciente?.nombreCompleto}.`
@@ -106,7 +106,7 @@ export default function RegistroVacunasPage() {
                                             </FormControl>
                                             <SelectContent>
                                                 {loading ? <SelectItem value="loading" disabled>Cargando...</SelectItem> : 
-                                                pacientes.map(p => <SelectItem key={p.idPaciente} value={String(p.idPaciente)}>{p.nombreCompleto}</SelectItem>)}
+                                                pacientes.map(p => <SelectItem key={p.id} value={String(p.id)}>{p.nombreCompleto}</SelectItem>)}
                                             </SelectContent>
                                         </Select>
                                         <FormMessage />

@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from 'react';
 import { Eye } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
-import * as api from '@/lib/services/api.mock';
 import { ChequeoBienestar } from '@/lib/types/domain';
 import { DataTable } from '@/components/shared/DataTable';
 import { Button } from '@/components/ui/button';
@@ -24,11 +23,13 @@ export default function HistorialChequeosPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (usuarioActual?.idPaciente) {
-      api.getChequeosPorPaciente(usuarioActual.idPaciente).then(res => {
-        setChequeos(res);
-        setLoading(false);
-      });
+    if (usuarioActual?.id) {
+      fetch(`/api/pacientes/${usuarioActual.id}/chequeos`)
+        .then(res => res.json())
+        .then(data => {
+            setChequeos(data);
+            setLoading(false);
+        });
     }
   }, [usuarioActual]);
 

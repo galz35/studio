@@ -6,8 +6,8 @@ import { StepHeaderWizard } from './StepHeaderWizard';
 import { Button } from '@/components/ui/button';
 import { AtencionMedica, CitaMedica, Paciente, EmpleadoEmp2024, EstadoClinico, VacunaAplicada, RegistroPsicosocial, SeguimientoGenerado, CasoClinico } from '@/lib/types/domain';
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import * as api from '@/lib/services/api.mock';
 import { useAuth } from '@/hooks/use-auth';
+import { useToast } from '@/hooks/use-toast';
 
 // Import steps
 import { Step1_Resumen } from './steps/Step1_Resumen';
@@ -30,6 +30,7 @@ interface AtencionCitaWizardProps {
 
 export function AtencionCitaWizard({ citaData }: AtencionCitaWizardProps) {
     const { usuarioActual } = useAuth();
+    const { toast } = useToast();
     const [step, setStep] = useState(1);
     const [showSummaryModal, setShowSummaryModal] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
@@ -37,7 +38,7 @@ export function AtencionCitaWizard({ citaData }: AtencionCitaWizardProps) {
     // Main state for the medical attention
     const [atencion, setAtencion] = useState<AtencionMedica>({
         idAtencion: Date.now(),
-        idCita: citaData.cita.idCita,
+        idCita: citaData.cita.id!,
         idCaso: citaData.cita.idCaso,
         idMedico: usuarioActual!.idMedico!,
         fechaAtencion: new Date().toISOString(),
@@ -49,7 +50,7 @@ export function AtencionCitaWizard({ citaData }: AtencionCitaWizardProps) {
     const [vacunas, setVacunas] = useState<VacunaAplicada[]>([]);
     const [psico, setPsico] = useState<RegistroPsicosocial>({
         idRegistroPsico: Date.now(),
-        idAtencion: atencion.idAtencion,
+        idAtencion: atencion.idAtencion.toString(),
         confidencial: true,
         sintomasPsico: [],
     });
@@ -68,17 +69,29 @@ export function AtencionCitaWizard({ citaData }: AtencionCitaWizardProps) {
 
     const handleSave = async () => {
         setIsSaving(true);
+        const payload = {
+            atencion,
+            vacunas,
+            psico: psico.nivelEstrés || (psico.sintomasPsico && psico.sintomasPsico.length > 0) || psico.notasPsico ? psico : null,
+            seguimientos
+        };
         try {
-            await api.guardarAtencionCompleta({
-                atencion,
-                vacunas,
-                psico: psico,
-                seguimientos
+            const response = await fetch('/api/atenciones', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
             });
+            if (!response.ok) {
+                throw new Error(await response.text());
+            }
             setShowSummaryModal(true);
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error guardando la atención", error);
-            // Here you would show a toast with the error
+            toast({
+                title: 'Error al Guardar',
+                description: error.message || 'No se pudo registrar la atención.',
+                variant: 'destructive',
+            });
         } finally {
             setIsSaving(false);
         }
@@ -108,7 +121,7 @@ export function AtencionCitaWizard({ citaData }: AtencionCitaWizardProps) {
                 {step === 1 && <Step1_Resumen citaData={citaData} />}
                 {step === 2 && <Step2_Vitales atencion={atencion} handleChange={handleChangeAtencion} />}
                 {step === 3 && <Step3_Diagnostico atencion={atencion} handleChange={handleChangeAtencion} />}
-                {step === 4 && <Step4_Seguimiento atencion={atencion} handleChange={handleChangeAtencion} setSeguimientos={setSeguimientos} idPaciente={citaData.paciente.idPaciente} />}
+                {step === 4 && <Step4_Seguimiento atencion={atencion} handleChange={handleChangeAtencion} setSeguimientos={setSeguimientos} idPaciente={citaData.paciente.id!} />}
                 {step === 5 && <Step5_Cierre atencion={atencion} vacunas={vacunas} setVacunas={setVacunas} psico={psico} setPsico={handleUpdatePsico} />}
                 
                 <div className="mt-8 flex justify-between">

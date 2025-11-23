@@ -50,13 +50,11 @@ export default function GestionUsuariosPage() {
   const [isDialogOpen, setDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Data states managed by fetch
   const [usuarios, setUsuarios] = useState<UsuarioAplicacion[]>([]);
   const [empleados, setEmpleados] = useState<EmpleadoEmp2024[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
-  useEffect(() => {
-    const fetchData = async () => {
+  const fetchData = async () => {
       setIsLoading(true);
       try {
         const [usuariosRes, empleadosRes] = await Promise.all([
@@ -77,6 +75,8 @@ export default function GestionUsuariosPage() {
         setIsLoading(false);
       }
     };
+    
+  useEffect(() => {
     fetchData();
   }, [toast]);
   
@@ -139,12 +139,10 @@ export default function GestionUsuariosPage() {
           throw new Error(await response.text());
         }
         
-        const createdUser = await response.json();
-        setUsuarios(prev => [...prev, createdUser]);
-
         toast({ title: "Usuario Creado", description: `El usuario ${newUserData.nombreCompleto} ha sido añadido al sistema.`});
         setDialogOpen(false);
         form.reset({ userType: 'interno', rol: undefined });
+        fetchData(); // Refresh data
     } catch(e: any) {
         console.error("Error creating user:", e);
         toast({ variant: 'destructive', title: 'Error', description: e.message || 'No se pudo crear el usuario.'});
