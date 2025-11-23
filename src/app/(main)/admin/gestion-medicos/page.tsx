@@ -76,12 +76,11 @@ export default function GestionMedicosPage() {
   }, [pais]);
 
   const onSubmit = (data: MedicoFormValues) => {
-    let newMedico: Medico;
+    let newMedico: Omit<Medico, 'idMedico'> & { idMedico?: number };
 
     if (data.userType === 'interno') {
         const empleado = empleados.find(e => e.carnet === data.empleadoCarnet)!;
         newMedico = {
-          idMedico: medicos.length + 1,
           carnet: empleado.carnet,
           nombreCompleto: empleado.nombreCompleto,
           especialidad: data.especialidad,
@@ -92,7 +91,6 @@ export default function GestionMedicosPage() {
         };
     } else { // Externo
         newMedico = {
-          idMedico: medicos.length + 1,
           nombreCompleto: data.nombreCompleto!,
           carnet: data.carnet,
           especialidad: data.especialidad,
@@ -103,8 +101,13 @@ export default function GestionMedicosPage() {
         };
     }
 
-    setMedicos(prev => [...prev, newMedico]);
-    toast({ title: "Médico Creado", description: `El Dr./Dra. ${newMedico.nombreCompleto} ha sido añadido al sistema.`});
+    const finalMedico: Medico = {
+        ...newMedico,
+        idMedico: medicos.length + 1,
+    }
+
+    setMedicos(prev => [...prev, finalMedico]);
+    toast({ title: "Médico Creado", description: `El Dr./Dra. ${finalMedico.nombreCompleto} ha sido añadido al sistema.`});
     setDialogOpen(false);
     form.reset({ userType: 'interno' });
   };

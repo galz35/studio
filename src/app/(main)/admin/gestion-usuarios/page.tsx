@@ -38,7 +38,7 @@ const userSchema = z.object({
 .refine(data => {
     if (data.userType === 'externo') return !!data.nombreCompleto && !!data.carnet;
     return true;
-}, { message: "Nombre y Carnet son requeridos para usuarios externos.", path: ["nombreCompleto"] });
+}, { message: "Nombre y Carnet son requeridos para usuarios externos.", path: ["nombreCompleto", "carnet"] });
 
 
 type UserFormValues = z.infer<typeof userSchema>;
@@ -65,19 +65,19 @@ export default function GestionUsuariosPage() {
       api.getUsuarios({ pais }),
       api.getEmpleados()
     ]).then(([usersRes, employeesRes]) => {
+      const userCarnets = new Set(usersRes.map(u => u.carnet));
       setUsuarios(usersRes);
-      setEmpleados(employeesRes.filter(e => e.pais === pais));
+      setEmpleados(employeesRes.filter(e => e.pais === pais && !userCarnets.has(e.carnet)));
       setLoading(false);
     });
   }, [pais]);
 
   const onSubmit = (data: UserFormValues) => {
-    let newUser: UsuarioAplicacion;
+    let newUser: Omit<UsuarioAplicacion, 'idUsuario'>;
 
     if (data.userType === 'interno') {
         const empleado = empleados.find(e => e.carnet === data.empleadoCarnet)!;
         newUser = {
-          idUsuario: usuarios.length + 1,
           carnet: empleado.carnet,
           rol: data.rol,
           estado: 'A',
@@ -88,7 +88,6 @@ export default function GestionUsuariosPage() {
         };
     } else { // Externo
         newUser = {
-          idUsuario: usuarios.length + 1,
           carnet: data.carnet!,
           rol: data.rol,
           estado: 'A',
@@ -99,8 +98,13 @@ export default function GestionUsuariosPage() {
         };
     }
 
-    setUsuarios(prev => [...prev, newUser]);
-    toast({ title: "Usuario Creado", description: `El usuario ${newUser.nombreCompleto} ha sido añadido al sistema.`});
+    const finalUser: UsuarioAplicacion = {
+        ...newUser,
+        idUsuario: usuarios.length + 1
+    }
+
+    setUsuarios(prev => [...prev, finalUser]);
+    toast({ title: "Usuario Creado", description: `El usuario ${finalUser.nombreCompleto} ha sido añadido al sistema.`});
     setDialogOpen(false);
     form.reset({ userType: 'interno' });
   };
