@@ -2,7 +2,7 @@
 
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { User, signInWithEmailAndPassword } from 'firebase/auth';
+import { User, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 
 import type { UsuarioAplicacion, Rol, Pais } from '@/lib/types/domain';
 import { usuarios as mockUsuarios } from '@/lib/mock/usuarios.mock';
@@ -104,12 +104,35 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         router.push(getDashboardUrl(user.rol));
 
     } catch (error: any) {
-        console.error("Firebase login error:", error);
-         toast({
-            variant: "destructive",
-            title: "Error de Autenticación",
-            description: "Credenciales incorrectas. Verifique su carnet y contraseña.",
-        });
+        if (error.code === 'auth/user-not-found') {
+            // If the user doesn't exist, try creating it. This is for demo purposes.
+            try {
+                await createUserWithEmailAndPassword(auth, `${carnet.toLowerCase()}@corp.local`, password);
+                const userWithCountry = { ...user, pais };
+                setUsuarioActual(userWithCountry);
+                localStorage.setItem('usuarioActual', JSON.stringify(userWithCountry));
+                router.push(getDashboardUrl(user.rol));
+            } catch (creationError) {
+                 toast({
+                    variant: "destructive",
+                    title: "Error de Registro",
+                    description: "No se pudo crear la cuenta de prueba.",
+                });
+            }
+        } else if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
+            toast({
+                variant: "destructive",
+                title: "Error de Autenticación",
+                description: "Credenciales incorrectas. Verifique su carnet y contraseña.",
+            });
+        } else {
+            console.error("Firebase login error:", error);
+            toast({
+                variant: "destructive",
+                title: "Error Inesperado",
+                description: "Ocurrió un error al intentar iniciar sesión.",
+            });
+        }
     }
   };
 
