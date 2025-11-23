@@ -9,20 +9,34 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { UploadCloud } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useCollection, useMemoFirebase } from '@/firebase';
-import { useFirebase } from '@/firebase/provider';
-import { collection } from 'firebase/firestore';
+import { Skeleton } from '@/components/ui/skeleton';
+
 
 export default function GestionEmpleadosPage() {
   const { pais } = useAuth();
-  const { firestore } = useFirebase();
+  const [empleadosData, setEmpleadosData] = useState<EmpleadoEmp2024[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const empleadosQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
-    return collection(firestore, 'empleadosEmp2024');
-  }, [firestore]);
+  useEffect(() => {
+    const fetchEmpleados = async () => {
+      setIsLoading(true);
+      try {
+        const response = await fetch('/api/empleados');
+        if (!response.ok) {
+          throw new Error('Failed to fetch empleados');
+        }
+        const data: EmpleadoEmp2024[] = await response.json();
+        setEmpleadosData(data);
+      } catch (error) {
+        console.error(error);
+        // Aquí podrías usar un toast para notificar el error
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  const { data: empleadosData, isLoading } = useCollection<EmpleadoEmp2024>(empleadosQuery);
+    fetchEmpleados();
+  }, []); // Se ejecuta una sola vez al montar el componente
 
   const empleadosDelPais = useMemo(() => {
     if (!empleadosData) return [];
@@ -49,7 +63,31 @@ export default function GestionEmpleadosPage() {
     },
   ];
 
-  if (isLoading) return <div>Cargando empleados...</div>;
+  if (isLoading) return (
+      <div className="space-y-6">
+        <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
+            <div>
+                <Skeleton className="h-9 w-64" />
+                <Skeleton className="h-4 w-80 mt-2" />
+            </div>
+            <Skeleton className="h-10 w-full md:w-48" />
+        </div>
+        <Card>
+            <CardHeader>
+                <Skeleton className="h-6 w-52" />
+                <Skeleton className="h-4 w-96 mt-2" />
+            </CardHeader>
+            <CardContent>
+                <div className="space-y-2">
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-12 w-full" />
+                    <Skeleton className="h-12 w-full" />
+                    <Skeleton className="h-12 w-full" />
+                </div>
+            </CardContent>
+        </Card>
+    </div>
+  );
 
   return (
     <div className="space-y-6">

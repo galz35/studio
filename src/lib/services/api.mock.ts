@@ -286,3 +286,23 @@ export const getDashboardAdmin = (pais: Pais): Promise<{
 
     return Promise.resolve({ kpis, chequeosPorRuta, citasPorEstado });
 }
+
+export const getEmpleados = (): Promise<EmpleadoEmp2024[]> => {
+    // This function is now conceptually handled by /api/empleados
+    return Promise.resolve([]);
+}
+
+export const getMedicos = (): Promise<Medico[]> => {
+    return Promise.resolve(mockMedicos);
+}
+
+export const getUsuarios = (filters?: { rol?: Rol, pais?: Pais }): Promise<UsuarioAplicacion[]> => {
+    let users = [...mockUsuarios];
+    if(filters?.rol) {
+        users = users.filter(u => u.rol === filters.rol);
+    }
+    if(filters?.pais) {
+        users = users.filter(u => u.pais === filters.pais);
+    }
+    return Promise.resolve(users);
+}
