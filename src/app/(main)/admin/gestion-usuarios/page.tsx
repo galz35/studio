@@ -22,10 +22,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { useFirebase } from '@/firebase/provider';
-import { collection, addDoc } from 'firebase/firestore';
-import { useCollection, useMemoFirebase } from '@/firebase';
-
+import { Skeleton } from '@/components/ui/skeleton';
 
 const userSchema = z.object({
   userType: z.enum(['interno', 'externo']),
@@ -49,17 +46,39 @@ type UserFormValues = z.infer<typeof userSchema>;
 export default function GestionUsuariosPage() {
   const { pais } = useAuth();
   const { toast } = useToast();
-  const { firestore } = useFirebase();
 
   const [isDialogOpen, setDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Firestore Hooks
-  const usuariosQuery = useMemoFirebase(() => firestore ? collection(firestore, 'usuariosAplicacion') : null, [firestore]);
-  const { data: usuarios, isLoading: isLoadingUsuarios } = useCollection<UsuarioAplicacion>(usuariosQuery);
+  // Data states managed by fetch
+  const [usuarios, setUsuarios] = useState<UsuarioAplicacion[]>([]);
+  const [empleados, setEmpleados] = useState<EmpleadoEmp2024[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const [usuariosRes, empleadosRes] = await Promise.all([
+          fetch('/api/usuarios'),
+          fetch('/api/empleados')
+        ]);
+        if (!usuariosRes.ok || !empleadosRes.ok) throw new Error('Failed to fetch data');
 
-  const empleadosQuery = useMemoFirebase(() => firestore ? collection(firestore, 'empleadosEmp2024') : null, [firestore]);
-  const { data: empleados, isLoading: isLoadingEmpleados } = useCollection<EmpleadoEmp2024>(empleadosQuery);
+        const usuariosData = await usuariosRes.json();
+        const empleadosData = await empleadosRes.json();
+
+        setUsuarios(usuariosData);
+        setEmpleados(empleadosData);
+      } catch (error) {
+        console.error(error);
+        toast({ variant: 'destructive', title: 'Error', description: 'No se pudieron cargar los datos iniciales.' });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
+  }, [toast]);
   
   const usuariosDelPais = useMemo(() => {
     if (!usuarios) return [];
@@ -82,7 +101,6 @@ export default function GestionUsuariosPage() {
   const userType = form.watch('userType');
 
   const onSubmit = async (data: UserFormValues) => {
-    if (!firestore) return;
     setIsSubmitting(true);
 
     let newUserData: Omit<UsuarioAplicacion, 'idUsuario' | 'id'>;
@@ -111,15 +129,25 @@ export default function GestionUsuariosPage() {
     }
     
     try {
-        // Here, we would also need to create a user in Firebase Auth
-        // For now, we just create the document in Firestore
-        await addDoc(collection(firestore, 'usuariosAplicacion'), newUserData);
+        const response = await fetch('/api/usuarios', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newUserData),
+        });
+
+        if (!response.ok) {
+          throw new Error(await response.text());
+        }
+        
+        const createdUser = await response.json();
+        setUsuarios(prev => [...prev, createdUser]);
+
         toast({ title: "Usuario Creado", description: `El usuario ${newUserData.nombreCompleto} ha sido añadido al sistema.`});
         setDialogOpen(false);
         form.reset({ userType: 'interno', rol: undefined });
-    } catch(e) {
+    } catch(e: any) {
         console.error("Error creating user:", e);
-        toast({ variant: 'destructive', title: 'Error', description: 'No se pudo crear el usuario.'});
+        toast({ variant: 'destructive', title: 'Error', description: e.message || 'No se pudo crear el usuario.'});
     } finally {
         setIsSubmitting(false);
     }
@@ -149,7 +177,27 @@ export default function GestionUsuariosPage() {
     },
   ];
 
-  if (isLoadingUsuarios || isLoadingEmpleados) return <div>Cargando...</div>;
+  if (isLoading) return (
+       <div className="space-y-6">
+        <div className="flex justify-between items-center">
+            <Skeleton className="h-9 w-64" />
+            <Skeleton className="h-10 w-32" />
+        </div>
+        <Card>
+            <CardHeader>
+                <Skeleton className="h-6 w-52" />
+            </CardHeader>
+            <CardContent>
+                <div className="space-y-2">
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-12 w-full" />
+                    <Skeleton className="h-12 w-full" />
+                    <Skeleton className="h-12 w-full" />
+                </div>
+            </CardContent>
+        </Card>
+    </div>
+  );
 
   return (
     <div className="space-y-6">
