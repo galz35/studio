@@ -25,21 +25,15 @@ export async function POST(request: Request) {
 
     const logsCollection = collection(firestore, 'logs');
     
-    // We await the operation here to catch potential errors
-    await addDoc(logsCollection, logEntry);
+    // Using addDoc without await for "fire and forget"
+    addDoc(logsCollection, logEntry);
     
-    return NextResponse.json({ message: 'Log submitted' }, { status: 201 });
+    return NextResponse.json({ message: 'Log submission accepted' }, { status: 202 });
 
   } catch (error) {
+    // This will mainly catch issues with Firebase initialization or JSON parsing
     console.error('Error in log API route:', error);
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-
-    // Check if the error is a Firestore permission error
-    if (errorMessage.toLowerCase().includes('permission-denied') || errorMessage.toLowerCase().includes('missing or insufficient permissions')) {
-        // Send a specific, machine-readable error message to the client
-        return NextResponse.json({ message: 'Firestore Permission Error' }, { status: 500 });
-    }
-
     return NextResponse.json({ message: 'Error processing log request', error: errorMessage }, { status: 500 });
   }
 }

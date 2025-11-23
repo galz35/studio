@@ -2,8 +2,9 @@ import type { ChequeoBienestar } from "@/lib/types/domain";
 
 export const chequeos: ChequeoBienestar[] = [
   {
+    id: "chq-001",
     idChequeo: 1,
-    idPaciente: 1,
+    idPaciente: "paciente-001",
     fechaRegistro: "2024-07-29T09:00:00",
     estadoAnimo: "Contento(a)",
     ruta: "Oficentro",
@@ -18,8 +19,9 @@ export const chequeos: ChequeoBienestar[] = [
     comentarioGeneral: "Todo bien esta semana.",
   },
   {
+    id: "chq-002",
     idChequeo: 2,
-    idPaciente: 2,
+    idPaciente: "paciente-002",
     fechaRegistro: "2024-07-29T08:30:00",
     estadoAnimo: "Estresado(a)",
     ruta: "Teletrabajo",
@@ -36,8 +38,9 @@ export const chequeos: ChequeoBienestar[] = [
     comentarioGeneral: "He tenido migrañas fuertes y no he dormido bien.",
   },
   {
+    id: "chq-003",
     idChequeo: 3,
-    idPaciente: 3,
+    idPaciente: "paciente-003",
     fechaRegistro: "2024-07-29T08:00:00",
     estadoAnimo: "Normal",
     ruta: "Zona Franca",
@@ -52,8 +55,9 @@ export const chequeos: ChequeoBienestar[] = [
     comentarioGeneral: "Un poco de cansancio, pero nada fuera de lo normal.",
   },
   {
+    id: "chq-004",
     idChequeo: 4,
-    idPaciente: 1,
+    idPaciente: "paciente-001",
     fechaRegistro: "2024-07-28T09:15:00",
     estadoAnimo: "Normal",
     ruta: "Oficentro",
@@ -67,8 +71,9 @@ export const chequeos: ChequeoBienestar[] = [
     estadoChequeo: "Completado",
   },
   {
+    id: "chq-005",
     idChequeo: 5,
-    idPaciente: 2,
+    idPaciente: "paciente-002",
     fechaRegistro: "2024-07-30T08:45:00",
     estadoAnimo: "Normal",
     ruta: "Teletrabajo",

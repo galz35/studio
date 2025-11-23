@@ -8,9 +8,10 @@ const d = (days: number) => {
 
 export const seguimientos: SeguimientoPaciente[] = [
   {
+    id: "seg-001",
     idSeguimiento: 1,
-    idCaso: 1,
-    idPaciente: 2,
+    idCaso: "caso-001",
+    idPaciente: "paciente-002",
     fechaProgramada: "2024-08-05",
     tipoSeguimiento: "LLAMADA",
     estadoSeguimiento: "PENDIENTE",
@@ -19,9 +20,10 @@ export const seguimientos: SeguimientoPaciente[] = [
     notasSeguimiento: "Verificar evolución de migrañas y efectividad del tratamiento inicial. Paciente reportó síntomas severos.",
   },
   {
+    id: "seg-002",
     idSeguimiento: 2,
-    idCaso: 2,
-    idPaciente: 3,
+    idCaso: "caso-002",
+    idPaciente: "paciente-003",
     fechaProgramada: "2024-08-01",
     tipoSeguimiento: "TEAMS",
     estadoSeguimiento: "PENDIENTE",
@@ -30,9 +32,10 @@ export const seguimientos: SeguimientoPaciente[] = [
     notasSeguimiento: "Check-in sobre niveles de energía y fatiga persistente.",
   },
   {
+    id: "seg-003",
     idSeguimiento: 3,
-    idCaso: 3,
-    idPaciente: 1,
+    idCaso: "caso-003",
+    idPaciente: "paciente-001",
     fechaProgramada: "2024-06-20",
     fechaReal: "2024-06-20",
     tipoSeguimiento: "LLAMADA",
@@ -42,9 +45,10 @@ export const seguimientos: SeguimientoPaciente[] = [
     notasSeguimiento: "Paciente reporta mejoría con el antihistamínico. Se cierra el seguimiento.",
   },
   {
+    id: "seg-004",
     idSeguimiento: 4,
-    idCaso: 1,
-    idPaciente: 2,
+    idCaso: "caso-001",
+    idPaciente: "paciente-002",
     fechaProgramada: "2024-08-15",
     tipoSeguimiento: "PRESENCIAL",
     estadoSeguimiento: "PENDIENTE",
@@ -53,9 +57,10 @@ export const seguimientos: SeguimientoPaciente[] = [
     notasSeguimiento: "Cita de control para reevaluar tratamiento de migraña. Verificar adherencia a terapia de sueño."
   },
   {
+    id: "seg-005",
     idSeguimiento: 5,
-    idCaso: 4,
-    idPaciente: 1,
+    idCaso: "caso-004",
+    idPaciente: "paciente-001",
     fechaProgramada: "2024-08-02",
     tipoSeguimiento: "LLAMADA",
     estadoSeguimiento: "PENDIENTE",
@@ -64,9 +69,10 @@ export const seguimientos: SeguimientoPaciente[] = [
     notasSeguimiento: "Verificar si el dolor de espalda ha disminuido con el reposo y los analgésicos."
   },
    {
+    id: "seg-006",
     idSeguimiento: 6,
-    idCaso: 1,
-    idPaciente: 2,
+    idCaso: "caso-001",
+    idPaciente: "paciente-002",
     fechaProgramada: "2024-07-30",
     tipoSeguimiento: "LLAMADA",
     estadoSeguimiento: "EN_PROCESO",
@@ -76,9 +82,10 @@ export const seguimientos: SeguimientoPaciente[] = [
   },
   // Added data for calendar
   {
+    id: "seg-007",
     idSeguimiento: 7,
-    idCaso: 5,
-    idPaciente: 3,
+    idCaso: "caso-005",
+    idPaciente: "paciente-003",
     fechaProgramada: d(-3),
     tipoSeguimiento: "LLAMADA",
     estadoSeguimiento: "PENDIENTE",
@@ -87,9 +94,10 @@ export const seguimientos: SeguimientoPaciente[] = [
     notasSeguimiento: "Recordar a paciente sobre cita dermatológica y preguntar por evolución.",
   },
   {
+    id: "seg-008",
     idSeguimiento: 8,
-    idCaso: 1,
-    idPaciente: 2,
+    idCaso: "caso-001",
+    idPaciente: "paciente-002",
     fechaProgramada: d(2),
     tipoSeguimiento: "TEAMS",
     estadoSeguimiento: "PENDIENTE",
@@ -98,9 +106,10 @@ export const seguimientos: SeguimientoPaciente[] = [
     notasSeguimiento: "Seguimiento de cefalea. Verificar si hay mejoría con nuevo tratamiento.",
   },
   {
+    id: "seg-009",
     idSeguimiento: 9,
-    idCaso: 2,
-    idPaciente: 3,
+    idCaso: "caso-002",
+    idPaciente: "paciente-003",
     fechaProgramada: d(10),
     tipoSeguimiento: "PRESENCIAL",
     estadoSeguimiento: "PENDIENTE",

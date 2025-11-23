@@ -2,6 +2,7 @@ import type { Paciente } from "@/lib/types/domain";
 
 export const pacientes: Paciente[] = [
   {
+    id: "paciente-001",
     idPaciente: 1,
     carnet: "P001",
     nombreCompleto: "Ana Sofía Pérez",
@@ -13,8 +14,10 @@ export const pacientes: Paciente[] = [
     area: "Marketing Digital",
     estadoPaciente: "A",
     nivelSemaforo: "V",
+    pais: "NI",
   },
   {
+    id: "paciente-002",
     idPaciente: 2,
     carnet: "P002",
     nombreCompleto: "Luis Fernando García",
@@ -26,8 +29,10 @@ export const pacientes: Paciente[] = [
     area: "Desarrollo de Software",
     estadoPaciente: "A",
     nivelSemaforo: "R",
+    pais: "CR",
   },
   {
+    id: "paciente-003",
     idPaciente: 3,
     carnet: "P003",
     nombreCompleto: "Mariana López",
@@ -39,5 +44,6 @@ export const pacientes: Paciente[] = [
     area: "Contabilidad",
     estadoPaciente: "A",
     nivelSemaforo: "A",
+    pais: "HN",
   },
 ];

@@ -2,6 +2,7 @@ import type { Medico } from "@/lib/types/domain";
 
 export const medicos: Medico[] = [
   {
+    id: "medico-001",
     idMedico: 1,
     carnet: "M001",
     nombreCompleto: "Dr. Carlos Herrera",
@@ -12,6 +13,7 @@ export const medicos: Medico[] = [
     estadoMedico: "A",
   },
   {
+    id: "medico-002",
     idMedico: 2,
     carnet: "M002",
     nombreCompleto: "Dra. Isabel Castillo",
@@ -22,6 +24,7 @@ export const medicos: Medico[] = [
     estadoMedico: "A",
   },
   {
+    id: "medico-003",
     idMedico: 3,
     nombreCompleto: "Dr. Fernando Morales",
     especialidad: "Cardiología",
