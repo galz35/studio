@@ -6,7 +6,7 @@ import type { CitaMedica, Paciente, EmpleadoEmp2024, CasoClinico } from '@/lib/t
 import { AtencionCitaWizard } from '@/components/medico/AtencionCitaWizard';
 import { Skeleton } from '@/components/ui/skeleton';
 
-type AtencionPageData = {
+export type AtencionPageData = {
   cita: CitaMedica;
   paciente: Paciente;
   empleado: EmpleadoEmp2024;
@@ -15,7 +15,7 @@ type AtencionPageData = {
 
 export default function AtencionCitaPage() {
   const params = useParams();
-  const idCita = params.idCita;
+  const idCita = params.idCita as string;
   const [data, setData] = useState<AtencionPageData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { Eye } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
-import { ExamenMedico, Paciente } from '@/lib/types/domain';
+import { ExamenMedico } from '@/lib/types/domain';
 import { DataTable } from '@/components/shared/DataTable';
 import { Button } from '@/components/ui/button';
 import {
@@ -11,29 +11,33 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogClose,
   DialogFooter
 } from '@/components/ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
 
 export default function MisExamenesPage() {
   const { usuarioActual } = useAuth();
+  const { toast } = useToast();
   const [examenes, setExamenes] = useState<ExamenMedico[]>([]);
   const [selectedExamen, setSelectedExamen] = useState<ExamenMedico | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (usuarioActual?.id) {
-      fetch(`/api/pacientes/${usuarioActual.id}/examenes`)
+    if (usuarioActual?.idPaciente) {
+      fetch(`/api/pacientes/${usuarioActual.idPaciente}/examenes`)
         .then(res => res.json())
         .then(data => {
             setExamenes(data);
+        }).catch(() => {
+          toast({ variant: 'destructive', title: 'Error', description: 'No se pudo cargar el historial de exámenes.' });
+        }).finally(() => {
             setLoading(false);
         });
     }
-  }, [usuarioActual]);
+  }, [usuarioActual, toast]);
 
   const columns = [
     { accessor: 'fechaSolicitud', header: 'F. Solicitud' },
@@ -51,13 +55,9 @@ export default function MisExamenesPage() {
       accessor: 'actions',
       header: 'Acciones',
       cell: (row: ExamenMedico) => (
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button variant="ghost" size="icon" disabled={row.estadoExamen !== 'ENTREGADO'} onClick={() => setSelectedExamen(row)}>
-              <Eye className="h-4 w-4" />
-            </Button>
-          </DialogTrigger>
-        </Dialog>
+        <Button variant="ghost" size="icon" disabled={row.estadoExamen !== 'ENTREGADO'} onClick={() => setSelectedExamen(row)}>
+          <Eye className="h-4 w-4" />
+        </Button>
       ),
     },
   ];

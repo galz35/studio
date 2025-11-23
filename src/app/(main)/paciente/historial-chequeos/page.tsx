@@ -12,32 +12,35 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useToast } from '@/hooks/use-toast';
 
 export default function HistorialChequeosPage() {
   const { usuarioActual } = useAuth();
+  const { toast } = useToast();
   const [chequeos, setChequeos] = useState<ChequeoBienestar[]>([]);
   const [selectedChequeo, setSelectedChequeo] = useState<ChequeoBienestar | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (usuarioActual?.id) {
-      fetch(`/api/pacientes/${usuarioActual.id}/chequeos`)
+    if (usuarioActual?.idPaciente) {
+      fetch(`/api/pacientes/${usuarioActual.idPaciente}/chequeos`)
         .then(res => res.json())
         .then(data => {
             setChequeos(data);
+        }).catch(() => {
+            toast({ variant: 'destructive', title: 'Error', description: 'No se pudo cargar el historial de chequeos.' });
+        }).finally(() => {
             setLoading(false);
         });
     }
-  }, [usuarioActual]);
+  }, [usuarioActual, toast]);
 
   const columns = [
     {
-      accessor: 'fechaRegistro',
+      accessor: (row: ChequeoBienestar) => new Date(row.fechaRegistro).toLocaleString('es-ES'),
       header: 'Fecha',
-      cell: (row: ChequeoBienestar) => new Date(row.fechaRegistro).toLocaleString('es-ES'),
     },
     { accessor: 'estadoAnimo', header: 'Estado de Ánimo' },
     { accessor: 'modalidadTrabajo', header: 'Modalidad' },
@@ -55,13 +58,9 @@ export default function HistorialChequeosPage() {
       accessor: 'actions',
       header: 'Acciones',
       cell: (row: ChequeoBienestar) => (
-         <Dialog>
-          <DialogTrigger asChild>
-            <Button variant="ghost" size="icon" onClick={() => setSelectedChequeo(row)}>
-              <Eye className="h-4 w-4" />
-            </Button>
-          </DialogTrigger>
-        </Dialog>
+        <Button variant="ghost" size="icon" onClick={() => setSelectedChequeo(row)}>
+          <Eye className="h-4 w-4" />
+        </Button>
       ),
     },
   ];

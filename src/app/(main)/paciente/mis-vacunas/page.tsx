@@ -2,39 +2,38 @@
 
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
-import { VacunaAplicada, Medico } from '@/lib/types/domain';
+import { VacunaAplicada } from '@/lib/types/domain';
 import { DataTable } from '@/components/shared/DataTable';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useToast } from '@/hooks/use-toast';
 
 export default function MisVacunasPage() {
   const { usuarioActual } = useAuth();
+  const { toast } = useToast();
   const [vacunas, setVacunas] = useState<VacunaAplicada[]>([]);
   const [loading, setLoading] = useState(true);
-  const [medicos, setMedicos] = useState<Medico[]>([]);
 
   useEffect(() => {
-    if (usuarioActual?.id) {
-      Promise.all([
-        fetch(`/api/pacientes/${usuarioActual.id}/vacunas`),
-        fetch('/api/medicos')
-      ]).then(async ([vacunasRes, medicosRes]) => {
-        const vacunasData = await vacunasRes.json();
-        const medicosData = await medicosRes.json();
-        setVacunas(vacunasData);
-        setMedicos(medicosData);
-        setLoading(false);
-      });
+    if (usuarioActual?.idPaciente) {
+      fetch(`/api/pacientes/${usuarioActual.idPaciente}/vacunas`)
+        .then(res => res.json())
+        .then(data => {
+          setVacunas(data);
+        }).catch(() => {
+          toast({ variant: 'destructive', title: 'Error', description: 'No se pudo cargar el historial de vacunación.' });
+        }).finally(() => {
+          setLoading(false);
+        });
     }
-  }, [usuarioActual]);
+  }, [usuarioActual, toast]);
 
   const columns = [
     { accessor: 'fechaAplicacion', header: 'Fecha Aplicación' },
     { accessor: 'tipoVacuna', header: 'Tipo de Vacuna' },
     { accessor: 'dosis', header: 'Dosis' },
     {
-      accessor: 'idMedico',
-      header: 'Registrado por',
-      cell: (row: VacunaAplicada) => medicos.find(m => m.id === row.idMedico)?.nombreCompleto || 'Sistema'
+      accessor: (row: VacunaAplicada) => row.medico?.nombreCompleto || 'Sistema',
+      header: 'Registrado por'
     },
     { accessor: 'observaciones', header: 'Observaciones' },
   ];

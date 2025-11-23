@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 
 const getStatusClass = (status: CitaMedica['estadoCita']) => {
   switch (status) {
@@ -22,24 +23,23 @@ const getStatusClass = (status: CitaMedica['estadoCita']) => {
 
 export default function MisCitasPage() {
   const { usuarioActual } = useAuth();
+  const { toast } = useToast();
   const [citas, setCitas] = useState<CitaMedica[]>([]);
   const [loading, setLoading] = useState(true);
-  const [medicos, setMedicos] = useState<Medico[]>([]);
 
   useEffect(() => {
-    if (usuarioActual?.id) {
-      Promise.all([
-        fetch(`/api/pacientes/${usuarioActual.id}/citas`),
-        fetch('/api/medicos')
-      ]).then(async ([citasRes, medicosRes]) => {
-        const citasData = await citasRes.json();
-        const medicosData = await medicosRes.json();
-        setCitas(citasData);
-        setMedicos(medicosData);
-        setLoading(false);
-      });
+    if (usuarioActual?.idPaciente) {
+      fetch(`/api/pacientes/${usuarioActual.idPaciente}/citas`)
+        .then(res => res.json())
+        .then(data => {
+          setCitas(data);
+        }).catch(() => {
+            toast({ variant: 'destructive', title: 'Error', description: 'No se pudo cargar el historial de citas.' });
+        }).finally(() => {
+          setLoading(false);
+        });
     }
-  }, [usuarioActual]);
+  }, [usuarioActual, toast]);
 
   const proximaCita = citas.filter(c => ['PROGRAMADA', 'CONFIRMADA'].includes(c.estadoCita) && new Date(c.fechaCita) >= new Date()).sort((a,b) => new Date(a.fechaCita).getTime() - new Date(b.fechaCita).getTime())[0];
 
@@ -47,9 +47,8 @@ export default function MisCitasPage() {
     { accessor: 'fechaCita', header: 'Fecha' },
     { accessor: 'horaCita', header: 'Hora' },
     { 
-      accessor: 'idMedico', 
+      accessor: (row: CitaMedica) => row.medico?.nombreCompleto || 'N/A', 
       header: 'Médico',
-      cell: (row: CitaMedica) => medicos.find(m => m.id === row.idMedico)?.nombreCompleto || 'N/A'
     },
     { 
       accessor: 'estadoCita',
@@ -80,7 +79,7 @@ export default function MisCitasPage() {
           {proximaCita ? (
             <div className='space-y-1'>
               <p className='text-lg'><strong>Fecha:</strong> {proximaCita.fechaCita} a las {proximaCita.horaCita}</p>
-              <p><strong>Médico:</strong> {medicos.find(m => m.id === proximaCita.idMedico)?.nombreCompleto}</p>
+              <p><strong>Médico:</strong> {proximaCita.medico?.nombreCompleto}</p>
               <div className="flex items-center gap-2">
                 <strong>Estado:</strong> <Badge className={cn("border-transparent", getStatusClass(proximaCita.estadoCita))}>{proximaCita.estadoCita}</Badge>
               </div>

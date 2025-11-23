@@ -48,7 +48,7 @@ export interface Medico {
 }
 
 export interface ChequeoBienestar {
-  idChequeo: number;
+  idChequeo?: number;
   id?: string;
   idPaciente: string;
   fechaRegistro: string;
@@ -104,6 +104,10 @@ export interface CitaMedica {
   motivoResumen: string;
   nivelSemaforoPaciente: 'V' | 'A' | 'R';
   pais: Pais;
+  // Populated fields from API
+  paciente?: Paciente;
+  medico?: Medico;
+  caso?: CasoClinico;
 }
 
 export interface AtencionMedica {
@@ -138,6 +142,8 @@ export interface VacunaAplicada {
   dosis: string; // 1ra dosis, refuerzo, etc.
   fechaAplicacion: string;
   observaciones?: string;
+  // Populated by API
+  medico?: Medico;
 }
 
 export interface RegistroPsicosocial {
