@@ -149,13 +149,18 @@ export interface EmpleadoEmp2024 {
   correo: string;
   cargo: string;
   gerencia: string;
+  subgerencia: string;
   area: string;
   telefono: string;
   nomJefe: string;
   correoJefe: string;
   carnetJefe: string;
   pais: Pais;
+  fechaNacimiento: string; // YYYY-MM-DD
+  fechaContratacion: string; // YYYY-MM-DD
+  estado: 'ACTIVO' | 'INACTIVO'; // Replaces fechabaja for more flexibility
 }
+
 
 export interface SeguimientoPaciente {
   idSeguimiento: number;

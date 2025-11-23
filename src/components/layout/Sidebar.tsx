@@ -19,6 +19,7 @@ import {
   X,
   BookOpen,
   Syringe,
+  Users2,
 } from "lucide-react";
 
 import { useAuth } from "@/hooks/use-auth";
@@ -96,6 +97,7 @@ const medicoMenu = [
 const adminMenu = [
   { href: "/admin/dashboard", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/admin/gestion-usuarios", icon: Users, label: "Usuarios" },
+  { href: "/admin/gestion-empleados", icon: Users2, label: "Empleados" },
   { href: "/admin/gestion-medicos", icon: Stethoscope, label: "Médicos" },
   { href: "/admin/reportes", icon: BarChart3, label: "Reportes" },
   { href: "/admin/configuracion", icon: Settings, label: "Configuración" },
@@ -126,10 +128,9 @@ export function Sidebar({ isCollapsed, toggleSidebar }: { isCollapsed: boolean, 
   const menuItems = getMenu();
 
   return (
-    <aside
+    <div
       className={cn(
-        "bg-primary text-primary-foreground flex h-full flex-col border-r border-primary-foreground/10 transition-all duration-300 ease-in-out",
-        isCollapsed && !isMobile ? "w-20" : "w-64"
+        "flex h-full flex-col bg-primary text-primary-foreground transition-all duration-300 ease-in-out",
       )}
     >
       <div className={cn("flex h-16 items-center border-b border-white/10", isCollapsed && !isMobile ? 'justify-center' : 'px-4 justify-between')}>
@@ -163,6 +164,6 @@ export function Sidebar({ isCollapsed, toggleSidebar }: { isCollapsed: boolean, 
           ))}
         </ul>
       </nav>
-    </aside>
+    </div>
   );
 }
