@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChequeoBienestar } from '@/lib/types/domain';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useToast } from '@/hooks/use-toast';
 
 type DashboardData = {
   kpis: {
@@ -23,6 +24,7 @@ type DashboardData = {
 
 export default function DashboardPacientePage() {
   const { userProfile } = useUserProfile();
+  const { toast } = useToast();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -39,13 +41,18 @@ export default function DashboardPacientePage() {
             })
             .catch(err => {
                 console.error(err);
+                toast({
+                    title: 'Error',
+                    description: 'No se pudo cargar la información del panel.',
+                    variant: 'destructive'
+                });
             }).finally(() => {
                 setLoading(false);
             });
     } else {
         setLoading(false);
     }
-  }, [userProfile]);
+  }, [userProfile?.id, toast]);
 
   if (loading) return (
       <div className="space-y-6">
