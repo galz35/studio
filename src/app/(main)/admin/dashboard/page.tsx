@@ -4,7 +4,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import * as api from '@/lib/services/api.mock';
 import { KpiCard } from '@/components/shared/KpiCard';
-import { Users, Stethoscope, ClipboardList, CalendarCheck, Clock, AreaChart, PieChart, TrendingDown } from 'lucide-react';
+import { Users, Stethoscope, ClipboardList, CalendarCheck, Clock, AreaChart, PieChart, TrendingDown, Repeat } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Button } from '@/components/ui/button';
@@ -21,17 +21,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { CasoClinico, AtencionMedica } from '@/lib/types/domain';
+import type { CasoClinico, AtencionMedica, SeguimientoPaciente } from '@/lib/types/domain';
 
 
 type DashboardData = {
     casos: CasoClinico[];
     atenciones: (AtencionMedica & { caso?: CasoClinico })[];
+    seguimientos: SeguimientoPaciente[];
 };
 
 export default function DashboardAdminPage() {
   const { pais } = useAuth();
-  const [data, setData] = useState<DashboardData>({ casos: [], atenciones: [] });
+  const [data, setData] = useState<DashboardData>({ casos: [], atenciones: [], seguimientos: [] });
   const [loading, setLoading] = useState(true);
 
   // State for filters
@@ -47,7 +48,8 @@ export default function DashboardAdminPage() {
     Promise.all([
       api.getCasos(),
       api.getAllAtenciones(pais),
-    ]).then(([casosRes, atencionesRes]) => {
+      api.getSeguimientos({ pais })
+    ]).then(([casosRes, atencionesRes, seguimientosRes]) => {
       
       const atencionesConCaso = atencionesRes.map(a => ({
         ...a,
@@ -57,6 +59,7 @@ export default function DashboardAdminPage() {
       setData({
           casos: casosRes,
           atenciones: atencionesConCaso,
+          seguimientos: seguimientosRes,
       });
 
       setLoading(false);
@@ -65,28 +68,27 @@ export default function DashboardAdminPage() {
 
 
   const filteredData = useMemo(() => {
-    if (!data.casos.length || !data.atenciones.length) return { casos: [], atenciones: [] };
+    if (!data.casos.length || !data.atenciones.length) return { casos: [], atenciones: [], seguimientos: [] };
+
+    const fromDate = date?.from ? new Date(date.from) : new Date('1970-01-01');
+    const toDate = date?.to ? new Date(date.to) : new Date();
+    
+    fromDate.setHours(0,0,0,0);
+    toDate.setHours(23,59,59,999);
 
     let filteredCasos = data.casos.filter(caso => {
         const casoDate = new Date(caso.fechaCreacion);
-        const fromDate = date?.from ? new Date(date.from) : new Date('1970-01-01');
-        const toDate = date?.to ? new Date(date.to) : new Date();
-        
-        fromDate.setHours(0,0,0,0);
-        toDate.setHours(23,59,59,999);
-
         return casoDate >= fromDate && casoDate <= toDate;
     });
 
     let filteredAtenciones = data.atenciones.filter(atencion => {
         const atencionDate = new Date(atencion.fechaAtencion);
-        const fromDate = date?.from ? new Date(date.from) : new Date('1970-01-01');
-        const toDate = date?.to ? new Date(date.to) : new Date();
-        
-        fromDate.setHours(0,0,0,0);
-        toDate.setHours(23,59,59,999);
-
         return atencionDate >= fromDate && atencionDate <= toDate;
+    });
+
+    let filteredSeguimientos = data.seguimientos.filter(s => {
+        const seguimientoDate = new Date(s.fechaProgramada);
+        return seguimientoDate >= fromDate && seguimientoDate <= toDate;
     });
     
     if (gerencia !== 'all') {
@@ -95,7 +97,7 @@ export default function DashboardAdminPage() {
         filteredAtenciones = filteredAtenciones.filter(a => a.paciente && empleadosGerencia.includes(a.paciente.carnet));
     }
 
-    return { casos: filteredCasos, atenciones: filteredAtenciones };
+    return { casos: filteredCasos, atenciones: filteredAtenciones, seguimientos: filteredSeguimientos };
 
   }, [data, date, gerencia]);
   
@@ -120,15 +122,14 @@ export default function DashboardAdminPage() {
 
     const promedioCierre = tiemposDeCierre.length > 0 ? Math.round(tiemposDeCierre.reduce((a,b) => a+b, 0) / tiemposDeCierre.length) : 0;
     
-    const casosNoApto = filteredData.casos.filter(c => c.datosExtra?.AptoLaboral === false).length;
-    const tasaAusentismo = totalCasos > 0 ? Math.round((casosNoApto / totalCasos) * 100) : 0;
+    const seguimientosPendientes = filteredData.seguimientos.filter(s => s.estadoSeguimiento === 'PENDIENTE').length;
 
     return {
         atencionesRealizadas: filteredData.atenciones.length,
         casosAbiertos: totalCasos - casosCerrados,
         casosCerrados: casosCerrados,
         tiempoPromedioCierre: promedioCierre,
-        tasaAusentismo: tasaAusentismo,
+        seguimientosPendientes: seguimientosPendientes,
     }
   }, [filteredData]);
   
@@ -217,7 +218,7 @@ export default function DashboardAdminPage() {
         <KpiCard title="Atenciones Realizadas" value={kpis.atencionesRealizadas} icon={Stethoscope} description="Consultas completadas en el periodo." />
         <KpiCard title="Casos Abiertos / Cerrados" value={`${kpis.casosAbiertos} / ${kpis.casosCerrados}`} icon={ClipboardList} description="Flujo de casos en el periodo." />
         <KpiCard title="Tiempo Prom. de Cierre" value={`${kpis.tiempoPromedioCierre} días`} icon={Clock} description="Desde apertura hasta atención final." />
-        <KpiCard title="Tasa de Ausentismo" value={`${kpis.tasaAusentismo}%`} icon={TrendingDown} description="% de casos reportados como 'No Apto'." color="text-destructive" />
+        <KpiCard title="Seguimientos Pendientes" value={kpis.seguimientosPendientes} icon={Repeat} description="Tareas de seguimiento por realizar." color="text-orange-500" />
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
