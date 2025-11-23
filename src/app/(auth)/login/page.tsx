@@ -29,7 +29,6 @@ import { useAuth } from "@/hooks/use-auth";
 
 const loginSchema = z.object({
   carnet: z.string().min(1, { message: "El carnet es requerido." }),
-  password: z.string().min(1, { message: "La contraseña es requerida." }),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
@@ -42,7 +41,6 @@ export default function LoginPage() {
     resolver: zodResolver(loginSchema),
     defaultValues: {
       carnet: "",
-      password: "",
     },
   });
 
@@ -55,7 +53,7 @@ export default function LoginPage() {
   }, [user, router]);
 
   const onSubmit: SubmitHandler<LoginFormValues> = async (data) => {
-    await login(data.carnet, data.password);
+    await login(data.carnet);
   };
 
   return (
@@ -63,7 +61,7 @@ export default function LoginPage() {
       <CardHeader>
         <CardTitle>Iniciar Sesión</CardTitle>
         <CardDescription>
-          Ingrese su carnet y contraseña para acceder al sistema.
+          Ingrese su carnet de empleado para acceder al sistema.
         </CardDescription>
       </CardHeader>
       <Form {...form}>
@@ -77,19 +75,6 @@ export default function LoginPage() {
                   <FormLabel>Carnet de Empleado</FormLabel>
                   <FormControl>
                     <Input placeholder="Ej: P001, M001, A001" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Contraseña</FormLabel>
-                  <FormControl>
-                    <Input type="password" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -126,7 +111,7 @@ export default function LoginPage() {
             <p><strong>Paciente:</strong> carnet `P001`</p>
             <p><strong>Médico:</strong> carnet `M001`</p>
             <p><strong>Admin:</strong> carnet `A001`</p>
-            <p className="font-semibold">Contraseña para todos: <code className="bg-muted px-2 py-1 rounded">12345</code></p>
+            <p className="font-semibold text-muted-foreground">(No se requiere contraseña)</p>
         </CardContent>
       </Card>
     </Card>

@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 export interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (carnet: string, password: string) => Promise<void>;
+  login: (carnet: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -25,14 +25,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setLoading(isUserLoading);
   }, [isUserLoading]);
 
-  const login = async (carnet: string, password: string) => {
+  const login = async (carnet: string) => {
     setLoading(true);
     const email = `${carnet.toLowerCase()}@corp.local`;
+    // Hardcoded password for testing purposes
+    const password = "password"; 
+    
     try {
       await signInWithEmailAndPassword(auth, email, password);
       // Redirection will be handled by the page after successful login
     } catch (error: any) {
-      if (error.code === 'auth/user-not-found') {
+      if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
         try {
           // If user doesn't exist, create it for testing purposes
           await createUserWithEmailAndPassword(auth, email, password);
@@ -40,15 +43,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           toast({
             variant: "destructive",
             title: "Error de Registro de Prueba",
-            description: `No se pudo crear la cuenta: ${creationError.message}`,
+            description: `No se pudo crear la cuenta de prueba: ${creationError.message}`,
           });
         }
-      } else if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-        toast({
-          variant: "destructive",
-          title: "Error de Autenticación",
-          description: "Credenciales incorrectas. Verifique su carnet y contraseña.",
-        });
       } else {
         console.error("Firebase login error:", error);
         toast({
