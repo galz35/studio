@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
@@ -37,7 +38,7 @@ const getDashboardUrl = (rol: Rol) => {
   }
 };
 
-const logAuditEvent = (firestore: any, type: string, userCarnet: string, userId: string, message: string, details: object = {}) => {
+const logAuditEvent = async (firestore: any, type: string, userCarnet: string, userId: string, message: string, details: object = {}) => {
   const logEntry = {
       type,
       userCarnet,
@@ -46,15 +47,33 @@ const logAuditEvent = (firestore: any, type: string, userCarnet: string, userId:
       details,
   };
   
-  // "Fire-and-forget" call to the log API
-  fetch('/api/logs', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(logEntry),
-  }).catch(error => {
-      // This catch is for network errors, not for application-level errors from the API response.
-      console.warn("Log submission network request failed:", error);
-  });
+  try {
+    const response = await fetch('/api/logs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(logEntry),
+    });
+
+    if (!response.ok) {
+        const errorBody = await response.json();
+        // Check for our specific permission error signal from the API
+        if (errorBody.message === 'Firestore Permission Error') {
+            const permissionError = new FirestorePermissionError({
+                path: 'logs',
+                operation: 'create',
+                requestResourceData: logEntry,
+            });
+            // Emit the error on the client to be caught by the listener
+            errorEmitter.emit('permission-error', permissionError);
+        }
+        // Throw a generic error to be caught by the outer try/catch
+        throw new Error(errorBody.message || 'Log submission failed');
+    }
+  } catch(error) {
+      console.warn("Log submission request failed:", error);
+      // Re-throw to be handled by the calling function
+      throw error;
+  }
 };
 
 
@@ -130,13 +149,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
   
-  const performLogin = (authedUser: User, userProfile: UsuarioAplicacion) => {
+  const performLogin = async (authedUser: User, userProfile: UsuarioAplicacion) => {
     const userWithCountry = { ...userProfile, pais };
     setUsuarioActual(userWithCountry);
     localStorage.setItem('usuarioActual', JSON.stringify(userWithCountry));
     
-    // Log the event without waiting for it
-    logAuditEvent(firestore, 'LOGIN_SUCCESS', userProfile.carnet, authedUser.uid, `User ${userProfile.carnet} logged in successfully.`);
+    try {
+        await logAuditEvent(firestore, 'LOGIN_SUCCESS', userProfile.carnet, authedUser.uid, `User ${userProfile.carnet} logged in successfully.`);
+    } catch(e) {
+        // The error is already emitted by logAuditEvent, we just need to stop the loading state.
+        setAuthLoading(false);
+        // We don't re-toast here as the error boundary will show the issue.
+        return; // Stop execution
+    }
     
     router.push(getDashboardUrl(userProfile.rol));
     setAuthLoading(false);
@@ -159,12 +184,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     try {
         const userCredential = await signInWithEmailAndPassword(auth, `${lowerCaseCarnet}@corp.local`, password);
-        performLogin(userCredential.user, userProfile);
+        await performLogin(userCredential.user, userProfile);
     } catch (error: any) {
         if (error.code === 'auth/user-not-found') {
             try {
                 const newUserCredential = await createUserWithEmailAndPassword(auth, `${lowerCaseCarnet}@corp.local`, password);
-                performLogin(newUserCredential.user, userProfile);
+                await performLogin(newUserCredential.user, userProfile);
             } catch (creationError: any) {
                  toast({
                     variant: "destructive",
@@ -182,11 +207,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             setAuthLoading(false);
         } else {
             console.error("Firebase login error:", error);
-            toast({
-                variant: "destructive",
-                title: "Error Inesperado",
-                description: "Ocurrió un error al intentar iniciar sesión.",
-            });
+            // This might catch the error from performLogin if it propagates
+            if (!error.message.includes('Log submission failed')) {
+                toast({
+                    variant: "destructive",
+                    title: "Error Inesperado",
+                    description: "Ocurrió un error al intentar iniciar sesión.",
+                });
+            }
             setAuthLoading(false);
         }
     }
