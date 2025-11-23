@@ -8,8 +8,10 @@ import { Loader2 } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 import type { RutaMotivo, TriageNivel, ModalidadTrabajo, DatosExtraJSON, SolicitudCitaPayload } from '@/lib/types/solicitud';
-import * as api from '@/lib/services/api.mock';
 import { useAuth } from '@/hooks/use-auth';
+import { useFirebase } from '@/firebase';
+import { collection, addDoc } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
 
 // Sub-components for steps
 import { Step1_EstadoHoy } from './steps-solicitud/Step1_EstadoHoy';
@@ -54,7 +56,10 @@ const initialDatosExtra: DatosExtraJSON = {
 };
 
 export function SolicitudCitaWizard() {
-    const { usuarioActual } = useAuth();
+    const { usuarioActual, pais } = useAuth();
+    const { firestore } = useFirebase();
+    const { toast } = useToast();
+
     const [step, setStep] = useState(1);
     const [ruta, setRuta] = useState<RutaMotivo | null>(null);
     const [modalidad, setModalidad] = useState<ModalidadTrabajo | null>(null);
@@ -107,7 +112,7 @@ export function SolicitudCitaWizard() {
 
     const handleNext = () => {
         if (step === 1 && !ruta) {
-            alert("Por favor, selecciona cómo te sientes hoy.");
+            toast({ variant: 'destructive', title: 'Campo requerido', description: 'Por favor, selecciona cómo te sientes hoy.'})
             return;
         }
         if (step === 1 && ruta === 'bien') {
@@ -120,7 +125,11 @@ export function SolicitudCitaWizard() {
     
     const handleSubmit = async () => {
        if (!usuarioActual?.idPaciente) {
-            alert("Error: No se pudo identificar al paciente.");
+            toast({ variant: 'destructive', title: 'Error de Usuario', description: 'No se pudo identificar al paciente.' });
+            return;
+        }
+        if (!firestore) {
+            toast({ variant: 'destructive', title: 'Error de Conexión', description: 'No se pudo conectar a la base de datos.' });
             return;
         }
         
@@ -139,14 +148,25 @@ export function SolicitudCitaWizard() {
         };
         
         setFinalPayload(payload);
-        console.log('SolicitudCitaPayload', payload);
+        
+        const nuevoCaso = {
+            idPaciente: usuarioActual.idPaciente,
+            fechaCreacion: new Date().toISOString(),
+            estadoCaso: 'Abierto',
+            nivelSemaforo: payload.Triage || 'A',
+            motivoConsulta: payload.DatosExtraJSON.Sintomas.join(', ') || 'Revisión General',
+            resumenClinicoUsuario: payload.Comentario || '',
+            diagnosticoUsuario: 'Autodiagnóstico por solicitud',
+            datosExtra: payload.DatosExtraJSON,
+            pais: pais,
+        };
 
         try {
-            await api.guardarSolicitudCita(usuarioActual.idPaciente, payload);
+            await addDoc(collection(firestore, 'casosClinicos'), nuevoCaso);
             setShowSummaryModal(true);
         } catch (error) {
             console.error("Error al guardar la solicitud", error);
-            alert("Hubo un error al guardar tu solicitud. Inténtalo de nuevo.");
+            toast({ variant: 'destructive', title: 'Error', description: 'Hubo un error al guardar tu solicitud. Inténtalo de nuevo.'})
         } finally {
             setIsLoading(false);
         }

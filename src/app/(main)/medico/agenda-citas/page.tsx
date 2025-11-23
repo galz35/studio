@@ -1,9 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useMemo } from 'react';
-import Link from 'next/link';
 import { useAuth } from '@/hooks/use-auth';
-import * as api from '@/lib/services/api.mock';
 import { CasoClinico, Paciente, Medico } from '@/lib/types/domain';
 import { DataTable } from '@/components/shared/DataTable';
 import { Button } from '@/components/ui/button';
@@ -14,86 +12,117 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogClose,
   DialogFooter
 } from '@/components/ui/dialog';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { CalendarPlus, Ban } from 'lucide-react';
-import { pacientes as mockPacientes } from '@/lib/mock/pacientes.mock';
+import { CalendarPlus, Ban, Loader2 } from 'lucide-react';
+import { useFirebase } from '@/firebase';
+import { collection, query, where, addDoc, updateDoc, doc } from 'firebase/firestore';
+import { useCollection, useMemoFirebase } from '@/firebase';
+import { useConfirm } from '@/hooks/use-confirm';
 
-type CasoConPaciente = CasoClinico & { paciente: Paciente };
+type CasoConPaciente = CasoClinico & { paciente?: Paciente, id?: string };
 
 export default function GestionCitasPage() {
   const { pais } = useAuth();
   const { toast } = useToast();
-  const [casos, setCasos] = useState<CasoConPaciente[]>([]);
-  const [medicos, setMedicos] = useState<Medico[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { firestore } = useFirebase();
+  const [ConfirmDialog, confirm] = useConfirm();
+
   const [selectedCaso, setSelectedCaso] = useState<CasoConPaciente | null>(null);
   const [isAgendarOpen, setAgendarOpen] = useState(false);
-  const [isCancelarOpen, setCancelarOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [motivoCancelacion, setMotivoCancelacion] = useState("");
 
+  // Firestore Data
+  const casosQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'casosClinicos'), where('estadoCaso', '==', 'Abierto'), where('pais', '==', pais)) : null, [firestore, pais]);
+  const { data: casosData, isLoading: isLoadingCasos } = useCollection<CasoClinico>(casosQuery);
 
-  useEffect(() => {
-    Promise.all([
-      api.getCasosClinicos({ estado: 'Abierto', pais }),
-      api.getMedicos({ pais })
-    ]).then(([casosRes, medicosRes]) => {
-      const casosConPaciente = casosRes.map(caso => ({
-        ...caso,
-        paciente: mockPacientes.find(p => p.idPaciente === caso.idPaciente)!,
-      }));
-      setCasos(casosConPaciente);
-      setMedicos(medicosRes);
-      setLoading(false);
-    });
-  }, [pais]);
+  const pacientesQuery = useMemoFirebase(() => firestore ? collection(firestore, 'pacientes') : null, [firestore]);
+  const { data: pacientesData, isLoading: isLoadingPacientes } = useCollection<Paciente>(pacientesQuery);
 
-  const handleAgendar = (formData: any) => {
-    if (!selectedCaso) return;
+  const medicosQuery = useMemoFirebase(() => firestore ? collection(firestore, 'medicos') : null, [firestore]);
+  const { data: medicosData, isLoading: isLoadingMedicos } = useCollection<Medico>(medicosQuery);
 
-    api.agendarCitaDesdeCaso(
-      selectedCaso.idCaso,
-      formData.idMedico,
-      formData.fechaCita,
-      formData.horaCita,
-      'AGENDADA_POR_MEDICO'
-    );
-    toast({ title: 'Cita Agendada', description: `Se ha agendado una cita para ${selectedCaso.paciente.nombreCompleto}.` });
-    // Remove from list
-    setCasos(prev => prev.filter(c => c.idCaso !== selectedCaso.idCaso));
-    setAgendarOpen(false);
-    setSelectedCaso(null);
+  const casosConPaciente = useMemo<CasoConPaciente[]>(() => {
+    if (!casosData || !pacientesData) return [];
+    return casosData.map(caso => ({
+      ...caso,
+      paciente: pacientesData.find(p => p.id === caso.idPaciente),
+    }));
+  }, [casosData, pacientesData]);
+
+  const handleAgendar = async (formData: any) => {
+    if (!selectedCaso || !firestore) return;
+    setIsSubmitting(true);
+
+    const nuevaCita: Omit<CitaMedica, 'idCita'> = {
+        idCaso: selectedCaso.id!,
+        idPaciente: selectedCaso.idPaciente,
+        idMedico: formData.idMedico,
+        fechaCita: formData.fechaCita,
+        horaCita: formData.horaCita,
+        canalOrigen: 'AGENDADA_POR_MEDICO',
+        estadoCita: 'PROGRAMADA',
+        motivoResumen: selectedCaso.motivoConsulta,
+        nivelSemaforoPaciente: selectedCaso.nivelSemaforo,
+        pais: pais,
+    };
+    
+    try {
+        const citaRef = await addDoc(collection(firestore, 'citasMedicas'), nuevaCita);
+        const casoDocRef = doc(firestore, 'casosClinicos', selectedCaso.id!);
+        await updateDoc(casoDocRef, {
+            estadoCaso: 'AGENDADO',
+            idCita: citaRef.id,
+        });
+
+        toast({ title: 'Cita Agendada', description: `Se ha agendado una cita para ${selectedCaso.paciente?.nombreCompleto}.` });
+        setAgendarOpen(false);
+        setSelectedCaso(null);
+    } catch(e) {
+        console.error(e);
+        toast({ variant: 'destructive', title: 'Error', description: 'No se pudo agendar la cita.' });
+    } finally {
+        setIsSubmitting(false);
+    }
   };
   
-  const handleCancelar = () => {
-     if (!selectedCaso) return;
+  const handleCancelar = async () => {
+     if (!selectedCaso || !firestore) return;
      if (!motivoCancelacion) {
         toast({ title: 'Error', description: 'Debe especificar un motivo para la cancelación.', variant: 'destructive'});
         return;
      }
-     console.log(`Caso ${selectedCaso.idCaso} cancelado por: ${motivoCancelacion}`);
-     toast({ title: 'Solicitud Cancelada', description: `Se ha cancelado la solicitud de ${selectedCaso.paciente.nombreCompleto}.`, variant: 'destructive'});
-     setCasos(prev => prev.filter(c => c.idCaso !== selectedCaso.idCaso));
-     setCancelarOpen(false);
-     setSelectedCaso(null);
-     setMotivoCancelacion("");
+
+     const isConfirmed = await confirm({
+        title: '¿Confirmar Cancelación?',
+        description: `Esta acción marcará la solicitud de ${selectedCaso.paciente?.nombreCompleto} como cancelada. No se puede deshacer.`
+     });
+
+     if (isConfirmed) {
+        setIsSubmitting(true);
+        try {
+            const casoDocRef = doc(firestore, 'casosClinicos', selectedCaso.id!);
+            await updateDoc(casoDocRef, {
+                estadoCaso: 'CANCELADO',
+                notasCancelacion: motivoCancelacion, // Add cancellation note
+            });
+            toast({ title: 'Solicitud Cancelada', description: `Se ha cancelado la solicitud de ${selectedCaso.paciente?.nombreCompleto}.`, variant: 'destructive'});
+            setMotivoCancelacion("");
+            setSelectedCaso(null);
+        } catch (e) {
+            console.error(e);
+            toast({ variant: 'destructive', title: 'Error', description: 'No se pudo cancelar la solicitud.' });
+        } finally {
+            setIsSubmitting(false);
+        }
+     }
   }
 
 
@@ -103,7 +132,7 @@ export default function GestionCitasPage() {
       header: 'F. Solicitud',
     },
     {
-      accessor: (row: CasoConPaciente) => row.paciente.nombreCompleto,
+      accessor: (row: CasoConPaciente) => row.paciente?.nombreCompleto || 'Cargando...',
       header: 'Paciente',
     },
     { accessor: 'motivoConsulta', header: 'Motivo' },
@@ -120,7 +149,7 @@ export default function GestionCitasPage() {
             <Button size="sm" variant="outline" className="gap-2" onClick={() => { setSelectedCaso(row); setAgendarOpen(true); }}>
               <CalendarPlus className="h-4 w-4"/> <span>Agendar</span>
             </Button>
-            <Button size="sm" variant="destructive" className="gap-2" onClick={() => { setSelectedCaso(row); setCancelarOpen(true); }}>
+            <Button size="sm" variant="destructive" className="gap-2" onClick={() => { setSelectedCaso(row); }}>
                 <Ban className="h-4 w-4"/> <span>Cancelar</span>
             </Button>
         </div>
@@ -128,10 +157,11 @@ export default function GestionCitasPage() {
     },
   ];
 
-  if (loading) return <div>Cargando solicitudes...</div>;
+  if (isLoadingCasos || isLoadingPacientes || isLoadingMedicos) return <div>Cargando solicitudes...</div>;
 
   return (
     <div className="space-y-6">
+      <ConfirmDialog />
       <div className='flex justify-between items-center'>
         <h1 className="text-3xl font-bold">Gestión de Citas (Triaje)</h1>
       </div>
@@ -141,7 +171,7 @@ export default function GestionCitasPage() {
           <CardTitle>Solicitudes Pendientes de Agendar</CardTitle>
         </CardHeader>
         <CardContent>
-          <DataTable columns={columns} data={casos} filterColumn="motivoConsulta" filterPlaceholder='Filtrar por motivo...' />
+          <DataTable columns={columns} data={casosConPaciente} filterColumn="motivoConsulta" filterPlaceholder='Filtrar por motivo...' />
         </CardContent>
       </Card>
       
@@ -149,7 +179,7 @@ export default function GestionCitasPage() {
       <Dialog open={isAgendarOpen} onOpenChange={(open) => { if(!open) setSelectedCaso(null); setAgendarOpen(open); }}>
          <DialogContent>
             <DialogHeader>
-                <DialogTitle>Agendar Cita para {selectedCaso?.paciente.nombreCompleto}</DialogTitle>
+                <DialogTitle>Agendar Cita para {selectedCaso?.paciente?.nombreCompleto}</DialogTitle>
             </DialogHeader>
             <form id="agendar-form" onSubmit={(e) => {
                 e.preventDefault();
@@ -174,44 +204,21 @@ export default function GestionCitasPage() {
                         <Select name="idMedico" required>
                             <SelectTrigger id="medico-cita"><SelectValue placeholder="Seleccione un médico" /></SelectTrigger>
                             <SelectContent>
-                                {medicos.map(m => <SelectItem key={m.idMedico} value={String(m.idMedico)}>{m.nombreCompleto}</SelectItem>)}
+                                {medicosData?.map(m => <SelectItem key={m.id} value={String(m.id)}>{m.nombreCompleto}</SelectItem>)}
                             </SelectContent>
                         </Select>
                      </div>
                 </div>
                 <DialogFooter>
                     <DialogClose asChild><Button type="button" variant="ghost">Cerrar</Button></DialogClose>
-                    <Button type="submit">Confirmar Cita</Button>
+                    <Button type="submit" disabled={isSubmitting}>
+                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Confirmar Cita
+                    </Button>
                 </DialogFooter>
             </form>
         </DialogContent>
       </Dialog>
-      
-      {/* Cancelar Modal */}
-      <AlertDialog open={isCancelarOpen} onOpenChange={(open) => { if(!open) setSelectedCaso(null); setCancelarOpen(open); }}>
-        <AlertDialogContent>
-             <AlertDialogHeader>
-                <AlertDialogTitle>¿Está seguro que desea cancelar la solicitud?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Esta acción no se puede deshacer. La solicitud de {selectedCaso?.paciente.nombreCompleto} será marcada como cancelada.
-                </AlertDialogDescription>
-             </AlertDialogHeader>
-             <div className="space-y-2">
-                 <Label htmlFor="motivo-cancelacion">Motivo de la cancelación (requerido)</Label>
-                 <Textarea 
-                    id="motivo-cancelacion" 
-                    name="motivo-cancelacion" 
-                    placeholder="Especifique por qué se cancela la solicitud (ej: datos insuficientes, contactado por otro medio, etc.)"
-                    value={motivoCancelacion}
-                    onChange={(e) => setMotivoCancelacion(e.target.value)}
-                  />
-             </div>
-             <AlertDialogFooter>
-                <AlertDialogCancel onClick={() => setMotivoCancelacion("")}>Cerrar</AlertDialogCancel>
-                <AlertDialogAction onClick={handleCancelar} disabled={!motivoCancelacion}>Confirmar Cancelación</AlertDialogAction>
-            </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
     </div>
   );

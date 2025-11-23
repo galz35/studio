@@ -6,20 +6,22 @@ export type Pais = 'NI' | 'CR' | 'HN';
 export type EstadoClinico = 'BIEN' | 'REGULAR' | 'MAL';
 
 export interface UsuarioAplicacion {
-  idUsuario: number;
+  idUsuario?: number; // Optional on create
+  id?: string; // Firestore ID
   carnet: string;
   rol: Rol;
   estado: 'A' | 'I';
   ultimoAcceso?: string;
-  idPaciente?: number;
-  idMedico?: number;
+  idPaciente?: string; // Should be Firestore ID
+  idMedico?: string; // Should be Firestore ID
   nombreCompleto: string; 
   correo?: string;
   pais: Pais;
 }
 
 export interface Paciente {
-  idPaciente: number;
+  idPaciente?: number;
+  id?: string;
   carnet: string;
   nombreCompleto: string;
   fechaNacimiento?: string;
@@ -30,10 +32,12 @@ export interface Paciente {
   area?: string;
   estadoPaciente: 'A' | 'I';
   nivelSemaforo?: 'V' | 'A' | 'R';
+  pais: Pais;
 }
 
 export interface Medico {
-  idMedico: number;
+  idMedico?: number;
+  id?: string;
   nombreCompleto: string;
   especialidad?: string;
   tipoMedico: 'INTERNO' | 'EXTERNO';
@@ -45,7 +49,8 @@ export interface Medico {
 
 export interface ChequeoBienestar {
   idChequeo: number;
-  idPaciente: number;
+  id?: string;
+  idPaciente: string;
   fechaRegistro: string;
   estadoAnimo: string;
   ruta: string;
@@ -63,10 +68,11 @@ export interface ChequeoBienestar {
 }
 
 export interface CasoClinico {
-  idCaso: number;
-  codigoCaso: string;
-  idPaciente: number;
-  idCita?: number;
+  idCaso?: number;
+  id?: string;
+  codigoCaso?: string;
+  idPaciente: string;
+  idCita?: string;
   fechaCreacion: string;
   estadoCaso: string;
   nivelSemaforo: 'V' | 'A' | 'R';
@@ -74,26 +80,30 @@ export interface CasoClinico {
   resumenClinicoUsuario?: string;
   diagnosticoUsuario?: string;
   datosExtra?: any; // To store the full payload from the wizard
+  pais: Pais;
 }
 
 export interface CitaMedica {
-  idCita: number;
-  idCaso?: number;
-  idPaciente: number;
-  idMedico: number;
+  idCita?: number;
+  id?: string;
+  idCaso?: string;
+  idPaciente: string;
+  idMedico: string;
   fechaCita: string; // YYYY-MM-DD
   horaCita: string; // HH:mm
   canalOrigen: 'CHEQUEO' | 'RRHH' | 'OTRO' | 'SOLICITUD' | 'AGENDADA_POR_MEDICO';
   estadoCita: 'PROGRAMADA' | 'CONFIRMADA' | 'EN_ATENCION' | 'FINALIZADA' | 'CANCELADA';
   motivoResumen: string;
   nivelSemaforoPaciente: 'V' | 'A' | 'R';
+  pais: Pais;
 }
 
 export interface AtencionMedica {
   idAtencion: number;
-  idCita: number;
-  idCaso?: number;
-  idMedico: number;
+  id?: string;
+  idCita: string;
+  idCaso?: string;
+  idMedico: string;
   fechaAtencion: string; // ISO
   temperaturaC?: number;
   pesoKg?: number;
@@ -112,9 +122,10 @@ export interface AtencionMedica {
 
 export interface VacunaAplicada {
   idVacunaRegistro: number;
-  idPaciente: number;
-  idMedico: number;
-  idAtencion?: number; // Optional: can be registered outside a consultation
+  id?: string;
+  idPaciente: string;
+  idMedico: string;
+  idAtencion?: string; // Optional: can be registered outside a consultation
   tipoVacuna: string; // Influenza, COVID, Hepatitis, etc.
   dosis: string; // 1ra dosis, refuerzo, etc.
   fechaAplicacion: string;
@@ -123,7 +134,8 @@ export interface VacunaAplicada {
 
 export interface RegistroPsicosocial {
   idRegistroPsico: number;
-  idAtencion: number;
+  id?: string;
+  idAtencion: string;
   nivelEstrés?: 'BAJO' | 'MEDIO' | 'ALTO';
   sintomasPsico?: string[]; // Ej: ['Ansiedad', 'Insomnio', 'Tristeza']
   riesgoSuicida?: boolean;
@@ -134,9 +146,10 @@ export interface RegistroPsicosocial {
 
 export interface SeguimientoGenerado {
   idSeguimiento: number;
-  idCaso?: number;
-  idAtencion: number;
-  idPaciente: number;
+  id?: string;
+  idCaso?: string;
+  idAtencion: string;
+  idPaciente: string;
   fechaProgramada: string;
   motivo: string;
   estadoInicial: 'PENDIENTE';
@@ -144,6 +157,7 @@ export interface SeguimientoGenerado {
 }
 
 export interface EmpleadoEmp2024 {
+  id?: string;
   carnet: string;
   nombreCompleto: string;
   correo: string;
@@ -164,8 +178,9 @@ export interface EmpleadoEmp2024 {
 
 export interface SeguimientoPaciente {
   idSeguimiento: number;
-  idCaso: number;
-  idPaciente: number;
+  id?: string;
+  idCaso: string;
+  idPaciente: string;
   fechaProgramada: string;
   fechaReal?: string;
   tipoSeguimiento: 'LLAMADA' | 'TEAMS' | 'PRESENCIAL';
@@ -177,9 +192,10 @@ export interface SeguimientoPaciente {
 
 export interface ExamenMedico {
   idExamen: number;
-  idCaso?: number;
-  idAtencion?: number;
-  idPaciente: number;
+  id?: string;
+  idCaso?: string;
+  idAtencion?: string;
+  idPaciente: string;
   tipoExamen: string;
   fechaSolicitud: string;
   fechaResultado?: string;

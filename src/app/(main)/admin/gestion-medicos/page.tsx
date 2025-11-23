@@ -1,17 +1,16 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useAuth } from '@/hooks/use-auth';
-import * as api from '@/lib/services/api.mock';
 import { Medico, EmpleadoEmp2024 } from '@/lib/types/domain';
 import { DataTable } from '@/components/shared/DataTable';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, Pencil } from 'lucide-react';
+import { PlusCircle, Pencil, Loader2 } from 'lucide-react';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from '@/components/ui/dialog';
@@ -22,8 +21,9 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
-
+import { useFirebase } from '@/firebase/provider';
+import { collection, addDoc } from 'firebase/firestore';
+import { useCollection, useMemoFirebase } from '@/firebase';
 
 const medicoSchema = z.object({
   userType: z.enum(['interno', 'externo']),
@@ -48,10 +48,40 @@ type MedicoFormValues = z.infer<typeof medicoSchema>;
 export default function GestionMedicosPage() {
   const { pais } = useAuth();
   const { toast } = useToast();
-  const [medicos, setMedicos] = useState<Medico[]>([]);
-  const [empleados, setEmpleados] = useState<EmpleadoEmp2024[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { firestore } = useFirebase();
+
   const [isDialogOpen, setDialogOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Firestore Hooks
+  const medicosQuery = useMemoFirebase(() => firestore ? collection(firestore, 'medicos') : null, [firestore]);
+  const { data: medicos, isLoading: isLoadingMedicos } = useCollection<Medico>(medicosQuery);
+
+  const empleadosQuery = useMemoFirebase(() => firestore ? collection(firestore, 'empleadosEmp2024') : null, [firestore]);
+  const { data: empleados, isLoading: isLoadingEmpleados } = useCollection<EmpleadoEmp2024>(empleadosQuery);
+  
+  const medicosDelPais = useMemo(() => {
+    if (!medicos || !empleados) return [];
+    
+    // Get all external doctors
+    const medicosExternos = medicos.filter(m => m.tipoMedico === 'EXTERNO');
+
+    // Get internal doctors from the selected country
+    const empleadosDelPaisCarnets = new Set(empleados.filter(e => e.pais === pais).map(e => e.carnet));
+    const medicosInternosDelPais = medicos.filter(m => {
+        return m.tipoMedico === 'INTERNO' && m.carnet && empleadosDelPaisCarnets.has(m.carnet);
+    });
+
+    return [...medicosInternosDelPais, ...medicosExternos];
+  }, [medicos, empleados, pais]);
+
+
+  const empleadosDisponibles = useMemo(() => {
+    if (!empleados || !medicos) return [];
+    const medicoCarnets = new Set(medicos.map(m => m.carnet));
+    return empleados.filter(e => e.pais === pais && !medicoCarnets.has(e.carnet));
+  }, [empleados, medicos, pais]);
+
 
   const form = useForm<MedicoFormValues>({
     resolver: zodResolver(medicoSchema),
@@ -62,25 +92,15 @@ export default function GestionMedicosPage() {
 
   const userType = form.watch('userType');
 
-  useEffect(() => {
-    Promise.all([
-      api.getMedicos({ pais }),
-      api.getEmpleados()
-    ]).then(([medicosRes, empleadosRes]) => {
-      setMedicos(medicosRes);
-      // Filter employees who are not already doctors
-      const medicosCarnets = new Set(medicosRes.map(m => m.carnet));
-      setEmpleados(empleadosRes.filter(e => e.pais === pais && !medicosCarnets.has(e.carnet)));
-      setLoading(false);
-    });
-  }, [pais]);
-
-  const onSubmit = (data: MedicoFormValues) => {
-    let newMedico: Omit<Medico, 'idMedico'> & { idMedico?: number };
+  const onSubmit = async (data: MedicoFormValues) => {
+    if (!firestore) return;
+    setIsSubmitting(true);
+    
+    let newMedicoData: Omit<Medico, 'idMedico' | 'id'>;
 
     if (data.userType === 'interno') {
-        const empleado = empleados.find(e => e.carnet === data.empleadoCarnet)!;
-        newMedico = {
+        const empleado = empleados?.find(e => e.carnet === data.empleadoCarnet)!;
+        newMedicoData = {
           carnet: empleado.carnet,
           nombreCompleto: empleado.nombreCompleto,
           especialidad: data.especialidad,
@@ -90,7 +110,7 @@ export default function GestionMedicosPage() {
           estadoMedico: 'A',
         };
     } else { // Externo
-        newMedico = {
+        newMedicoData = {
           nombreCompleto: data.nombreCompleto!,
           carnet: data.carnet,
           especialidad: data.especialidad,
@@ -100,16 +120,18 @@ export default function GestionMedicosPage() {
           estadoMedico: 'A',
         };
     }
-
-    const finalMedico: Medico = {
-        ...newMedico,
-        idMedico: medicos.length + 1,
+    
+    try {
+        await addDoc(collection(firestore, 'medicos'), newMedicoData);
+        toast({ title: "Médico Creado", description: `El Dr./Dra. ${newMedicoData.nombreCompleto} ha sido añadido al sistema.`});
+        setDialogOpen(false);
+        form.reset({ userType: 'interno' });
+    } catch (error) {
+        console.error("Error creating medico:", error);
+        toast({ variant: 'destructive', title: 'Error', description: 'No se pudo crear el médico.'})
+    } finally {
+        setIsSubmitting(false);
     }
-
-    setMedicos(prev => [...prev, finalMedico]);
-    toast({ title: "Médico Creado", description: `El Dr./Dra. ${finalMedico.nombreCompleto} ha sido añadido al sistema.`});
-    setDialogOpen(false);
-    form.reset({ userType: 'interno' });
   };
 
 
@@ -137,7 +159,7 @@ export default function GestionMedicosPage() {
     },
   ];
 
-  if (loading) return <div>Cargando médicos...</div>;
+  if (isLoadingMedicos || isLoadingEmpleados) return <div>Cargando médicos y empleados...</div>;
 
   return (
     <div className="space-y-6">
@@ -167,7 +189,11 @@ export default function GestionMedicosPage() {
                       <FormItem><FormLabel>Empleado</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un empleado" /></SelectTrigger></FormControl>
                           <SelectContent>
-                            {empleados.map(e => <SelectItem key={e.carnet} value={e.carnet}>{e.nombreCompleto} ({e.carnet})</SelectItem>)}
+                            {empleadosDisponibles.length > 0 ? (
+                                empleadosDisponibles.map(e => <SelectItem key={e.carnet} value={e.carnet}>{e.nombreCompleto} ({e.carnet})</SelectItem>)
+                            ) : (
+                                <SelectItem value="none" disabled>No hay empleados disponibles</SelectItem>
+                            )}
                           </SelectContent>
                         </Select><FormMessage />
                       </FormItem>)} />
@@ -194,16 +220,19 @@ export default function GestionMedicosPage() {
                     <FormMessage />
                   </FormItem>)} />
 
-                <Button type="submit">Crear Médico</Button>
+                <Button type="submit" disabled={isSubmitting} className="w-full">
+                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Crear Médico
+                </Button>
               </form>
             </Form>
           </DialogContent>
         </Dialog>
       </div>
       <Card>
-        <CardHeader><CardTitle>Listado de Médicos</CardTitle></CardHeader>
+        <CardHeader><CardTitle>Listado de Médicos ({pais})</CardTitle></CardHeader>
         <CardContent>
-          <DataTable columns={columns} data={medicos} filterColumn="nombreCompleto" filterPlaceholder="Filtrar por nombre..." />
+          <DataTable columns={columns} data={medicosDelPais} filterColumn="nombreCompleto" filterPlaceholder="Filtrar por nombre..." />
         </CardContent>
       </Card>
     </div>

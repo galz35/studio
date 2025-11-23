@@ -1,14 +1,16 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 import { useAuth } from '@/hooks/use-auth';
-import * as api from '@/lib/services/api.mock';
 import { UsuarioAplicacion, EmpleadoEmp2024, Rol } from '@/lib/types/domain';
 import { DataTable } from '@/components/shared/DataTable';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, Pencil } from 'lucide-react';
+import { PlusCircle, Pencil, Loader2 } from 'lucide-react';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from '@/components/ui/dialog';
@@ -17,12 +19,13 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
+import { useFirebase } from '@/firebase/provider';
+import { collection, addDoc } from 'firebase/firestore';
+import { useCollection, useMemoFirebase } from '@/firebase';
+
 
 const userSchema = z.object({
   userType: z.enum(['interno', 'externo']),
@@ -46,10 +49,28 @@ type UserFormValues = z.infer<typeof userSchema>;
 export default function GestionUsuariosPage() {
   const { pais } = useAuth();
   const { toast } = useToast();
-  const [usuarios, setUsuarios] = useState<UsuarioAplicacion[]>([]);
-  const [empleados, setEmpleados] = useState<EmpleadoEmp2024[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { firestore } = useFirebase();
+
   const [isDialogOpen, setDialogOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Firestore Hooks
+  const usuariosQuery = useMemoFirebase(() => firestore ? collection(firestore, 'usuariosAplicacion') : null, [firestore]);
+  const { data: usuarios, isLoading: isLoadingUsuarios } = useCollection<UsuarioAplicacion>(usuariosQuery);
+
+  const empleadosQuery = useMemoFirebase(() => firestore ? collection(firestore, 'empleadosEmp2024') : null, [firestore]);
+  const { data: empleados, isLoading: isLoadingEmpleados } = useCollection<EmpleadoEmp2024>(empleadosQuery);
+  
+  const usuariosDelPais = useMemo(() => {
+    if (!usuarios) return [];
+    return usuarios.filter(u => u.pais === pais);
+  }, [usuarios, pais]);
+
+  const empleadosDisponibles = useMemo(() => {
+    if (!empleados || !usuarios) return [];
+    const userCarnets = new Set(usuarios.map(u => u.carnet));
+    return empleados.filter(e => e.pais === pais && !userCarnets.has(e.carnet));
+  }, [empleados, usuarios, pais]);
 
   const form = useForm<UserFormValues>({
     resolver: zodResolver(userSchema),
@@ -60,24 +81,15 @@ export default function GestionUsuariosPage() {
 
   const userType = form.watch('userType');
 
-  useEffect(() => {
-    Promise.all([
-      api.getUsuarios({ pais }),
-      api.getEmpleados()
-    ]).then(([usersRes, employeesRes]) => {
-      const userCarnets = new Set(usersRes.map(u => u.carnet));
-      setUsuarios(usersRes);
-      setEmpleados(employeesRes.filter(e => e.pais === pais && !userCarnets.has(e.carnet)));
-      setLoading(false);
-    });
-  }, [pais]);
+  const onSubmit = async (data: UserFormValues) => {
+    if (!firestore) return;
+    setIsSubmitting(true);
 
-  const onSubmit = (data: UserFormValues) => {
-    let newUser: Omit<UsuarioAplicacion, 'idUsuario'>;
+    let newUserData: Omit<UsuarioAplicacion, 'idUsuario' | 'id'>;
 
     if (data.userType === 'interno') {
-        const empleado = empleados.find(e => e.carnet === data.empleadoCarnet)!;
-        newUser = {
+        const empleado = empleados?.find(e => e.carnet === data.empleadoCarnet)!;
+        newUserData = {
           carnet: empleado.carnet,
           rol: data.rol,
           estado: 'A',
@@ -87,7 +99,7 @@ export default function GestionUsuariosPage() {
           ultimoAcceso: new Date().toISOString(),
         };
     } else { // Externo
-        newUser = {
+        newUserData = {
           carnet: data.carnet!,
           rol: data.rol,
           estado: 'A',
@@ -97,16 +109,20 @@ export default function GestionUsuariosPage() {
           ultimoAcceso: new Date().toISOString(),
         };
     }
-
-    const finalUser: UsuarioAplicacion = {
-        ...newUser,
-        idUsuario: usuarios.length + 1
+    
+    try {
+        // Here, we would also need to create a user in Firebase Auth
+        // For now, we just create the document in Firestore
+        await addDoc(collection(firestore, 'usuariosAplicacion'), newUserData);
+        toast({ title: "Usuario Creado", description: `El usuario ${newUserData.nombreCompleto} ha sido añadido al sistema.`});
+        setDialogOpen(false);
+        form.reset({ userType: 'interno', rol: undefined });
+    } catch(e) {
+        console.error("Error creating user:", e);
+        toast({ variant: 'destructive', title: 'Error', description: 'No se pudo crear el usuario.'});
+    } finally {
+        setIsSubmitting(false);
     }
-
-    setUsuarios(prev => [...prev, finalUser]);
-    toast({ title: "Usuario Creado", description: `El usuario ${finalUser.nombreCompleto} ha sido añadido al sistema.`});
-    setDialogOpen(false);
-    form.reset({ userType: 'interno' });
   };
 
   const columns = [
@@ -133,7 +149,7 @@ export default function GestionUsuariosPage() {
     },
   ];
 
-  if (loading) return <div>Cargando usuarios...</div>;
+  if (isLoadingUsuarios || isLoadingEmpleados) return <div>Cargando...</div>;
 
   return (
     <div className="space-y-6">
@@ -163,7 +179,11 @@ export default function GestionUsuariosPage() {
                       <FormItem><FormLabel>Empleado</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un empleado" /></SelectTrigger></FormControl>
                           <SelectContent>
-                            {empleados.map(e => <SelectItem key={e.carnet} value={e.carnet}>{e.nombreCompleto} ({e.carnet})</SelectItem>)}
+                            {empleadosDisponibles.length > 0 ? (
+                                empleadosDisponibles.map(e => <SelectItem key={e.carnet} value={e.carnet}>{e.nombreCompleto} ({e.carnet})</SelectItem>)
+                            ) : (
+                                <SelectItem value="none" disabled>No hay empleados para crear usuarios</SelectItem>
+                            )}
                           </SelectContent>
                         </Select><FormMessage />
                       </FormItem>)} />
@@ -187,7 +207,10 @@ export default function GestionUsuariosPage() {
                       <SelectContent><SelectItem value="PACIENTE">Paciente</SelectItem><SelectItem value="MEDICO">Médico</SelectItem><SelectItem value="ADMIN">Administrador</SelectItem></SelectContent>
                     </Select><FormMessage />
                   </FormItem>)} />
-                <Button type="submit">Crear Usuario</Button>
+                <Button type="submit" disabled={isSubmitting} className="w-full">
+                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Crear Usuario
+                </Button>
               </form>
             </Form>
           </DialogContent>
@@ -196,7 +219,7 @@ export default function GestionUsuariosPage() {
       <Card>
         <CardHeader><CardTitle>Listado de Usuarios del Sistema ({pais})</CardTitle></CardHeader>
         <CardContent>
-          <DataTable columns={columns} data={usuarios} filterColumn="nombreCompleto" filterPlaceholder="Filtrar por nombre..." />
+          <DataTable columns={columns} data={usuariosDelPais} filterColumn="nombreCompleto" filterPlaceholder="Filtrar por nombre..." />
         </CardContent>
       </Card>
     </div>
