@@ -21,9 +21,8 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
-import { useFirebase } from '@/firebase/provider';
-import { collection, addDoc } from 'firebase/firestore';
-import { useCollection, useMemoFirebase } from '@/firebase';
+import { Skeleton } from '@/components/ui/skeleton';
+
 
 const medicoSchema = z.object({
   userType: z.enum(['interno', 'externo']),
@@ -48,17 +47,40 @@ type MedicoFormValues = z.infer<typeof medicoSchema>;
 export default function GestionMedicosPage() {
   const { pais } = useAuth();
   const { toast } = useToast();
-  const { firestore } = useFirebase();
-
+  
   const [isDialogOpen, setDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Firestore Hooks
-  const medicosQuery = useMemoFirebase(() => firestore ? collection(firestore, 'medicos') : null, [firestore]);
-  const { data: medicos, isLoading: isLoadingMedicos } = useCollection<Medico>(medicosQuery);
+  // State for data fetched from our API
+  const [medicos, setMedicos] = useState<Medico[]>([]);
+  const [empleados, setEmpleados] = useState<EmpleadoEmp2024[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const [medicosRes, empleadosRes] = await Promise.all([
+          fetch('/api/medicos'),
+          fetch('/api/empleados')
+        ]);
+        if (!medicosRes.ok || !empleadosRes.ok) {
+          throw new Error('Failed to fetch data');
+        }
+        const medicosData = await medicosRes.json();
+        const empleadosData = await empleadosRes.json();
+        setMedicos(medicosData);
+        setEmpleados(empleadosData);
+      } catch (error) {
+        console.error(error);
+        toast({ variant: 'destructive', title: 'Error', description: 'No se pudieron cargar los datos.'});
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  const empleadosQuery = useMemoFirebase(() => firestore ? collection(firestore, 'empleadosEmp2024') : null, [firestore]);
-  const { data: empleados, isLoading: isLoadingEmpleados } = useCollection<EmpleadoEmp2024>(empleadosQuery);
+    fetchData();
+  }, [toast]);
   
   const medicosDelPais = useMemo(() => {
     if (!medicos || !empleados) return [];
@@ -93,7 +115,6 @@ export default function GestionMedicosPage() {
   const userType = form.watch('userType');
 
   const onSubmit = async (data: MedicoFormValues) => {
-    if (!firestore) return;
     setIsSubmitting(true);
     
     let newMedicoData: Omit<Medico, 'idMedico' | 'id'>;
@@ -122,7 +143,19 @@ export default function GestionMedicosPage() {
     }
     
     try {
-        await addDoc(collection(firestore, 'medicos'), newMedicoData);
+        const response = await fetch('/api/medicos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newMedicoData),
+        });
+
+        if (!response.ok) {
+          throw new Error('Server responded with an error');
+        }
+
+        const createdMedico = await response.json();
+        setMedicos(prev => [...prev, createdMedico]);
+
         toast({ title: "Médico Creado", description: `El Dr./Dra. ${newMedicoData.nombreCompleto} ha sido añadido al sistema.`});
         setDialogOpen(false);
         form.reset({ userType: 'interno' });
@@ -159,7 +192,27 @@ export default function GestionMedicosPage() {
     },
   ];
 
-  if (isLoadingMedicos || isLoadingEmpleados) return <div>Cargando médicos y empleados...</div>;
+  if (isLoading) return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+            <Skeleton className="h-9 w-64" />
+            <Skeleton className="h-10 w-32" />
+        </div>
+        <Card>
+            <CardHeader>
+                <Skeleton className="h-6 w-52" />
+            </CardHeader>
+            <CardContent>
+                <div className="space-y-2">
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-12 w-full" />
+                    <Skeleton className="h-12 w-full" />
+                    <Skeleton className="h-12 w-full" />
+                </div>
+            </CardContent>
+        </Card>
+    </div>
+  );
 
   return (
     <div className="space-y-6">
