@@ -1,18 +1,28 @@
 import { NextResponse } from 'next/server';
-import { initializeFirebase } from '@/firebase';
-import { collection, query, where, getDocs, Timestamp, limit } from 'firebase/firestore';
 import type { CitaMedica, Paciente, CasoClinico, SeguimientoPaciente, ExamenMedico } from '@/lib/types/domain';
 
-async function getCollectionData<T>(collectionName: string, pais: string, extraQuery?: any): Promise<T[]> {
-    const { firestore } = initializeFirebase();
-    const baseQuery = [where('pais', '==', pais)];
-    if (extraQuery) {
-        baseQuery.push(extraQuery);
-    }
-    const q = query(collection(firestore, collectionName), ...baseQuery);
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as T));
-}
+// --- Hardcoded Mock Data for this specific API endpoint ---
+const today = new Date().toISOString().split('T')[0];
+
+const pacientes: Paciente[] = [
+  { id: "paciente-001", idPaciente: 1, carnet: "P001", nombreCompleto: "Ana Sofía Pérez", estadoPaciente: "A", nivelSemaforo: "V", pais: "NI" },
+  { id: "paciente-002", idPaciente: 2, carnet: "P002", nombreCompleto: "Luis García", estadoPaciente: "A", nivelSemaforo: "R", pais: "NI" },
+];
+
+const citas: (CitaMedica & {id: string})[] = [
+  { id: "cita-001", idCita: 1, idCaso: "caso-001", idPaciente: "paciente-001", idMedico: "medico-001", fechaCita: today, horaCita: "10:00", motivoResumen: "Control anual", estadoCita: "PROGRAMADA", nivelSemaforoPaciente: "V", pais: "NI" },
+  { id: "cita-002", idCita: 2, idCaso: "caso-002", idPaciente: "paciente-002", idMedico: "medico-001", fechaCita: today, horaCita: "11:00", motivoResumen: "Seguimiento migraña", estadoCita: "PROGRAMADA", nivelSemaforoPaciente: "R", pais: "NI" },
+];
+
+const seguimientos: SeguimientoPaciente[] = [
+    { idSeguimiento: 1, idCaso: "caso-002", idPaciente: "paciente-002", fechaProgramada: "2024-08-10", tipoSeguimiento: "LLAMADA", estadoSeguimiento: "PENDIENTE", nivelSemaforo: "R", usuarioResponsable: "medico-001", notasSeguimiento: "Verificar efectividad de nuevo tratamiento." }
+];
+
+const examenes: ExamenMedico[] = [
+    { idExamen: 1, idPaciente: "paciente-002", tipoExamen: "Resonancia Magnética", fechaSolicitud: "2024-07-25", estadoExamen: "PENDIENTE", laboratorio: "Centro de Imágenes" }
+];
+// --- End of Mock Data ---
+
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
@@ -22,86 +32,33 @@ export async function GET(request: Request) {
     if (!idMedico || !pais) {
         return NextResponse.json({ message: 'idMedico y pais son requeridos' }, { status: 400 });
     }
+    
+    await new Promise(resolve => setTimeout(resolve, 500));
 
     try {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const tomorrow = new Date(today);
-        tomorrow.setDate(today.getDate() + 1);
-
-        const { firestore } = initializeFirebase();
-
-        // Citas del día para el médico
-        const citasQuery = query(
-            collection(firestore, 'citasMedicas'),
-            where('idMedico', '==', idMedico),
-            where('fechaCita', '>=', today.toISOString().split('T')[0]),
-            where('fechaCita', '<', tomorrow.toISOString().split('T')[0])
-        );
-        const citasSnapshot = await getDocs(citasQuery);
-        const citasDelDia: (CitaMedica & { id: string })[] = citasSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as CitaMedica & { id: string }));
-
-        // Pacientes en rojo (general del país, no solo del médico)
-        const pacientesEnRojoQuery = query(
-            collection(firestore, 'pacientes'),
-            where('pais', '==', pais),
-            where('nivelSemaforo', '==', 'R')
-        );
-        const pacientesEnRojoSnapshot = await getDocs(pacientesEnRojoQuery);
-
-        // Seguimientos pendientes (asignados al médico)
-        const seguimientosQuery = query(
-            collection(firestore, 'seguimientosPacientes'),
-            where('usuarioResponsable', '==', idMedico), // Asumiendo que el responsable es por ID
-            where('estadoSeguimiento', '==', 'PENDIENTE')
-        );
-        const seguimientosSnapshot = await getDocs(seguimientosQuery);
-
-        // Exámenes sin resultado (general del país)
-        const examenesQuery = query(
-            collection(firestore, 'examenesMedicos'),
-            where('pais', '==', pais),
-            where('estadoExamen', '==', 'PENDIENTE')
-        );
-        const examenesSnapshot = await getDocs(examenesQuery);
+        const citasDelDia = citas.filter(c => c.idMedico === idMedico && c.fechaCita === today && c.estadoCita === 'PROGRAMADA');
+        const pacientesEnRojo = pacientes.filter(p => p.pais === pais && p.nivelSemaforo === 'R').length;
+        const seguimientosPendientes = seguimientos.filter(s => s.usuarioResponsable === idMedico && s.estadoSeguimiento === 'PENDIENTE').length;
+        const examenesSinResultado = examenes.filter(e => {
+            const pac = pacientes.find(p => p.id === e.idPaciente);
+            return pac && pac.pais === pais && e.estadoExamen === 'PENDIENTE';
+        }).length;
         
-        // Alertas (simulado por ahora)
-        const alertas = [
-            // { message: 'Luis García ha reportado semáforo ROJO por 3 días seguidos.', type: 'danger' as const },
-            // { message: 'Seguimiento de Mariana López está vencido.', type: 'warning' as const },
-        ];
-        
-        // Populate paciente and caso for citasDelDia
-        const populatedCitas = await Promise.all(citasDelDia.map(async (cita) => {
-            let paciente: Paciente | null = null;
-            let caso: CasoClinico | null = null;
-            
-            const pacienteRef = doc(firestore, 'pacientes', cita.idPaciente);
-            const pacienteSnap = await getDoc(pacienteRef);
-            if (pacienteSnap.exists()) {
-                paciente = pacienteSnap.data() as Paciente;
-            }
-
-            if (cita.idCaso) {
-                const casoRef = doc(firestore, 'casosClinicos', cita.idCaso);
-                const casoSnap = await getDoc(casoRef);
-                if (casoSnap.exists()) {
-                    caso = casoSnap.data() as CasoClinico;
-                }
-            }
-            return { ...cita, paciente, caso };
-        }));
-
+        // Populate paciente for citasDelDia
+        const populatedCitas = citasDelDia.map(cita => {
+            const paciente = pacientes.find(p => p.id === cita.idPaciente);
+            return { ...cita, paciente: paciente || null, caso: null }; // caso is not needed for dashboard view
+        });
 
         const data = {
             kpis: {
                 citasHoy: citasDelDia.length,
-                pacientesEnRojo: pacientesEnRojoSnapshot.size,
-                seguimientosPendientes: seguimientosSnapshot.size,
-                examenesSinResultado: examenesSnapshot.size,
+                pacientesEnRojo: pacientesEnRojo,
+                seguimientosPendientes: seguimientosPendientes,
+                examenesSinResultado: examenesSinResultado,
             },
             citasDelDia: populatedCitas,
-            alertas: alertas,
+            alertas: seguimientosPendientes > 0 ? [{ message: `Tienes ${seguimientosPendientes} seguimientos por vencer.`, type: 'warning' as const }] : [],
         };
 
         return NextResponse.json(data);

@@ -1,7 +1,27 @@
 import { NextResponse } from 'next/server';
-import { initializeFirebase } from '@/firebase';
-import { collection, query, where, getDocs, getDoc, doc, orderBy, limit } from 'firebase/firestore';
-import { Paciente, ChequeoBienestar, CitaMedica, SeguimientoPaciente, AtencionMedica } from '@/lib/types/domain';
+import type { Paciente, ChequeoBienestar, CitaMedica, SeguimientoPaciente, AtencionMedica, CasoClinico } from '@/lib/types/domain';
+
+// --- Hardcoded Mock Data for this specific API endpoint ---
+const mockData: { [key: string]: any } = {
+    "paciente-001": {
+        paciente: { id: "paciente-001", nombreCompleto: "Ana Sofía Pérez", nivelSemaforo: "V", pais: "NI" },
+        chequeos: [
+            { id: "chq-001", idPaciente: "paciente-001", fechaRegistro: "2024-07-30T09:00:00Z", estadoAnimo: "Contento(a)", calidadSueno: "Buena", comentarioGeneral: "Todo bien esta semana.", nivelSemaforo: "V" }
+        ],
+        citas: [
+            { id: "cita-003", idPaciente: "paciente-001", fechaCita: "2024-08-05", horaCita: "10:00", estadoCita: "PROGRAMADA" }
+        ],
+        seguimientos: [],
+        atenciones: [
+            { id: "atencion-001", idPaciente: "paciente-001", fechaAtencion: "2024-07-20T11:00:00Z", diagnosticoPrincipal: "Revisión de rutina", idCaso: "caso-001" }
+        ],
+        casos: [
+             { id: "caso-001", idPaciente: "paciente-001" }
+        ]
+    }
+};
+// --- End of Mock Data ---
+
 
 // GET: /api/paciente/dashboard?idPaciente=...
 export async function GET(request: Request) {
@@ -11,82 +31,38 @@ export async function GET(request: Request) {
     if (!idPaciente) {
         return NextResponse.json({ message: 'idPaciente es requerido' }, { status: 400 });
     }
+    
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    const dataForPatient = mockData[idPaciente];
+
+    if (!dataForPatient) {
+        return NextResponse.json({ message: `No mock data found for patient ${idPaciente}` }, { status: 404 });
+    }
 
     try {
-        const { firestore } = initializeFirebase();
+        const { paciente, chequeos, citas, seguimientos, atenciones } = dataForPatient;
 
-        // 1. Obtener datos del paciente
-        const pacienteRef = doc(firestore, 'pacientes', idPaciente);
-        const pacienteSnap = await getDoc(pacienteRef);
-        if (!pacienteSnap.exists()) {
-            return NextResponse.json({ message: 'Paciente no encontrado' }, { status: 404 });
-        }
-        const pacienteData = pacienteSnap.data() as Paciente;
-
-        // 2. Obtener último chequeo
-        const chequeosQuery = query(
-            collection(firestore, 'chequeosBienestar'),
-            where('idPaciente', '==', idPaciente),
-            orderBy('fechaRegistro', 'desc'),
-            limit(1)
-        );
-        const chequeosSnap = await getDocs(chequeosQuery);
-        const ultimoChequeoData = chequeosSnap.empty ? null : (chequeosSnap.docs[0].data() as ChequeoBienestar);
+        const ultimoChequeoData = chequeos.length > 0 ? chequeos[0] : null;
         
-        // 3. Obtener próxima cita
-        const hoy = new Date().toISOString().split('T')[0];
-        const citasQuery = query(
-            collection(firestore, 'citasMedicas'),
-            where('idPaciente', '==', idPaciente),
-            where('fechaCita', '>=', hoy),
-            where('estadoCita', 'in', ['PROGRAMADA', 'CONFIRMADA']),
-            orderBy('fechaCita', 'asc'),
-            limit(1)
-        );
-        const citasSnap = await getDocs(citasQuery);
-        const proximaCitaData = citasSnap.empty ? null : (citasSnap.docs[0].data() as CitaMedica);
-        
-        // 4. Contar seguimientos activos
-        const seguimientosQuery = query(
-            collection(firestore, 'seguimientosPacientes'),
-            where('idPaciente', '==', idPaciente),
-            where('estadoSeguimiento', 'in', ['PENDIENTE', 'EN_PROCESO'])
-        );
-        const seguimientosSnap = await getDocs(seguimientosQuery);
-        const seguimientosActivos = seguimientosSnap.size;
+        const hoy = new Date();
+        const proximaCitaData = citas
+            .filter((c: CitaMedica) => new Date(c.fechaCita) >= hoy && c.estadoCita === 'PROGRAMADA')
+            .sort((a: CitaMedica, b: CitaMedica) => new Date(a.fechaCita).getTime() - new Date(b.fechaCita).getTime())[0] || null;
 
-        // 5. Construir Timeline (ejemplo)
+        const seguimientosActivos = seguimientos.filter((s: SeguimientoPaciente) => ['PENDIENTE', 'EN_PROCESO'].includes(s.estadoSeguimiento)).length;
+        
         let timeline: { title: string; date: string }[] = [];
-
-        const casosQuery = query(collection(firestore, 'casosClinicos'), where('idPaciente', '==', idPaciente));
-        const casosSnap = await getDocs(casosQuery);
-        const casosIds = casosSnap.docs.map(d => d.id);
-        
-        // Robustez: Solo buscar atenciones si existen casos clínicos.
-        if (casosIds.length > 0) {
-            const atencionesQuery = query(
-                collection(firestore, 'atencionesMedicas'), 
-                where('idCaso', 'in', casosIds), 
-                orderBy('fechaAtencion', 'desc'), 
-                limit(2)
-            );
-            const atencionesSnap = await getDocs(atencionesQuery);
-            const atencionesTimeline = atencionesSnap.docs.map(d => {
-                const data = d.data() as AtencionMedica;
-                return { title: `Atención: ${data.diagnosticoPrincipal}`, date: data.fechaAtencion };
-            });
-            timeline.push(...atencionesTimeline);
-        }
-
         if (ultimoChequeoData) {
             timeline.push({ title: `Chequeo de Bienestar`, date: ultimoChequeoData.fechaRegistro });
         }
+        atenciones.forEach((a: AtencionMedica) => {
+            timeline.push({ title: `Atención: ${a.diagnosticoPrincipal}`, date: a.fechaAtencion });
+        });
 
-
-        // Construir respuesta
-        const data = {
+        const responseData = {
             kpis: {
-                estadoActual: pacienteData.nivelSemaforo || 'V',
+                estadoActual: paciente.nivelSemaforo || 'V',
                 ultimoChequeo: ultimoChequeoData ? new Date(ultimoChequeoData.fechaRegistro).toLocaleDateString('es-ES') : 'Ninguno',
                 proximaCita: proximaCitaData ? `${proximaCitaData.fechaCita} a las ${proximaCitaData.horaCita}` : null,
                 seguimientosActivos: seguimientosActivos,
@@ -95,10 +71,10 @@ export async function GET(request: Request) {
             timeline: timeline.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 3),
         };
 
-        return NextResponse.json(data);
+        return NextResponse.json(responseData);
 
     } catch (error) {
-        console.error("Error fetching paciente dashboard data:", error);
+        console.error(`Error processing dashboard for patient ${idPaciente}:`, error);
         const errorMessage = error instanceof Error ? error.message : 'Ocurrió un error desconocido';
         return NextResponse.json({ message: 'Error al obtener datos del dashboard del paciente', error: errorMessage }, { status: 500 });
     }
