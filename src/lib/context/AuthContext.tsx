@@ -105,7 +105,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const login = async (carnet: string, password: string) => {
-    let user = mockUsuarios.find(u => u.carnet.toLowerCase() === carnet.toLowerCase());
+    const lowerCaseCarnet = carnet.toLowerCase();
+    let user = mockUsuarios.find(u => u.carnet.toLowerCase() === lowerCaseCarnet);
     
     if (!user) {
         toast({
@@ -116,23 +117,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return;
     }
     
-    const performLogin = async () => {
-        const userWithCountry = { ...user!, pais };
+    // Use a generic user object for login, then specify role for dashboard
+    const userForLogin = user;
+
+    const performLogin = async (authedUser: User) => {
+        const userWithCountry = { ...userForLogin, pais };
         setUsuarioActual(userWithCountry);
         localStorage.setItem('usuarioActual', JSON.stringify(userWithCountry));
-        await logAuditEvent('LOGIN_SUCCESS', carnet, firebaseUser?.uid || "unknown", `User ${carnet} logged in successfully.`);
-        router.push(getDashboardUrl(user!.rol));
+        await logAuditEvent('LOGIN_SUCCESS', carnet, authedUser.uid, `User ${carnet} logged in successfully.`);
+        router.push(getDashboardUrl(userForLogin.rol));
     }
 
     try {
-        await signInWithEmailAndPassword(auth, `${carnet.toLowerCase()}@corp.local`, password);
-        await performLogin();
+        const userCredential = await signInWithEmailAndPassword(auth, `${lowerCaseCarnet}@corp.local`, password);
+        await performLogin(userCredential.user);
 
     } catch (error: any) {
         if (error.code === 'auth/user-not-found') {
             try {
-                await createUserWithEmailAndPassword(auth, `${carnet.toLowerCase()}@corp.local`, password);
-                await performLogin();
+                const userCredential = await createUserWithEmailAndPassword(auth, `${lowerCaseCarnet}@corp.local`, password);
+                await performLogin(userCredential.user);
             } catch (creationError) {
                  toast({
                     variant: "destructive",
