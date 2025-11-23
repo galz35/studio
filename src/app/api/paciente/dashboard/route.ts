@@ -56,12 +56,12 @@ export async function GET(request: Request) {
         const seguimientosActivos = seguimientosSnap.size;
 
         // 5. Construir Timeline (ejemplo)
+        let timeline: { title: string; date: string }[] = [];
+
         const casosQuery = query(collection(firestore, 'casosClinicos'), where('idPaciente', '==', idPaciente));
         const casosSnap = await getDocs(casosQuery);
         const casosIds = casosSnap.docs.map(d => d.id);
         
-        let timeline: { title: string; date: string }[] = [];
-
         if (casosIds.length > 0) {
             const atencionesQuery = query(
                 collection(firestore, 'atencionesMedicas'), 
@@ -70,10 +70,11 @@ export async function GET(request: Request) {
                 limit(2)
             );
             const atencionesSnap = await getDocs(atencionesQuery);
-            timeline = atencionesSnap.docs.map(d => {
+            const atencionesTimeline = atencionesSnap.docs.map(d => {
                 const data = d.data() as AtencionMedica;
                 return { title: `Atención: ${data.diagnosticoPrincipal}`, date: data.fechaAtencion };
             });
+            timeline.push(...atencionesTimeline);
         }
 
         if (ultimoChequeoData) {
