@@ -138,7 +138,7 @@ export function Sidebar({ isCollapsed, toggleSidebar }: { isCollapsed: boolean, 
             {(!isCollapsed || isMobile) ? (
               <div className="flex items-center font-cursive text-2xl text-white">
                 <span>Clar</span>
-                <HeartPulse className="relative -bottom-1 mx-[-1px] h-6 w-6"/>
+                <HeartPulse className="relative -bottom-1 mx-[-1px] h-6 w-6 text-accent"/>
                 <span className="font-bold">Mi Salud</span>
               </div>
             ) : (
