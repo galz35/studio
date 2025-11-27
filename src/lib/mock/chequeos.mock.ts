@@ -36,6 +36,7 @@ export const chequeos: ChequeoBienestar[] = [
     nivelSemaforo: "R",
     estadoChequeo: "Requiere atención",
     comentarioGeneral: "He tenido migrañas fuertes y no he dormido bien.",
+    nivelEstres: 'Alto',
   },
   {
     id: "chq-003",
@@ -53,6 +54,7 @@ export const chequeos: ChequeoBienestar[] = [
     nivelSemaforo: "A",
     estadoChequeo: "Completado",
     comentarioGeneral: "Un poco de cansancio, pero nada fuera de lo normal.",
+    nivelEstres: 'Medio',
   },
   {
     id: "chq-004",
@@ -69,6 +71,7 @@ export const chequeos: ChequeoBienestar[] = [
     yaConsultoMedico: false,
     nivelSemaforo: "V",
     estadoChequeo: "Completado",
+    nivelEstres: 'Bajo',
   },
   {
     id: "chq-005",
@@ -86,7 +89,8 @@ export const chequeos: ChequeoBienestar[] = [
     yaConsultoMedico: false,
     nivelSemaforo: "A",
     estadoChequeo: "Completado",
-    comentarioGeneral: "Sigo con algo de malestar pero mejorando."
+    comentarioGeneral: "Sigo con algo de malestar pero mejorando.",
+    nivelEstres: 'Medio',
   },
   {
     id: "chq-006",
@@ -103,6 +107,7 @@ export const chequeos: ChequeoBienestar[] = [
     yaConsultoMedico: false,
     nivelSemaforo: "V",
     estadoChequeo: "Completado",
-    comentarioGeneral: "Me siento bien esta semana, sin mucho estrés."
+    comentarioGeneral: "Me siento bien esta semana, sin mucho estrés.",
+    nivelEstres: 'Bajo',
   }
 ];

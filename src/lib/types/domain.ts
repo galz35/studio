@@ -17,6 +17,8 @@ export interface UsuarioAplicacion {
   nombreCompleto: string; 
   correo?: string;
   pais: Pais;
+  // Added for profile consistency
+  nivelSemaforo?: 'V' | 'A' | 'R';
 }
 
 export interface Paciente {
@@ -52,14 +54,17 @@ export interface ChequeoBienestar {
   id?: string;
   idPaciente: string;
   fechaRegistro: string;
+  // Psicosocial fields
+  nivelEstres?: string;
   estadoAnimo: string;
-  ruta: string;
+  calidadSueno: string;
+  consumoAgua: string;
   modalidadTrabajo: string;
+  // Original fields
+  ruta: string;
   aptoLaboral?: boolean;
   alergiasActivas?: boolean;
   alergiasDescripcion?: string;
-  calidadSueno: string;
-  consumoAgua: string;
   yaConsultoMedico?: boolean;
   motivoNoAcudirMedico?: string;
   nivelSemaforo: 'V' | 'A' | 'R';
@@ -136,7 +141,7 @@ export interface VacunaAplicada {
   idVacunaRegistro: number;
   id?: string;
   idPaciente: string;
-  idMedico: string;
+  idMedico?: string; // Optional because it can be registered from a campaign
   idAtencion?: string; // Optional: can be registered outside a consultation
   tipoVacuna: string; // Influenza, COVID, Hepatitis, etc.
   dosis: string; // 1ra dosis, refuerzo, etc.
@@ -147,12 +152,13 @@ export interface VacunaAplicada {
 }
 
 export interface RegistroPsicosocial {
-  idRegistroPsico?: number;
+  idRegistroPsico: number;
   id?: string;
-  idPaciente: string;
-  idMedico: string;
-  fechaRegistro: string; // ISO
-  idAtencion?: string; // Opcional, si se registra durante una atención
+  idPaciente?: string; // Can be linked to patient directly
+  idMedico?: string; // Who registered it
+  fechaRegistro?: string; // ISO
+  idAtencion?: string; // Optional, if registered during a consultation
+  confidencial?: boolean;
   nivelEstres?: 'Bajo' | 'Medio' | 'Alto';
   sintomasPsico?: string[]; // Ej: ['Ansiedad', 'Insomnio', 'Tristeza']
   estadoAnimoGeneral?: string; // Texto libre del paciente

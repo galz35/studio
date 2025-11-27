@@ -52,6 +52,9 @@ export function AtencionCitaWizard({ citaData }: AtencionCitaWizardProps) {
     const [psico, setPsico] = useState<RegistroPsicosocial>({
         idRegistroPsico: Date.now(),
         idAtencion: atencion.idAtencion.toString(),
+        idPaciente: citaData.paciente.id,
+        idMedico: userProfile?.idMedico,
+        fechaRegistro: new Date().toISOString(),
         confidencial: true,
         sintomasPsico: [],
     });
@@ -73,7 +76,7 @@ export function AtencionCitaWizard({ citaData }: AtencionCitaWizardProps) {
         const payload = {
             atencion,
             vacunas,
-            psico: psico.nivelEstrés || (psico.sintomasPsico && psico.sintomasPsico.length > 0) || psico.notasPsico ? psico : null,
+            psico: psico.nivelEstres || (psico.sintomasPsico && psico.sintomasPsico.length > 0) || psico.notasPsico ? psico : null,
             seguimientos
         };
         try {
@@ -116,7 +119,7 @@ export function AtencionCitaWizard({ citaData }: AtencionCitaWizardProps) {
                 {step === 2 && <Step2_Vitales atencion={atencion} handleChange={handleChangeAtencion} />}
                 {step === 3 && <Step3_Diagnostico atencion={atencion} handleChange={handleChangeAtencion} />}
                 {step === 4 && <Step4_Seguimiento atencion={atencion} handleChange={handleChangeAtencion} setSeguimientos={setSeguimientos} idPaciente={citaData.paciente.id!} />}
-                {step === 5 && <Step5_Cierre atencion={atencion} vacunas={vacunas} setVacunas={setVacunas} psico={psico} setPsico={handleUpdatePsico} />}
+                {step === 5 && <Step5_Cierre atencion={atencion} vacunas={vacunas} setVacunas={setVacunas} psico={psico} setPsico={handleUpdatePsico} idPaciente={citaData.paciente.id!} />}
                 
                 <div className="mt-8 flex justify-between">
                     <Button variant="outline" onClick={handlePrev} disabled={step === 1 || isSaving}>

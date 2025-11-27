@@ -21,10 +21,10 @@ import {
 
 
 // Subcomponents defined in the same file for simplicity
-const VacunasEmpresaBlock: React.FC<{ vacunas: VacunaAplicada[], setVacunas: React.Dispatch<React.SetStateAction<VacunaAplicada[]>>, idAtencion: number }> = ({ vacunas, setVacunas, idAtencion }) => {
+const VacunasEmpresaBlock: React.FC<{ vacunas: VacunaAplicada[], setVacunas: React.Dispatch<React.SetStateAction<VacunaAplicada[]>>, idAtencion: number, idPaciente: string }> = ({ vacunas, setVacunas, idAtencion, idPaciente }) => {
     
     const handleAdd = () => {
-        setVacunas(prev => [...prev, { idVacunaRegistro: Date.now(), idAtencion, tipoVacuna: '', dosis: '', fechaAplicacion: new Date().toISOString().split('T')[0] }]);
+        setVacunas(prev => [...prev, { idVacunaRegistro: Date.now(), idAtencion: idAtencion.toString(), tipoVacuna: '', dosis: '', fechaAplicacion: new Date().toISOString().split('T')[0], idPaciente: idPaciente }]);
     };
     
     const handleRemove = (id: number) => {
@@ -83,8 +83,8 @@ const PsicosocialBlock: React.FC<{ psico: RegistroPsicosocial, setPsico: (field:
                         <div>
                             <Label>Nivel de Estrés Percibido</Label>
                             <div className="flex gap-2 mt-2">
-                                {(['BAJO', 'MEDIO', 'ALTO'] as const).map(level => (
-                                     <Badge key={level} onClick={() => setPsico('nivelEstrés', level)} variant={psico.nivelEstrés === level ? 'default' : 'outline'} className={cn('cursor-pointer', psico.nivelEstrés === level ? 'bg-primary' : '')}>{level}</Badge>
+                                {(['Bajo', 'Medio', 'Alto'] as const).map(level => (
+                                     <Badge key={level} onClick={() => setPsico('nivelEstres', level)} variant={psico.nivelEstres === level ? 'default' : 'outline'} className={cn('cursor-pointer', psico.nivelEstres === level ? 'bg-primary' : '')}>{level}</Badge>
                                 ))}
                             </div>
                         </div>
@@ -127,12 +127,13 @@ interface Step5Props {
     setVacunas: React.Dispatch<React.SetStateAction<VacunaAplicada[]>>;
     psico: RegistroPsicosocial;
     setPsico: (field: keyof RegistroPsicosocial, value: any) => void;
+    idPaciente: string;
 }
 
-export function Step5_Cierre({ atencion, vacunas, setVacunas, psico, setPsico }: Step5Props) {
+export function Step5_Cierre({ atencion, vacunas, setVacunas, psico, setPsico, idPaciente }: Step5Props) {
     return (
         <div className="space-y-6">
-            <VacunasEmpresaBlock vacunas={vacunas} setVacunas={setVacunas} idAtencion={atencion.idAtencion} />
+            <VacunasEmpresaBlock vacunas={vacunas} setVacunas={setVacunas} idAtencion={atencion.idAtencion} idPaciente={idPaciente} />
             <PsicosocialBlock psico={psico} setPsico={setPsico} />
 
             <Card>
@@ -142,7 +143,7 @@ export function Step5_Cierre({ atencion, vacunas, setVacunas, psico, setPsico }:
                     <p><strong>Diagnóstico:</strong> {atencion.diagnosticoPrincipal || 'No especificado'}</p>
                     <p><strong>Requiere Seguimiento:</strong> {atencion.requiereSeguimiento ? `Sí, para el ${atencion.fechaSiguienteCita}` : 'No'}</p>
                     <p><strong>Vacunas/Acciones registradas:</strong> {vacunas.length}</p>
-                    <p><strong>Se registró info psicosocial:</strong> {psico.nivelEstrés || (psico.sintomasPsico && psico.sintomasPsico.length > 0) || psico.notasPsico ? 'Sí' : 'No'}</p>
+                    <p><strong>Se registró info psicosocial:</strong> {psico.nivelEstres || (psico.sintomasPsico && psico.sintomasPsico.length > 0) || psico.notasPsico ? 'Sí' : 'No'}</p>
                 </CardContent>
             </Card>
         </div>
