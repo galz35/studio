@@ -28,8 +28,10 @@ import type {
     UsuarioAplicacion,
     VacunaAplicada,
     RegistroPsicosocial,
-    EmpleadoEmp2024
+    EmpleadoEmp2024,
+    TriajeIA
 } from '@/lib/types/domain';
+import { analizarTriajeMedico } from '@/ai/flows/analisis-triaje-medico';
 
 // --- Utils ---
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -83,6 +85,26 @@ export const crearCasoClinico = async (data: Partial<CasoClinico>): Promise<Caso
     idCaso: nextId,
     ...data,
   } as CasoClinico;
+  
+  // Async call to IA without blocking the main thread
+  analizarTriajeMedico({ sintomas: newCaso.motivoConsulta })
+    .then(analisis => {
+      // Find the created case and update it with the IA analysis
+      const index = casosClinicos.findIndex(c => c.id === newCaso.id);
+      if (index !== -1) {
+        casosClinicos[index].triajeIA = analisis;
+        console.log("Análisis de IA completado y añadido al caso:", newCaso.id);
+      }
+    })
+    .catch(error => {
+      console.error("Error en el análisis de IA:", error);
+      // Optionally, update the case to show an error
+      const index = casosClinicos.findIndex(c => c.id === newCaso.id);
+      if (index !== -1) {
+        casosClinicos[index].triajeIA = null; // Mark as failed or add error info
+      }
+    });
+
   casosClinicos.push(newCaso);
   return newCaso;
 };
@@ -459,3 +481,24 @@ export const getDashboardAdmin = async (filters: { pais: string, gerencia: strin
          // ... chart data
      }
 }
+
+
+// PSICOSOCIAL
+export const getRegistrosPsicosociales = async (filters: { pais: string }) => {
+    await delay(300);
+    return registrosPsicosociales.filter(r => {
+        const p = pacientes.find(p => p.id === r.idPaciente);
+        return p?.pais === filters.pais;
+    });
+};
+
+export const crearRegistroPsicosocial = async (data: Omit<RegistroPsicosocial, 'id' | 'idRegistroPsico'>): Promise<RegistroPsicosocial> => {
+    await delay(400);
+    const newRegistro: RegistroPsicosocial = {
+        id: `psico-${nextId++}`,
+        idRegistroPsico: nextId,
+        ...data,
+    };
+    registrosPsicosociales.push(newRegistro);
+    return newRegistro;
+};
