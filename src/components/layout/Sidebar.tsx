@@ -78,6 +78,7 @@ const NavItem = ({ href, icon: Icon, label, isCollapsed }: NavItemProps) => {
 const pacienteMenu = [
   { href: "/paciente/dashboard", icon: LayoutDashboard, label: "Panel" },
   { href: "/paciente/solicitar-cita", icon: CalendarPlus, label: "Solicitar Cita" },
+  { href: "/paciente/psicosocial", icon: BrainCircuit, label: "Bienestar Psicosocial" },
   { href: "/paciente/mis-citas", icon: Calendar, label: "Mis Citas" },
   { href: "/paciente/historial-chequeos", icon: ClipboardList, label: "Mis Chequeos" },
   { href: "/paciente/mis-examenes", icon: FlaskConical, label: "Mis Exámenes" },

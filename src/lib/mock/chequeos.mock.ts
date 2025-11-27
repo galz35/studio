@@ -87,5 +87,22 @@ export const chequeos: ChequeoBienestar[] = [
     nivelSemaforo: "A",
     estadoChequeo: "Completado",
     comentarioGeneral: "Sigo con algo de malestar pero mejorando."
+  },
+  {
+    id: "chq-006",
+    idChequeo: 6,
+    idPaciente: "paciente-001",
+    fechaRegistro: "2024-07-31T10:00:00",
+    estadoAnimo: "Bien",
+    ruta: "Psicosocial",
+    modalidadTrabajo: "N/A",
+    aptoLaboral: true,
+    alergiasActivas: false,
+    calidadSueno: "Buena",
+    consumoAgua: "Más de 2 litros",
+    yaConsultoMedico: false,
+    nivelSemaforo: "V",
+    estadoChequeo: "Completado",
+    comentarioGeneral: "Me siento bien esta semana, sin mucho estrés."
   }
 ];
