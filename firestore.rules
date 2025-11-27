@@ -213,6 +213,21 @@ service cloud.firestore {
     }
 
     /**
+     * @description Stores psychosocial assessment records. Patients can create their own, medical staff can create detailed ones.
+     * @path /registrosPsicosociales/{idRegistro}
+     * @allow (create) Patients can create their own records, doctors/admins can create for any patient.
+     * @allow (read) Doctors and admins can read all records. Patients can read their own.
+     * @principle Enables both self-reporting and professional assessment while maintaining privacy.
+     */
+    match /registrosPsicosociales/{idRegistro} {
+      allow get: if isOwnPaciente(resource.data.idPaciente) || isMedico() || isAdmin();
+      allow list: if isMedico() || isAdmin();
+      allow create: if (isOwnPaciente(request.resource.data.idPaciente)) || isMedico() || isAdmin();
+      allow update: if (isMedico() || isAdmin()) && isExistingDoc();
+      allow delete: if (isAdmin()) && isExistingDoc();
+    }
+
+    /**
      * @description Read-only collection of employee data, likely from an external HR system.
      * @path /empleadosEmp2024/{carnet}
      * @allow (read) Any authenticated user can read this data.
