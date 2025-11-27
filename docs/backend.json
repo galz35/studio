@@ -563,6 +563,25 @@
         "usuarioResponsable"
       ]
     },
+    "RegistroPsicosocial": {
+      "title": "RegistroPsicosocial",
+      "description": "Stores psychosocial assessment records for an employee.",
+      "type": "object",
+      "properties": {
+        "idRegistroPsico": { "type": "string", "description": "Unique ID for the psychosocial record." },
+        "idPaciente": { "type": "string", "description": "ID of the patient being assessed." },
+        "idMedico": { "type": "string", "description": "ID of the doctor making the record." },
+        "fechaRegistro": { "type": "string", "format": "date-time", "description": "Timestamp of the record." },
+        "nivelEstres": { "type": "string", "enum": ["Bajo", "Medio", "Alto"], "description": "Perceived stress level." },
+        "sintomasPsico": { "type": "array", "items": { "type": "string" }, "description": "List of reported psychological symptoms." },
+        "estadoAnimoGeneral": { "type": "string", "description": "Open text from the patient about their mood." },
+        "analisisSentimiento": { "type": "string", "enum": ["Positivo", "Negativo", "Neutro"], "description": "AI-based sentiment analysis of the mood text." },
+        "riesgoSuicida": { "type": "boolean", "description": "Flag for suicide risk." },
+        "derivarAPsico": { "type": "boolean", "description": "Flag for psychology referral recommendation." },
+        "notasPsico": { "type": "string", "description": "Confidential notes from the doctor." }
+      },
+      "required": ["idRegistroPsico", "idPaciente", "idMedico", "fechaRegistro"]
+    },
     "EmpleadoEmp2024": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "EmpleadoEmp2024",
@@ -818,6 +837,19 @@
               "name": "idSeguimiento",
               "description": "The unique identifier for the patient follow-up."
             }
+          ]
+        }
+      },
+       {
+        "path": "/registrosPsicosociales/{idRegistro}",
+        "definition": {
+          "entityName": "RegistroPsicosocial",
+          "schema": {
+            "$ref": "#/backend/entities/RegistroPsicosocial"
+          },
+          "description": "Stores psychosocial assessment records.",
+          "params": [
+            { "name": "idRegistro", "description": "The unique ID for the psychosocial record." }
           ]
         }
       },

@@ -20,6 +20,7 @@ import {
   BookOpen,
   Syringe,
   Users2,
+  BrainCircuit,
 } from "lucide-react";
 
 import { useUserProfile } from "@/hooks/use-user-profile";
@@ -88,6 +89,7 @@ const medicoMenu = [
   { href: "/medico/agenda-citas", icon: CalendarPlus, label: "Gestión de Citas" },
   { href: "/medico/agenda-calendario", icon: CalendarDays, label: "Agenda (Calendario)" },
   { href: "/medico/pacientes-casos", icon: BookUser, label: "Pacientes y Casos" },
+  { href: "/medico/psicosocial", icon: BrainCircuit, label: "Psicosocial" },
   { href: "/medico/examenes", icon: FlaskConical, label: "Exámenes" },
   { href: "/medico/seguimientos", icon: Repeat, label: "Seguimientos" },
   { href: "/medico/registro-vacunas", icon: Syringe, label: "Registro de Vacunas" },
@@ -99,6 +101,7 @@ const adminMenu = [
   { href: "/admin/gestion-usuarios", icon: Users, label: "Usuarios" },
   { href: "/admin/gestion-empleados", icon: Users2, label: "Empleados" },
   { href: "/admin/gestion-medicos", icon: Stethoscope, label: "Médicos" },
+  { href: "/admin/psicosocial", icon: BrainCircuit, label: "Psicosocial" },
   { href: "/admin/reportes", icon: BarChart3, label: "Reportes" },
   { href: "/admin/configuracion", icon: Settings, label: "Configuración" },
 ];

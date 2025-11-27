@@ -147,15 +147,19 @@ export interface VacunaAplicada {
 }
 
 export interface RegistroPsicosocial {
-  idRegistroPsico: number;
+  idRegistroPsico?: number;
   id?: string;
-  idAtencion: string;
-  nivelEstrés?: 'BAJO' | 'MEDIO' | 'ALTO';
+  idPaciente: string;
+  idMedico: string;
+  fechaRegistro: string; // ISO
+  idAtencion?: string; // Opcional, si se registra durante una atención
+  nivelEstres?: 'Bajo' | 'Medio' | 'Alto';
   sintomasPsico?: string[]; // Ej: ['Ansiedad', 'Insomnio', 'Tristeza']
+  estadoAnimoGeneral?: string; // Texto libre del paciente
+  analisisSentimiento?: 'Positivo' | 'Negativo' | 'Neutro';
   riesgoSuicida?: boolean;
   derivarAPsico?: boolean;
-  notasPsico?: string;
-  confidencial?: boolean; // Indica si es info sensible
+  notasPsico?: string; // Notas confidenciales del médico
 }
 
 export interface SeguimientoGenerado {
