@@ -44,11 +44,22 @@ const userSchema = z.object({
 
 type UserFormValues = z.infer<typeof userSchema>;
 
+const editUserSchema = z.object({
+  rol: z.enum(["PACIENTE", "MEDICO", "ADMIN"]),
+  estado: z.enum(["A", "I"]),
+});
+
+type EditUserFormValues = z.infer<typeof editUserSchema>;
+
+
 export default function GestionUsuariosPage() {
   const { pais } = useUserProfile();
   const { toast } = useToast();
 
-  const [isDialogOpen, setDialogOpen] = useState(false);
+  const [isCreateDialogOpen, setCreateDialogOpen] = useState(false);
+  const [isEditDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<UsuarioAplicacion | null>(null);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [usuarios, setUsuarios] = useState<UsuarioAplicacion[]>([]);
@@ -90,20 +101,34 @@ export default function GestionUsuariosPage() {
     return empleados.filter(e => e.pais === pais && !userCarnets.has(e.carnet));
   }, [empleados, usuarios, pais]);
 
-  const form = useForm<UserFormValues>({
+  const createForm = useForm<UserFormValues>({
     resolver: zodResolver(userSchema),
     defaultValues: {
         userType: 'interno',
     }
   });
 
-  const userType = form.watch('userType');
+  const editForm = useForm<EditUserFormValues>({
+    resolver: zodResolver(editUserSchema),
+  });
 
-  const onSubmit = async (data: UserFormValues) => {
+  const userType = createForm.watch('userType');
+  
+  const handleEditClick = (user: UsuarioAplicacion) => {
+    setSelectedUser(user);
+    editForm.reset({
+      rol: user.rol,
+      estado: user.estado,
+    });
+    setEditDialogOpen(true);
+  };
+
+
+  const handleCreateSubmit = async (data: UserFormValues) => {
     if (!pais) return;
     setIsSubmitting(true);
 
-    let newUserData: Omit<UsuarioAplicacion, 'idUsuario' | 'id'>;
+    let newUserData: Omit<UsuarioAplicacion, 'id' | 'idUsuario'>;
 
     if (data.userType === 'interno') {
         const empleado = empleados?.find(e => e.carnet === data.empleadoCarnet)!;
@@ -131,14 +156,31 @@ export default function GestionUsuariosPage() {
     try {
         await api.crearUsuario(newUserData);
         toast({ title: "Usuario Creado", description: `El usuario ${newUserData.nombreCompleto} ha sido añadido al sistema.`});
-        setDialogOpen(false);
-        form.reset({ userType: 'interno', rol: undefined });
+        setCreateDialogOpen(false);
+        createForm.reset({ userType: 'interno', rol: undefined });
         fetchData(); // Refresh data
     } catch(e: any) {
         console.error("Error creating user:", e);
         toast({ variant: 'destructive', title: 'Error', description: e.message || 'No se pudo crear el usuario.'});
     } finally {
         setIsSubmitting(false);
+    }
+  };
+
+  const handleEditSubmit = async (data: EditUserFormValues) => {
+    if (!selectedUser) return;
+    setIsSubmitting(true);
+    try {
+      await api.updateUsuario(selectedUser.id!, data);
+      toast({ title: "Usuario Actualizado", description: `Los datos de ${selectedUser.nombreCompleto} se han actualizado.`});
+      setEditDialogOpen(false);
+      setSelectedUser(null);
+      fetchData(); // Refresh data
+    } catch (e: any) {
+      console.error("Error updating user:", e);
+      toast({ variant: 'destructive', title: 'Error', description: e.message || 'No se pudo actualizar el usuario.'});
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -160,8 +202,8 @@ export default function GestionUsuariosPage() {
     {
       accessor: 'actions',
       header: 'Acciones',
-      cell: () => (
-        <Button variant="ghost" size="icon"><Pencil className="h-4 w-4" /></Button>
+      cell: (row: UsuarioAplicacion) => (
+        <Button variant="ghost" size="icon" onClick={() => handleEditClick(row)}><Pencil className="h-4 w-4" /></Button>
       ),
     },
   ];
@@ -192,15 +234,15 @@ export default function GestionUsuariosPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Gestión de Usuarios</h1>
-        <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
+        <Dialog open={isCreateDialogOpen} onOpenChange={setCreateDialogOpen}>
           <DialogTrigger asChild>
             <Button className="gap-2"><PlusCircle /> Nuevo Usuario</Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[525px]">
             <DialogHeader><DialogTitle>Crear Nuevo Usuario</DialogTitle></DialogHeader>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <FormField control={form.control} name="userType" render={({ field }) => (
+            <Form {...createForm}>
+              <form onSubmit={createForm.handleSubmit(handleCreateSubmit)} className="space-y-6">
+                <FormField control={createForm.control} name="userType" render={({ field }) => (
                   <FormItem className="space-y-3"><FormLabel>Tipo de Usuario</FormLabel>
                     <FormControl>
                       <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex gap-4">
@@ -212,7 +254,7 @@ export default function GestionUsuariosPage() {
                 />
                 
                 {userType === 'interno' ? (
-                    <FormField control={form.control} name="empleadoCarnet" render={({ field }) => (
+                    <FormField control={createForm.control} name="empleadoCarnet" render={({ field }) => (
                       <FormItem><FormLabel>Empleado</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un empleado" /></SelectTrigger></FormControl>
                           <SelectContent>
@@ -226,19 +268,19 @@ export default function GestionUsuariosPage() {
                       </FormItem>)} />
                 ) : (
                     <div className='grid grid-cols-2 gap-4 border p-4 rounded-md bg-muted/20'>
-                         <FormField control={form.control} name="nombreCompleto" render={({ field }) => (
+                         <FormField control={createForm.control} name="nombreCompleto" render={({ field }) => (
                             <FormItem><FormLabel>Nombre Completo</FormLabel><FormControl><Input placeholder="Nombre del usuario" {...field} /></FormControl><FormMessage /></FormItem>
                          )} />
-                         <FormField control={form.control} name="carnet" render={({ field }) => (
+                         <FormField control={createForm.control} name="carnet" render={({ field }) => (
                             <FormItem><FormLabel>Carnet / ID</FormLabel><FormControl><Input placeholder="Identificador único" {...field} /></FormControl><FormMessage /></FormItem>
                          )} />
-                         <FormField control={form.control} name="correo" render={({ field }) => (
+                         <FormField control={createForm.control} name="correo" render={({ field }) => (
                             <FormItem className="col-span-2"><FormLabel>Correo</FormLabel><FormControl><Input placeholder="correo@externo.com" {...field} /></FormControl><FormMessage /></FormItem>
                          )} />
                     </div>
                 )}
                 
-                <FormField control={form.control} name="rol" render={({ field }) => (
+                <FormField control={createForm.control} name="rol" render={({ field }) => (
                   <FormItem><FormLabel>Asignar Rol</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un rol" /></SelectTrigger></FormControl>
                       <SelectContent><SelectItem value="PACIENTE">Paciente</SelectItem><SelectItem value="MEDICO">Médico</SelectItem><SelectItem value="ADMIN">Administrador</SelectItem></SelectContent>
@@ -253,6 +295,66 @@ export default function GestionUsuariosPage() {
           </DialogContent>
         </Dialog>
       </div>
+
+       <Dialog open={isEditDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Usuario: {selectedUser?.nombreCompleto}</DialogTitle>
+          </DialogHeader>
+          <Form {...editForm}>
+            <form onSubmit={editForm.handleSubmit(handleEditSubmit)} className="space-y-6">
+              <FormField
+                control={editForm.control}
+                name="rol"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Rol del Usuario</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleccione un rol" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="PACIENTE">Paciente</SelectItem>
+                        <SelectItem value="MEDICO">Médico</SelectItem>
+                        <SelectItem value="ADMIN">Administrador</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editForm.control}
+                name="estado"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Estado</FormLabel>
+                     <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleccione un estado" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="A">Activo</SelectItem>
+                        <SelectItem value="I">Inactivo</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button type="submit" disabled={isSubmitting} className="w-full">
+                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Guardar Cambios
+              </Button>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+      
       <Card>
         <CardHeader><CardTitle>Listado de Usuarios del Sistema ({pais})</CardTitle></CardHeader>
         <CardContent>

@@ -14,6 +14,7 @@ import {
   usuarios,
   vacunasAplicadas,
   registrosPsicosociales,
+  empleados,
 } from '@/lib/mock';
 import type { 
     AtencionMedica, 
@@ -214,16 +215,8 @@ export const crearMedico = async (data: Omit<Medico, 'id' | 'idMedico'>): Promis
 
 // EMPLEADOS
 export const getEmpleados = async (): Promise<EmpleadoEmp2024[]> => {
-    // This should fetch from the external DB. We mock it for now.
     await delay(100);
-    const empleadosMock: EmpleadoEmp2024[] = [
-        { carnet: 'P001', nombreCompleto: 'Ana Sofía Pérez', correo: 'ana.perez@corp.com', cargo: 'Analista de Marketing', gerencia: 'Marketing', subgerencia: 'Digital', area: 'SEO', telefono: '8888-1111', nomJefe: 'Jefe Mkt', correoJefe: 'jefe@mkt.com', carnetJefe: 'J-MKT', pais: 'NI', fechaNacimiento: '1995-01-01', fechaContratacion: '2020-01-01', estado: 'ACTIVO' },
-        { carnet: 'P002', nombreCompleto: 'Luis Fernando García', correo: 'luis.garcia@corp.com', cargo: 'Desarrollador', gerencia: 'Tecnología', subgerencia: 'Web', area: 'Frontend', telefono: '8888-2222', nomJefe: 'Jefe Tec', correoJefe: 'jefe@tec.com', carnetJefe: 'J-TEC', pais: 'CR', fechaNacimiento: '1992-01-01', fechaContratacion: '2019-01-01', estado: 'ACTIVO' },
-        { carnet: 'P003', nombreCompleto: 'Mariana López', correo: 'mariana.lopez@corp.com', cargo: 'Contadora', gerencia: 'Finanzas', subgerencia: 'Contabilidad', area: 'Impuestos', telefono: '8888-3333', nomJefe: 'Jefe Fin', correoJefe: 'jefe@fin.com', carnetJefe: 'J-FIN', pais: 'HN', fechaNacimiento: '1990-01-01', fechaContratacion: '2018-01-01', estado: 'ACTIVO' },
-        { carnet: 'M001', nombreCompleto: 'Dr. Carlos Herrera', correo: 'carlos.herrera@corp.med', cargo: 'Médico de Empresa', gerencia: 'Salud Ocupacional', subgerencia: 'Clínica', area: 'Consultorio', telefono: '7777-1111', nomJefe: 'Dir. Salud', correoJefe: 'dir@salud.com', carnetJefe: 'D-SALUD', pais: 'NI', fechaNacimiento: '1985-01-01', fechaContratacion: '2017-01-01', estado: 'ACTIVO' },
-        { carnet: 'M002', nombreCompleto: 'Dra. Isabel Castillo', correo: 'isabel.castillo@corp.med', cargo: 'Médico de Empresa', gerencia: 'Salud Ocupacional', subgerencia: 'Clínica', area: 'Consultorio', telefono: '7777-2222', nomJefe: 'Dir. Salud', correoJefe: 'dir@salud.com', carnetJefe: 'D-SALUD', pais: 'CR', fechaNacimiento: '1988-01-01', fechaContratacion: '2019-05-01', estado: 'ACTIVO' },
-    ];
-    return empleadosMock;
+    return empleados;
 }
 
 
@@ -262,6 +255,14 @@ export const crearUsuario = async (data: Omit<UsuarioAplicacion, 'id' | 'idUsuar
     return newUsuario;
 };
 
+export const updateUsuario = async(id: string, data: Partial<UsuarioAplicacion>): Promise<UsuarioAplicacion> => {
+    await delay(200);
+    const index = usuarios.findIndex(u => u.id === id);
+    if (index === -1) throw new Error("Usuario no encontrado");
+    usuarios[index] = { ...usuarios[index], ...data };
+    return usuarios[index];
+}
+
 
 // CHEQUEOS
 export const crearChequeo = async (data: Partial<ChequeoBienestar>): Promise<ChequeoBienestar> => {
@@ -296,12 +297,16 @@ export const getAtencionMedicaData = async (idCita: string) => {
     if (!cita) return null;
     const paciente = pacientes.find(p => p.id === cita.idPaciente);
     const caso = casosClinicos.find(c => c.id === cita.idCaso);
+    const empleado = empleados.find(e => e.carnet === paciente?.carnet);
     
-    if (!paciente || !caso) return null;
+    if (!paciente || !caso || !empleado) return null;
 
     return {
-        cita: { ...cita, paciente, caso }
-    }
+        cita,
+        paciente,
+        empleado,
+        caso,
+    };
 }
 
 export const guardarAtencion = async (data: Partial<AtencionMedica> & { vacunas?: any[], psico?: any, seguimientos?: any[] }) => {
@@ -417,7 +422,8 @@ export const getDashboardMedico = async (idMedico: string, pais: string) => {
     
     const pacientesEnRojo = pacientes.filter(p => p.pais === pais && p.nivelSemaforo === 'R').length;
     
-    const seguimientosPendientes = seguimientos.filter(s => s.usuarioResponsable === `Dr. Carlos Herrera` && s.estadoSeguimiento === 'PENDIENTE').length; // Mock, fix it
+    const medico = medicos.find(m => m.id === idMedico);
+    const seguimientosPendientes = seguimientos.filter(s => s.usuarioResponsable === medico?.nombreCompleto && s.estadoSeguimiento === 'PENDIENTE').length;
     
     const examenesSinResultado = examenes.filter(e => {
         const paciente = pacientes.find(p => p.id === e.idPaciente);
@@ -426,8 +432,8 @@ export const getDashboardMedico = async (idMedico: string, pais: string) => {
 
     const populatedCitas = citasDelDia.map(c => ({
         ...c,
-        paciente: pacientes.find(p => p.id === c.idPaciente),
-        caso: casosClinicos.find(cs => cs.id === c.idCaso),
+        paciente: pacientes.find(p => p.id === c.idPaciente) || null,
+        caso: casosClinicos.find(cs => cs.id === c.idCaso) || null,
     }));
 
     const data = {
