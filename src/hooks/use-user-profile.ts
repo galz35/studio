@@ -4,20 +4,20 @@ import { useAuth } from './use-auth';
 import { UsuarioAplicacion, Pais, Rol } from '@/lib/types/domain';
 
 export const useUserProfile = () => {
-  const { usuarioActual, loading, pais, setPais, switchRole } = useAuth();
+  const { user, loading, pais, setPais, switchRole } = useAuth();
 
   return {
-    userProfile: usuarioActual,
+    userProfile: user,
     loading,
     pais,
     setPais,
     switchRole,
     // Deprecated, use userProfile directly
-    id: usuarioActual?.id,
-    idPaciente: usuarioActual?.idPaciente,
-    idMedico: usuarioActual?.idMedico,
-    rol: usuarioActual?.rol,
-    nombreCompleto: usuarioActual?.nombreCompleto,
-    carnet: usuarioActual?.carnet,
+    id: user?.id_usuario,
+    idPaciente: user?.idPaciente || (user as any)?.paciente?.id_paciente,
+    idMedico: user?.idMedico || (user as any)?.medico?.id_medico,
+    rol: user?.rol,
+    nombreCompleto: user?.nombre_completo,
+    carnet: user?.carnet,
   };
 };

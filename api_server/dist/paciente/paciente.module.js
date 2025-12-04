@@ -15,13 +15,26 @@ const paciente_entity_1 = require("../entities/paciente.entity");
 const cita_medica_entity_1 = require("../entities/cita-medica.entity");
 const chequeo_bienestar_entity_1 = require("../entities/chequeo-bienestar.entity");
 const caso_clinico_entity_1 = require("../entities/caso-clinico.entity");
+const seguimiento_entity_1 = require("../entities/seguimiento.entity");
+const atencion_medica_entity_1 = require("../entities/atencion-medica.entity");
+const examen_medico_entity_1 = require("../entities/examen-medico.entity");
+const vacuna_aplicada_entity_1 = require("../entities/vacuna-aplicada.entity");
 let PacienteModule = class PacienteModule {
 };
 exports.PacienteModule = PacienteModule;
 exports.PacienteModule = PacienteModule = __decorate([
     (0, common_1.Module)({
         imports: [
-            typeorm_1.TypeOrmModule.forFeature([paciente_entity_1.Paciente, cita_medica_entity_1.CitaMedica, chequeo_bienestar_entity_1.ChequeoBienestar, caso_clinico_entity_1.CasoClinico]),
+            typeorm_1.TypeOrmModule.forFeature([
+                paciente_entity_1.Paciente,
+                cita_medica_entity_1.CitaMedica,
+                chequeo_bienestar_entity_1.ChequeoBienestar,
+                caso_clinico_entity_1.CasoClinico,
+                seguimiento_entity_1.Seguimiento,
+                atencion_medica_entity_1.AtencionMedica,
+                examen_medico_entity_1.ExamenMedico,
+                vacuna_aplicada_entity_1.VacunaAplicada
+            ]),
         ],
         controllers: [paciente_controller_1.PacienteController],
         providers: [paciente_service_1.PacienteService],

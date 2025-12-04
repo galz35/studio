@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { Eye } from 'lucide-react';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import * as api from '@/lib/services/api.mock';
+import { PacienteService } from '@/lib/services/paciente.service';
 import { ExamenMedico } from '@/lib/types/domain';
 import { DataTable } from '@/components/shared/DataTable';
 import { Button } from '@/components/ui/button';
@@ -28,16 +28,16 @@ export default function MisExamenesPage() {
 
   useEffect(() => {
     if (userProfile?.idPaciente) {
-      api.getExamenesPorPaciente(userProfile.idPaciente)
+      PacienteService.getMisExamenes()
         .then(data => {
-            setExamenes(data);
+          setExamenes(data);
         }).catch(() => {
           toast({ variant: 'destructive', title: 'Error', description: 'No se pudo cargar el historial de exámenes.' });
         }).finally(() => {
-            setLoading(false);
+          setLoading(false);
         });
     } else {
-        setLoading(false);
+      setLoading(false);
     }
   }, [userProfile, toast]);
 
@@ -49,7 +49,7 @@ export default function MisExamenesPage() {
       header: 'Estado',
       cell: (row: ExamenMedico) => (
         <Badge variant={row.estadoExamen === 'ENTREGADO' ? 'default' : 'secondary'} className={row.estadoExamen === 'ENTREGADO' ? "bg-accent text-accent-foreground" : ""}>
-            {row.estadoExamen}
+          {row.estadoExamen}
         </Badge>
       ),
     },
@@ -77,28 +77,28 @@ export default function MisExamenesPage() {
           <DataTable columns={columns} data={examenes} filterColumn="tipoExamen" filterPlaceholder="Filtrar por tipo de examen..." />
         </CardContent>
       </Card>
-      
+
       {selectedExamen && (
         <Dialog open={!!selectedExamen} onOpenChange={(open) => !open && setSelectedExamen(null)}>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Resultado del Examen</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-3 py-4 text-sm">
-                    <p><strong>Tipo de Examen:</strong> {selectedExamen.tipoExamen}</p>
-                    <p><strong>Fecha de Resultado:</strong> {selectedExamen.fechaResultado}</p>
-                    <p><strong>Laboratorio:</strong> {selectedExamen.laboratorio}</p>
-                    <div>
-                        <p className="font-medium">Resumen del Resultado:</p>
-                        <blockquote className="mt-2 pl-4 border-l-2 text-muted-foreground italic">
-                            {selectedExamen.resultadoResumen || 'No hay resumen disponible.'}
-                        </blockquote>
-                    </div>
-                </div>
-                <DialogFooter>
-                    <DialogClose asChild><Button>Cerrar</Button></DialogClose>
-                </DialogFooter>
-            </DialogContent>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Resultado del Examen</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3 py-4 text-sm">
+              <p><strong>Tipo de Examen:</strong> {selectedExamen.tipoExamen}</p>
+              <p><strong>Fecha de Resultado:</strong> {selectedExamen.fechaResultado}</p>
+              <p><strong>Laboratorio:</strong> {selectedExamen.laboratorio}</p>
+              <div>
+                <p className="font-medium">Resumen del Resultado:</p>
+                <blockquote className="mt-2 pl-4 border-l-2 text-muted-foreground italic">
+                  {selectedExamen.resultadoResumen || 'No hay resumen disponible.'}
+                </blockquote>
+              </div>
+            </div>
+            <DialogFooter>
+              <DialogClose asChild><Button>Cerrar</Button></DialogClose>
+            </DialogFooter>
+          </DialogContent>
         </Dialog>
       )}
     </div>

@@ -5,7 +5,8 @@ import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import * as api from '@/lib/services/api.mock';
+import { PacienteService } from '@/lib/services/paciente.service';
+import { AdminService } from '@/lib/services/admin.service';
 import { EmpleadoEmp2024 } from '@/lib/types/domain';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -60,21 +61,22 @@ export default function ChequeoDiarioPage() {
   const alergiasActivas = form.watch('alergiasActivas');
 
   useEffect(() => {
-    if (userProfile) {
-      api.getEmpleados().then(empleados => {
-        const info = empleados.find(e => e.carnet === userProfile.carnet);
-        if (info) setEmpleado(info);
-      });
+    if (userProfile?.carnet) {
+      AdminService.getEmpleados({ carnet: userProfile.carnet }).then(empleados => {
+        if (empleados && empleados.length > 0) {
+          setEmpleado(empleados[0]);
+        }
+      }).catch(err => console.error(err));
     }
   }, [userProfile]);
 
   const onSubmit: SubmitHandler<ChequeoFormValues> = async (data) => {
-    if (!userProfile?.id) return;
-    
+    if (!userProfile?.idPaciente) return;
+
     try {
-      await api.crearChequeo({
+      await PacienteService.crearChequeo({
         ...data,
-        idPaciente: userProfile.id,
+        idPaciente: userProfile.idPaciente,
         // Fake semaforo logic
         nivelSemaforo: data.calidadSueno === 'Mala' || data.estadoAnimo === 'Estresado(a)' ? 'A' : 'V',
         estadoChequeo: 'Completado',
@@ -102,15 +104,15 @@ export default function ChequeoDiarioPage() {
           <Card>
             <CardHeader><CardTitle>Datos del Colaborador</CardTitle></CardHeader>
             <CardContent className="grid gap-4 md:grid-cols-2">
-              <p><strong className="font-medium">Carnet:</strong> {empleado?.carnet}</p>
-              <p><strong className="font-medium">Nombre:</strong> {empleado?.nombreCompleto}</p>
-              <p><strong className="font-medium">Gerencia:</strong> {empleado?.gerencia}</p>
+              <p><strong className="font-medium">Carnet:</strong> {userProfile?.carnet || empleado?.carnet}</p>
+              <p><strong className="font-medium">Nombre:</strong> {userProfile?.nombreCompleto || empleado?.nombreCompleto}</p>
+              {/* <p><strong className="font-medium">Gerencia:</strong> {empleado?.gerencia}</p>
               <p><strong className="font-medium">Área:</strong> {empleado?.area}</p>
-              <p><strong className="font-medium">Jefe Inmediato:</strong> {empleado?.nomJefe}</p>
-              <p><strong className="font-medium">Correo:</strong> {empleado?.correo}</p>
+              <p><strong className="font-medium">Jefe Inmediato:</strong> {empleado?.nomJefe}</p> */}
+              <p><strong className="font-medium">Correo:</strong> {userProfile?.email || empleado?.correo}</p>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader><CardTitle>Bienestar</CardTitle></CardHeader>
             <CardContent className="space-y-4">
@@ -145,7 +147,7 @@ export default function ChequeoDiarioPage() {
                     </Select><FormMessage />
                   </FormItem>
                 )} />
-                 <FormField control={form.control} name="consumoAgua" render={({ field }) => (
+                <FormField control={form.control} name="consumoAgua" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Consumo de agua ayer</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione..." /></SelectTrigger></FormControl>
@@ -165,7 +167,7 @@ export default function ChequeoDiarioPage() {
                   <FormItem><FormLabel>Descripción de alergias</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>
                 )} />}
               </div>
-              
+
               <FormField control={form.control} name="comentarioGeneral" render={({ field }) => (
                 <FormItem><FormLabel>Comentario General</FormLabel><FormControl><Textarea placeholder="Cualquier otro síntoma o comentario..." {...field} /></FormControl><FormMessage /></FormItem>
               )} />

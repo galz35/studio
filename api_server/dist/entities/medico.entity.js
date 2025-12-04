@@ -13,6 +13,7 @@ exports.Medico = void 0;
 const typeorm_1 = require("typeorm");
 const usuario_entity_1 = require("./usuario.entity");
 const cita_medica_entity_1 = require("./cita-medica.entity");
+const vacuna_aplicada_entity_1 = require("./vacuna-aplicada.entity");
 let Medico = class Medico {
 };
 exports.Medico = Medico;
@@ -56,6 +57,10 @@ __decorate([
     (0, typeorm_1.OneToMany)(() => cita_medica_entity_1.CitaMedica, cita => cita.medico),
     __metadata("design:type", Array)
 ], Medico.prototype, "citas_medicas", void 0);
+__decorate([
+    (0, typeorm_1.OneToMany)(() => vacuna_aplicada_entity_1.VacunaAplicada, vacuna => vacuna.medico),
+    __metadata("design:type", Array)
+], Medico.prototype, "vacunas_aplicadas", void 0);
 exports.Medico = Medico = __decorate([
     (0, typeorm_1.Entity)('medicos')
 ], Medico);

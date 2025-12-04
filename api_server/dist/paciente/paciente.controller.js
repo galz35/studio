@@ -33,6 +33,15 @@ let PacienteController = class PacienteController {
     getMisCitas(req) {
         return this.pacienteService.getMisCitas(req.user.idPaciente);
     }
+    getMisChequeos(req) {
+        return this.pacienteService.getMisChequeos(req.user.idPaciente);
+    }
+    getMisExamenes(req) {
+        return this.pacienteService.getMisExamenes(req.user.idPaciente);
+    }
+    getMisVacunas(req) {
+        return this.pacienteService.getMisVacunas(req.user.idPaciente);
+    }
 };
 exports.PacienteController = PacienteController;
 __decorate([
@@ -60,6 +69,30 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], PacienteController.prototype, "getMisCitas", null);
+__decorate([
+    (0, common_1.Get)('mis-chequeos'),
+    (0, swagger_1.ApiOperation)({ summary: 'Obtener historial de chequeos' }),
+    __param(0, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], PacienteController.prototype, "getMisChequeos", null);
+__decorate([
+    (0, common_1.Get)('mis-examenes'),
+    (0, swagger_1.ApiOperation)({ summary: 'Obtener historial de exámenes' }),
+    __param(0, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], PacienteController.prototype, "getMisExamenes", null);
+__decorate([
+    (0, common_1.Get)('mis-vacunas'),
+    (0, swagger_1.ApiOperation)({ summary: 'Obtener historial de vacunas' }),
+    __param(0, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], PacienteController.prototype, "getMisVacunas", null);
 exports.PacienteController = PacienteController = __decorate([
     (0, swagger_1.ApiTags)('paciente'),
     (0, swagger_1.ApiBearerAuth)(),

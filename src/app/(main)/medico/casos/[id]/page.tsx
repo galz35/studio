@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { User, FileText, FlaskConical, Repeat, Calendar } from 'lucide-react';
-import * as api from '@/lib/services/api.mock';
+import { CasosService } from '@/lib/services/casos.service';
 import type { CasoClinico, Paciente, AtencionMedica, ExamenMedico, SeguimientoPaciente } from '@/lib/types/domain';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { SemaforoBadge } from '@/components/shared/SemaforoBadge';
@@ -24,16 +24,16 @@ export default function DetalleCasoClinicoPage() {
 
   useEffect(() => {
     if (id) {
-        api.getCasoById(id)
-            .then(data => {
-                if (!data) throw new Error('Caso no encontrado');
-                setCaso(data);
-                setLoading(false);
-            })
-            .catch(err => {
-                console.error(err);
-                setLoading(false);
-            })
+      CasosService.getCasoById(id)
+        .then(data => {
+          if (!data) throw new Error('Caso no encontrado');
+          setCaso(data);
+          setLoading(false);
+        })
+        .catch(err => {
+          console.error(err);
+          setLoading(false);
+        })
     }
   }, [id]);
 
@@ -94,35 +94,35 @@ export default function DetalleCasoClinicoPage() {
             </div>
             <Separator />
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                {/* Mini-listado de Atenciones */}
-                <div>
-                    <h4 className="font-semibold flex items-center gap-2"><Calendar className="h-4 w-4"/> Atenciones</h4>
-                    <ul className="mt-2 space-y-1 text-sm list-disc list-inside">
-                        {caso.atenciones.length > 0 ? caso.atenciones.map(a => (
-                            <li key={a.idAtencion}>{new Date(a.fechaAtencion).toLocaleDateString('es-ES')}</li>
-                        )) : <li className="list-none text-muted-foreground">Ninguna</li>}
-                    </ul>
-                </div>
+              {/* Mini-listado de Atenciones */}
+              <div>
+                <h4 className="font-semibold flex items-center gap-2"><Calendar className="h-4 w-4" /> Atenciones</h4>
+                <ul className="mt-2 space-y-1 text-sm list-disc list-inside">
+                  {caso.atenciones && caso.atenciones.length > 0 ? caso.atenciones.map(a => (
+                    <li key={a.idAtencion}>{new Date(a.fechaAtencion).toLocaleDateString('es-ES')}</li>
+                  )) : <li className="list-none text-muted-foreground">Ninguna</li>}
+                </ul>
+              </div>
 
-                {/* Mini-listado de Exámenes */}
-                <div>
-                    <h4 className="font-semibold flex items-center gap-2"><FlaskConical className="h-4 w-4"/> Exámenes</h4>
-                    <ul className="mt-2 space-y-1 text-sm list-disc list-inside">
-                        {caso.examenes.length > 0 ? caso.examenes.map(e => (
-                            <li key={e.idExamen}>{e.tipoExamen} ({e.estadoExamen})</li>
-                        )) : <li className="list-none text-muted-foreground">Ninguno</li>}
-                    </ul>
-                </div>
+              {/* Mini-listado de Exámenes */}
+              <div>
+                <h4 className="font-semibold flex items-center gap-2"><FlaskConical className="h-4 w-4" /> Exámenes</h4>
+                <ul className="mt-2 space-y-1 text-sm list-disc list-inside">
+                  {caso.examenes && caso.examenes.length > 0 ? caso.examenes.map(e => (
+                    <li key={e.idExamen}>{e.tipoExamen} ({e.estadoExamen})</li>
+                  )) : <li className="list-none text-muted-foreground">Ninguno</li>}
+                </ul>
+              </div>
 
-                {/* Mini-listado de Seguimientos */}
-                <div>
-                    <h4 className="font-semibold flex items-center gap-2"><Repeat className="h-4 w-4"/> Seguimientos</h4>
-                     <ul className="mt-2 space-y-1 text-sm list-disc list-inside">
-                        {caso.seguimientos.length > 0 ? caso.seguimientos.map(s => (
-                            <li key={s.idSeguimiento}>{s.tipoSeguimiento} ({s.estadoSeguimiento})</li>
-                        )) : <li className="list-none text-muted-foreground">Ninguno</li>}
-                    </ul>
-                </div>
+              {/* Mini-listado de Seguimientos */}
+              <div>
+                <h4 className="font-semibold flex items-center gap-2"><Repeat className="h-4 w-4" /> Seguimientos</h4>
+                <ul className="mt-2 space-y-1 text-sm list-disc list-inside">
+                  {caso.seguimientos && caso.seguimientos.length > 0 ? caso.seguimientos.map(s => (
+                    <li key={s.idSeguimiento}>{s.tipoSeguimiento} ({s.estadoSeguimiento})</li>
+                  )) : <li className="list-none text-muted-foreground">Ninguno</li>}
+                </ul>
+              </div>
             </div>
           </CardContent>
         </Card>

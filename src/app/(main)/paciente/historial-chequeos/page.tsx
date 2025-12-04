@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { Eye } from 'lucide-react';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { ChequeoBienestar } from '@/lib/types/domain';
-import * as api from '@/lib/services/api.mock';
+import { PacienteService } from '@/lib/services/paciente.service';
 import { DataTable } from '@/components/shared/DataTable';
 import { Button } from '@/components/ui/button';
 import { SemaforoBadge } from '@/components/shared/SemaforoBadge';
@@ -26,16 +26,16 @@ export default function HistorialChequeosPage() {
 
   useEffect(() => {
     if (userProfile?.idPaciente) {
-      api.getChequeosPorPaciente(userProfile.idPaciente)
+      PacienteService.getMisChequeos()
         .then(data => {
-            setChequeos(data);
+          setChequeos(data);
         }).catch(() => {
-            toast({ variant: 'destructive', title: 'Error', description: 'No se pudo cargar el historial de chequeos.' });
+          toast({ variant: 'destructive', title: 'Error', description: 'No se pudo cargar el historial de chequeos.' });
         }).finally(() => {
-            setLoading(false);
+          setLoading(false);
         });
     } else {
-        setLoading(false);
+      setLoading(false);
     }
   }, [userProfile, toast]);
 
@@ -80,25 +80,25 @@ export default function HistorialChequeosPage() {
           <DataTable columns={columns} data={chequeos} filterColumn="estadoAnimo" filterPlaceholder="Filtrar por estado de ánimo..." />
         </CardContent>
       </Card>
-      
+
       {selectedChequeo && (
         <Dialog open={!!selectedChequeo} onOpenChange={(open) => !open && setSelectedChequeo(null)}>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Detalle del Chequeo</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-2 text-sm">
-                    <p><strong>Fecha:</strong> {new Date(selectedChequeo.fechaRegistro).toLocaleString('es-ES')}</p>
-                    <p><strong>Estado de Ánimo:</strong> {selectedChequeo.estadoAnimo}</p>
-                    <p><strong>Modalidad:</strong> {selectedChequeo.modalidadTrabajo}</p>
-                    <p><strong>Ruta/Sede:</strong> {selectedChequeo.ruta}</p>
-                    <p><strong>Calidad Sueño:</strong> {selectedChequeo.calidadSueno}</p>
-                    <p><strong>Consumo Agua:</strong> {selectedChequeo.consumoAgua}</p>
-                    <p><strong>Alergias:</strong> {selectedChequeo.alergiasActivas ? selectedChequeo.alergiasDescripcion : 'No'}</p>
-                    <p><strong>Comentario:</strong> {selectedChequeo.comentarioGeneral || 'N/A'}</p>
-                    <p><strong>Semáforo:</strong> <SemaforoBadge nivel={selectedChequeo.nivelSemaforo} /></p>
-                </div>
-            </DialogContent>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Detalle del Chequeo</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-2 text-sm">
+              <p><strong>Fecha:</strong> {new Date(selectedChequeo.fechaRegistro).toLocaleString('es-ES')}</p>
+              <p><strong>Estado de Ánimo:</strong> {selectedChequeo.estadoAnimo}</p>
+              <p><strong>Modalidad:</strong> {selectedChequeo.modalidadTrabajo}</p>
+              <p><strong>Ruta/Sede:</strong> {selectedChequeo.ruta}</p>
+              <p><strong>Calidad Sueño:</strong> {selectedChequeo.calidadSueno}</p>
+              <p><strong>Consumo Agua:</strong> {selectedChequeo.consumoAgua}</p>
+              <p><strong>Alergias:</strong> {selectedChequeo.alergiasActivas ? selectedChequeo.alergiasDescripcion : 'No'}</p>
+              <p><strong>Comentario:</strong> {selectedChequeo.comentarioGeneral || 'N/A'}</p>
+              <p><strong>Semáforo:</strong> <SemaforoBadge nivel={selectedChequeo.nivelSemaforo} /></p>
+            </div>
+          </DialogContent>
         </Dialog>
       )}
     </div>

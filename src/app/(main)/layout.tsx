@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
-  const { usuarioActual, loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { userProfile, loading: profileLoading } = useUserProfile();
   const router = useRouter();
   const isMobile = useIsMobile();
@@ -19,10 +19,10 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
   useEffect(() => {
     // If auth has loaded and there's no user, redirect to login
-    if (!authLoading && !usuarioActual) {
+    if (!authLoading && !user) {
       router.push("/login");
     }
-  }, [usuarioActual, authLoading, router]);
+  }, [user, authLoading, router]);
 
   useEffect(() => {
     if (isMobile) {
@@ -42,10 +42,10 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       setSidebarOpen(true); // Ensure sidebar opens if it was collapsed
     }
   };
-  
+
   const loading = authLoading || profileLoading;
 
-  if (loading || !usuarioActual || !userProfile) {
+  if (loading || !user || !userProfile) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
         Cargando...
@@ -57,17 +57,17 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     <div className="flex min-h-screen w-full bg-background">
       {/* Mobile Sidebar Overlay */}
       {isMobile && isSidebarOpen && (
-         <div className="fixed inset-0 z-40 bg-black/60" onClick={toggleSidebar} />
+        <div className="fixed inset-0 z-40 bg-black/60" onClick={toggleSidebar} />
       )}
-      
+
       {/* Sidebar Container */}
-      <div 
+      <div
         className={cn(
-            "fixed inset-y-0 left-0 z-50 h-full bg-primary text-primary-foreground flex-col border-r border-primary-foreground/10 transition-transform duration-300 ease-in-out md:relative md:translate-x-0",
-            // Mobile state
-            isMobile && (isSidebarOpen ? "translate-x-0" : "-translate-x-full"),
-            // Desktop state
-            !isMobile && (isSidebarCollapsed ? "w-20" : "w-64")
+          "fixed inset-y-0 left-0 z-50 h-full bg-primary text-primary-foreground flex-col border-r border-primary-foreground/10 transition-transform duration-300 ease-in-out md:relative md:translate-x-0",
+          // Mobile state
+          isMobile && (isSidebarOpen ? "translate-x-0" : "-translate-x-full"),
+          // Desktop state
+          !isMobile && (isSidebarCollapsed ? "w-20" : "w-64")
         )}
       >
         <Sidebar isCollapsed={isMobile ? false : isSidebarCollapsed} toggleSidebar={toggleSidebar} />
@@ -76,7 +76,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       <div className="flex flex-1 flex-col">
         <Topbar toggleSidebar={toggleSidebar} />
         <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
-           {children}
+          {children}
         </main>
       </div>
     </div>

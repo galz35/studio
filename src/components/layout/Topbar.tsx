@@ -4,9 +4,6 @@ import {
   PanelLeft,
   User,
   LogOut,
-  ChevronDown,
-  Globe,
-  Building,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,18 +11,15 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/use-auth";
 import { useUserProfile } from "@/hooks/use-user-profile";
-import type { Pais, Rol } from "@/lib/types/domain";
 
 export function Topbar({ toggleSidebar }: { toggleSidebar: () => void }) {
   const { logout } = useAuth();
-  const { userProfile, switchRole, pais, setPais } = useUserProfile();
+  const { userProfile } = useUserProfile();
 
   const getInitials = (name: string = "") => {
     return name
@@ -42,54 +36,14 @@ export function Topbar({ toggleSidebar }: { toggleSidebar: () => void }) {
         <span className="sr-only">Toggle Sidebar</span>
       </Button>
       <div className="flex-1">
-         {/* This button is for desktop to collapse/expand the sidebar */}
-         <Button variant="ghost" size="icon" className="hidden md:inline-flex" onClick={toggleSidebar}>
-            <PanelLeft className="h-6 w-6" />
-            <span className="sr-only">Toggle Sidebar</span>
+        {/* This button is for desktop to collapse/expand the sidebar */}
+        <Button variant="ghost" size="icon" className="hidden md:inline-flex" onClick={toggleSidebar}>
+          <PanelLeft className="h-6 w-6" />
+          <span className="sr-only">Toggle Sidebar</span>
         </Button>
       </div>
       <div className="flex items-center gap-4">
-        {/* Country Switcher */}
-        <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="gap-2">
-                <Globe className="h-4 w-4" />
-                <span>{pais}</span>
-                <ChevronDown className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuLabel>Cambiar País</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuRadioGroup value={pais} onValueChange={(p) => setPais(p as Pais)}>
-                  <DropdownMenuRadioItem value="NI">Nicaragua</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="CR">Costa Rica</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="HN">Honduras</DropdownMenuRadioItem>
-              </DropdownMenuRadioGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
 
-        {/* Role Switcher */}
-        {userProfile && (
-           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="gap-2">
-                <Building className="h-4 w-4" />
-                <span>Rol: {userProfile?.rol}</span>
-                <ChevronDown className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuLabel>Cambiar Rol</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuRadioGroup value={userProfile?.rol} onValueChange={(r) => switchRole(r as Rol)}>
-                  <DropdownMenuRadioItem value="PACIENTE">Paciente</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="MEDICO">Médico</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="ADMIN">Administrador</DropdownMenuRadioItem>
-              </DropdownMenuRadioGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
 
 
         {/* User Profile */}
@@ -97,13 +51,13 @@ export function Topbar({ toggleSidebar }: { toggleSidebar: () => void }) {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-10 w-10 rounded-full">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground font-semibold">
-                {getInitials(userProfile?.nombreCompleto)}
+                {getInitials(userProfile?.nombre_completo)}
               </div>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>
-              <div className="font-medium">{userProfile?.nombreCompleto}</div>
+              <div className="font-medium">{userProfile?.nombre_completo}</div>
               <div className="text-xs text-muted-foreground">{userProfile?.carnet}</div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />

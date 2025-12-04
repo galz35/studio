@@ -8,7 +8,7 @@ import { Loader2 } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 import type { RutaMotivo, TriageNivel, ModalidadTrabajo, DatosExtraJSON, SolicitudCitaPayload } from '@/lib/types/solicitud';
-import * as api from '@/lib/services/api.mock';
+import { PacienteService } from '@/lib/services/paciente.service';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { useToast } from '@/hooks/use-toast';
 
@@ -66,15 +66,15 @@ export function SolicitudCitaWizard() {
     const [triage, setTriage] = useState<TriageNivel>('VERDE');
     const [comentario, setComentario] = useState('');
     const [datosExtra, setDatosExtra] = useState<DatosExtraJSON>(initialDatosExtra);
-    
+
     const [isLoading, setIsLoading] = useState(false);
     const [showSummaryModal, setShowSummaryModal] = useState(false);
     const [finalPayload, setFinalPayload] = useState<SolicitudCitaPayload | null>(null);
 
     const updateDatosExtra = (field: keyof DatosExtraJSON, value: any) => {
-        setDatosExtra(prev => ({...prev, [field]: value }));
+        setDatosExtra(prev => ({ ...prev, [field]: value }));
     };
-    
+
     const resetWizard = () => {
         setStep(1);
         setRuta(null);
@@ -93,10 +93,10 @@ export function SolicitudCitaWizard() {
         const urgentes = datosExtra.SintomasKeys.filter(key => ['dolorPecho', 'dificultadRespirar', 'desmayo', 'sangradoInusual'].includes(key));
 
         if (urgentes.length > 0) return 'ROJO';
-        
+
         const intensos = detalles.filter(d => (d.Intensidad || 0) >= 7);
         if (intensos.length >= 2 || datosExtra.Psicosocial.estres === 'Alto' || datosExtra.Habitos.sueno === 'Mal') return 'AMARILLO';
-        
+
         return 'VERDE';
     }, [datosExtra]);
 
@@ -110,7 +110,7 @@ export function SolicitudCitaWizard() {
 
     const handleNext = () => {
         if (step === 1 && !ruta) {
-            toast({ variant: 'destructive', title: 'Campo requerido', description: 'Por favor, selecciona cómo te sientes hoy.'})
+            toast({ variant: 'destructive', title: 'Campo requerido', description: 'Por favor, selecciona cómo te sientes hoy.' })
             return;
         }
         if (step === 1 && ruta === 'bien') {
@@ -120,13 +120,13 @@ export function SolicitudCitaWizard() {
         }
     };
     const handlePrev = () => setStep(prev => Math.max(prev - 1, 1));
-    
+
     const handleSubmit = async () => {
-       if (!userProfile?.id) {
+        if (!userProfile?.idPaciente) {
             toast({ variant: 'destructive', title: 'Error de Usuario', description: 'No se pudo identificar al paciente.' });
             return;
         }
-        
+
         setIsLoading(true);
 
         const payload: SolicitudCitaPayload = {
@@ -140,28 +140,29 @@ export function SolicitudCitaWizard() {
             Comentario: comentario || null,
             DatosExtraJSON: datosExtra,
         };
-        
+
         setFinalPayload(payload);
-        
-        const nuevoCaso = {
-            idPaciente: userProfile.id,
-            fechaCreacion: new Date().toISOString(),
-            estadoCaso: 'Abierto',
-            nivelSemaforo: payload.Triage || 'A',
-            motivoConsulta: payload.DatosExtraJSON.Sintomas.join(', ') || 'Revisión General',
-            resumenClinicoUsuario: payload.Comentario || '',
-            diagnosticoUsuario: 'Autodiagnóstico por solicitud',
-            datosExtra: payload.DatosExtraJSON,
-            pais: pais,
-            triajeIA: null, // Campo para el análisis de la IA
+
+        // The backend expects a DTO structure that matches SolicitudCitaDto
+        // We need to adapt the payload to what the backend expects
+        const solicitudDto = {
+            ruta: payload.Ruta,
+            modalidad: payload.Modalidad,
+            aptoLaboral: payload.AptoLaboral,
+            motivoNoApto: payload.MotivoNoApto,
+            alergiasActivas: payload.AlergiasActivas,
+            alergiasDescripcion: payload.AlergiasDescripcion,
+            triage: payload.Triage,
+            comentarioGeneral: payload.Comentario,
+            datosCompletos: payload.DatosExtraJSON
         };
 
         try {
-            await api.crearCasoClinico(nuevoCaso);
+            await PacienteService.solicitarCita(solicitudDto);
             setShowSummaryModal(true);
         } catch (error: any) {
             console.error("Error al guardar la solicitud", error);
-            toast({ variant: 'destructive', title: 'Error', description: error.message || 'Hubo un error al guardar tu solicitud. Inténtalo de nuevo.'})
+            toast({ variant: 'destructive', title: 'Error', description: error.message || 'Hubo un error al guardar tu solicitud. Inténtalo de nuevo.' })
         } finally {
             setIsLoading(false);
         }
@@ -172,10 +173,10 @@ export function SolicitudCitaWizard() {
         return {
             name: stepNames[step - 1],
             help: stepHelps[step - 1],
-            theme: themeMap[step-1],
+            theme: themeMap[step - 1],
         };
     }, [step]);
-    
+
     const progress = (step / TOTAL_STEPS) * 100;
     const gradientClass = themeClasses[currentStepConfig.theme as keyof typeof themeClasses];
 
@@ -214,13 +215,13 @@ export function SolicitudCitaWizard() {
                     )}
                 </div>
             </CardContent>
-            
+
             <AlertDialog open={showSummaryModal}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>¡Solicitud Registrada!</AlertDialogTitle>
                         <AlertDialogDescription>
-                           Hemos recibido tu solicitud. Nuestro sistema de IA la pre-analizará y el equipo médico se pondrá en contacto contigo pronto.
+                            Hemos recibido tu solicitud. Nuestro sistema de IA la pre-analizará y el equipo médico se pondrá en contacto contigo pronto.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <div className="text-sm space-y-3 max-h-60 overflow-y-auto">
@@ -231,8 +232,8 @@ export function SolicitudCitaWizard() {
                         <div>
                             <strong>Síntomas Reportados:</strong>
                             <ul className="list-disc list-inside ml-4 text-muted-foreground">
-                               {finalPayload?.DatosExtraJSON.Sintomas.map(s => <li key={s}>{s}</li>)}
-                               {finalPayload?.DatosExtraJSON.Sintomas.length === 0 && <li>Ninguno</li>}
+                                {finalPayload?.DatosExtraJSON.Sintomas.map(s => <li key={s}>{s}</li>)}
+                                {finalPayload?.DatosExtraJSON.Sintomas.length === 0 && <li>Ninguno</li>}
                             </ul>
                         </div>
                     </div>

@@ -14,6 +14,7 @@ const typeorm_1 = require("typeorm");
 const paciente_entity_1 = require("./paciente.entity");
 const cita_medica_entity_1 = require("./cita-medica.entity");
 const seguimiento_entity_1 = require("./seguimiento.entity");
+const examen_medico_entity_1 = require("./examen-medico.entity");
 let CasoClinico = class CasoClinico {
 };
 exports.CasoClinico = CasoClinico;
@@ -51,6 +52,14 @@ __decorate([
     __metadata("design:type", String)
 ], CasoClinico.prototype, "resumen_clinico_usuario", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ type: 'text', nullable: true }),
+    __metadata("design:type", String)
+], CasoClinico.prototype, "diagnostico_usuario", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'jsonb', nullable: true }),
+    __metadata("design:type", Object)
+], CasoClinico.prototype, "datos_extra", void 0);
+__decorate([
     (0, typeorm_1.OneToOne)(() => cita_medica_entity_1.CitaMedica, cita => cita.caso_clinico, { nullable: true }),
     (0, typeorm_1.JoinColumn)({ name: 'id_cita_principal' }),
     __metadata("design:type", cita_medica_entity_1.CitaMedica)
@@ -59,6 +68,10 @@ __decorate([
     (0, typeorm_1.OneToMany)(() => seguimiento_entity_1.Seguimiento, seguimiento => seguimiento.caso_clinico),
     __metadata("design:type", Array)
 ], CasoClinico.prototype, "seguimientos", void 0);
+__decorate([
+    (0, typeorm_1.OneToMany)(() => examen_medico_entity_1.ExamenMedico, examen => examen.caso_clinico),
+    __metadata("design:type", Array)
+], CasoClinico.prototype, "examenes", void 0);
 exports.CasoClinico = CasoClinico = __decorate([
     (0, typeorm_1.Entity)('casos_clinicos'),
     (0, typeorm_1.Index)(['codigo_caso'], { unique: true })

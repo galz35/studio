@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { SolicitudCitaWizard } from '@/components/paciente/SolicitudCitaWizard';
 import { EmpleadoEmp2024 } from '@/lib/types/domain';
-import * as api from '@/lib/services/api.mock';
+import { AdminService } from '@/lib/services/admin.service';
 
 export default function SolicitarCitaPage() {
     const { userProfile } = useUserProfile();
@@ -12,11 +12,15 @@ export default function SolicitarCitaPage() {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        if (userProfile) {
+        if (userProfile?.carnet) {
             setIsLoading(true);
-            api.getEmpleados().then(empleados => {
-                const info = empleados.find(e => e.carnet === userProfile.carnet);
-                if (info) setEmpleado(info);
+            AdminService.getEmpleados({ carnet: userProfile.carnet }).then(empleados => {
+                if (empleados && empleados.length > 0) {
+                    setEmpleado(empleados[0]);
+                }
+                setIsLoading(false);
+            }).catch(err => {
+                console.error("Error fetching employee info", err);
                 setIsLoading(false);
             });
         }
@@ -34,7 +38,7 @@ export default function SolicitarCitaPage() {
                     </p>
                 )}
             </div>
-            
+
             <SolicitudCitaWizard />
         </div>
     );

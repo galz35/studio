@@ -1,5 +1,7 @@
 import { CitaMedica } from './cita-medica.entity';
 import { Medico } from './medico.entity';
+import { ExamenMedico } from './examen-medico.entity';
+import { VacunaAplicada } from './vacuna-aplicada.entity';
 export declare class AtencionMedica {
     id_atencion: number;
     cita: CitaMedica;
@@ -15,4 +17,6 @@ export declare class AtencionMedica {
     presion_arterial: string | null;
     tipo_siguiente_cita: string | null;
     notas_seguimiento_medico: string | null;
+    examenes: ExamenMedico[];
+    vacunas: VacunaAplicada[];
 }

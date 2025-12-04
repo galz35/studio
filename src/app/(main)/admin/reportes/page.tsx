@@ -4,7 +4,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import * as api from '@/lib/services/api.mock';
+import { AdminService } from '@/lib/services/admin.service';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { AtencionMedica, EmpleadoEmp2024, Paciente, Medico, CasoClinico } from '@/lib/types/domain';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -56,17 +56,24 @@ export default function ReportesAdminPage() {
 
   useEffect(() => {
     if (pais) {
-        // Mock data fetching, needs real implementation
-        api.getAtencionMedicaData('1').then(data => {
-            // setAtenciones(data);
-            setLoading(false);
-        });
+      // Fetching reports via AdminService
+      // Note: The backend endpoint for this needs to return the full structure expected by AtencionCompleta
+      // If not, we might need to adjust or fetch related data separately.
+      // For now, assuming getReportesAtenciones returns what we need or we mock it for now if backend is not ready.
+      AdminService.getReportesAtenciones({ pais }).then(data => {
+        setAtenciones(data || []);
+        setLoading(false);
+      }).catch(err => {
+        console.error("Error fetching reports", err);
+        setLoading(false);
+      });
     }
   }, [pais]);
-  
+
   const gerencias = useMemo(() => {
-      const g = new Set(atenciones.map(a => a.empleado.gerencia));
-      return Array.from(g);
+    if (!atenciones.length) return [];
+    const g = new Set(atenciones.map(a => a.empleado?.gerencia).filter(Boolean));
+    return Array.from(g);
   }, [atenciones]);
 
   useEffect(() => {
@@ -75,59 +82,59 @@ export default function ReportesAdminPage() {
       const initialValues = form.getValues();
       onSubmit(initialValues);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [atenciones]);
 
 
   const onSubmit = (values: FilterValues) => {
     const filtered = atenciones.filter(a => {
-        const atencionDate = new Date(a.fechaAtencion);
-        const fromDate = values.dateRange.from;
-        const toDate = values.dateRange.to;
-        fromDate.setHours(0,0,0,0);
-        toDate.setHours(23,59,59,999);
+      const atencionDate = new Date(a.fechaAtencion);
+      const fromDate = values.dateRange.from;
+      const toDate = values.dateRange.to;
+      fromDate.setHours(0, 0, 0, 0);
+      toDate.setHours(23, 59, 59, 999);
 
-        if (atencionDate < fromDate || atencionDate > toDate) return false;
-        if (values.gerencia && values.gerencia !== 'all' && a.empleado.gerencia !== values.gerencia) return false;
-        if (values.sexo && values.sexo !== 'all' && a.paciente.sexo !== values.sexo) return false;
+      if (atencionDate < fromDate || atencionDate > toDate) return false;
+      if (values.gerencia && values.gerencia !== 'all' && a.empleado?.gerencia !== values.gerencia) return false;
+      if (values.sexo && values.sexo !== 'all' && a.paciente?.sexo !== values.sexo) return false;
 
-        if (values.edadFrom || values.edadTo) {
-            const birthDate = new Date(a.paciente.fechaNacimiento!);
-            const age = new Date().getFullYear() - birthDate.getFullYear();
-            if (values.edadFrom && age < values.edadFrom) return false;
-            if (values.edadTo && age > values.edadTo) return false;
-        }
-        
-        return true;
+      if (values.edadFrom || values.edadTo) {
+        const birthDate = new Date(a.paciente?.fechaNacimiento!);
+        const age = new Date().getFullYear() - birthDate.getFullYear();
+        if (values.edadFrom && age < values.edadFrom) return false;
+        if (values.edadTo && age > values.edadTo) return false;
+      }
+
+      return true;
     });
     setFilteredAtenciones(filtered);
   };
-  
+
   const exportToExcel = () => {
-      toast({ title: "Exportando...", description: `Se están generando ${filteredAtenciones.length} registros.` });
-      // In a real app, you would use a library like xlsx to generate the file
-      console.log("Exporting data:", filteredAtenciones);
+    toast({ title: "Exportando...", description: `Se están generando ${filteredAtenciones.length} registros.` });
+    // In a real app, you would use a library like xlsx to generate the file
+    console.log("Exporting data:", filteredAtenciones);
   }
 
   const kpis = useMemo(() => {
     const total = filteredAtenciones.length;
     const totalAge = filteredAtenciones.reduce((sum, a) => {
-        const age = new Date().getFullYear() - new Date(a.paciente.fechaNacimiento!).getFullYear();
-        return sum + age;
+      const age = new Date().getFullYear() - new Date(a.paciente?.fechaNacimiento!).getFullYear();
+      return sum + age;
     }, 0);
     return {
-        totalAtenciones: total,
-        edadPromedio: total > 0 ? Math.round(totalAge / total) : 0,
-        diagnosticosUnicos: new Set(filteredAtenciones.map(a => a.diagnosticoPrincipal)).size,
+      totalAtenciones: total,
+      edadPromedio: total > 0 ? Math.round(totalAge / total) : 0,
+      diagnosticosUnicos: new Set(filteredAtenciones.map(a => a.diagnosticoPrincipal)).size,
     };
   }, [filteredAtenciones]);
 
   const columns = [
     { accessor: (row: AtencionCompleta) => new Date(row.fechaAtencion).toLocaleDateString(), header: 'Fecha' },
-    { accessor: (row: AtencionCompleta) => row.paciente.nombreCompleto, header: 'Paciente' },
-    { accessor: (row: AtencionCompleta) => row.empleado.gerencia, header: 'Gerencia' },
+    { accessor: (row: AtencionCompleta) => row.paciente?.nombreCompleto || 'N/A', header: 'Paciente' },
+    { accessor: (row: AtencionCompleta) => row.empleado?.gerencia || 'N/A', header: 'Gerencia' },
     { accessor: 'diagnosticoPrincipal', header: 'Diagnóstico' },
-    { accessor: (row: AtencionCompleta) => row.medico.nombreCompleto, header: 'Médico' },
+    { accessor: (row: AtencionCompleta) => row.medico?.nombreCompleto || 'N/A', header: 'Médico' },
   ];
 
   return (
@@ -150,7 +157,7 @@ export default function ReportesAdminPage() {
                       <FormLabel>Rango de Fechas</FormLabel>
                       <Popover>
                         <PopoverTrigger asChild>
-                           <Button
+                          <Button
                             variant={"outline"}
                             className={cn("justify-start text-left font-normal", !field.value && "text-muted-foreground")}>
                             <CalendarIcon className="mr-2 h-4 w-4" />
@@ -183,22 +190,22 @@ export default function ReportesAdminPage() {
                 <FormField control={form.control} name="gerencia" render={({ field }) => (
                   <FormItem><FormLabel>Gerencia</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                        <SelectContent><SelectItem value="all">Todas</SelectItem>{gerencias.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent>
+                      <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                      <SelectContent><SelectItem value="all">Todas</SelectItem>{gerencias.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent>
                     </Select>
                   </FormItem>)}
                 />
                 <FormField control={form.control} name="sexo" render={({ field }) => (
                   <FormItem><FormLabel>Sexo</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                        <SelectContent><SelectItem value="all">Todos</SelectItem><SelectItem value="F">Femenino</SelectItem><SelectItem value="M">Masculino</SelectItem></SelectContent>
+                      <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                      <SelectContent><SelectItem value="all">Todos</SelectItem><SelectItem value="F">Femenino</SelectItem><SelectItem value="M">Masculino</SelectItem></SelectContent>
                     </Select>
                   </FormItem>)}
                 />
-                 <div className="flex items-end gap-2">
-                    <FormField control={form.control} name="edadFrom" render={({ field }) => (<FormItem><FormLabel>Edad (desde)</FormLabel><FormControl><Input type="number" placeholder="Ej: 20" {...field} /></FormControl></FormItem>)} />
-                    <FormField control={form.control} name="edadTo" render={({ field }) => (<FormItem><FormLabel>(hasta)</FormLabel><FormControl><Input type="number" placeholder="Ej: 50" {...field} /></FormControl></FormItem>)} />
+                <div className="flex items-end gap-2">
+                  <FormField control={form.control} name="edadFrom" render={({ field }) => (<FormItem><FormLabel>Edad (desde)</FormLabel><FormControl><Input type="number" placeholder="Ej: 20" {...field} /></FormControl></FormItem>)} />
+                  <FormField control={form.control} name="edadTo" render={({ field }) => (<FormItem><FormLabel>(hasta)</FormLabel><FormControl><Input type="number" placeholder="Ej: 50" {...field} /></FormControl></FormItem>)} />
                 </div>
               </div>
               <Button type="submit">Generar Reporte</Button>
@@ -206,17 +213,17 @@ export default function ReportesAdminPage() {
           </Form>
         </CardContent>
       </Card>
-      
+
       <div className="grid gap-4 md:grid-cols-3">
-          <KpiCard title="Total de Atenciones" value={kpis.totalAtenciones} />
-          <KpiCard title="Edad Promedio" value={kpis.edadPromedio} />
-          <KpiCard title="Diagnósticos Únicos" value={kpis.diagnosticosUnicos} />
+        <KpiCard title="Total de Atenciones" value={kpis.totalAtenciones} />
+        <KpiCard title="Edad Promedio" value={kpis.edadPromedio} />
+        <KpiCard title="Diagnósticos Únicos" value={kpis.diagnosticosUnicos} />
       </div>
 
       <Card>
         <CardHeader className='flex-row justify-between items-center'>
           <CardTitle>Resultados del Reporte</CardTitle>
-          <Button variant="outline" onClick={exportToExcel}><Download className="mr-2 h-4 w-4"/> Exportar a Excel</Button>
+          <Button variant="outline" onClick={exportToExcel}><Download className="mr-2 h-4 w-4" /> Exportar a Excel</Button>
         </CardHeader>
         <CardContent>
           {loading ? <p>Cargando datos...</p> : <DataTable columns={columns} data={filteredAtenciones} />}

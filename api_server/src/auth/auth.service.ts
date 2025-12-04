@@ -49,7 +49,7 @@ export class AuthService {
             access_token: this.jwtService.sign(payload),
             user: user, // Optional: return user info alongside token
         };
-    }
+    } L
     async createInitialAdmin() {
         const count = await this.usuariosRepository.count();
         if (count > 0) {
@@ -72,5 +72,16 @@ export class AuthService {
 
         await this.usuariosRepository.save(admin);
         return { message: 'Usuario ADMIN001 creado exitosamente. Contraseña: admin123' };
+    }
+    async getProfile(userId: number) {
+        const user = await this.usuariosRepository.findOne({
+            where: { id_usuario: userId },
+            relations: ['paciente', 'medico']
+        });
+        if (!user) {
+            throw new UnauthorizedException('Usuario no encontrado o inactivo');
+        }
+        const { password_hash, ...result } = user;
+        return result;
     }
 }

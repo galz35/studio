@@ -14,6 +14,8 @@ const typeorm_1 = require("typeorm");
 const usuario_entity_1 = require("./usuario.entity");
 const caso_clinico_entity_1 = require("./caso-clinico.entity");
 const seguimiento_entity_1 = require("./seguimiento.entity");
+const examen_medico_entity_1 = require("./examen-medico.entity");
+const vacuna_aplicada_entity_1 = require("./vacuna-aplicada.entity");
 let Paciente = class Paciente {
 };
 exports.Paciente = Paciente;
@@ -73,6 +75,14 @@ __decorate([
     (0, typeorm_1.OneToMany)(() => seguimiento_entity_1.Seguimiento, seguimiento => seguimiento.paciente),
     __metadata("design:type", Array)
 ], Paciente.prototype, "seguimientos", void 0);
+__decorate([
+    (0, typeorm_1.OneToMany)(() => examen_medico_entity_1.ExamenMedico, examen => examen.paciente),
+    __metadata("design:type", Array)
+], Paciente.prototype, "examenes", void 0);
+__decorate([
+    (0, typeorm_1.OneToMany)(() => vacuna_aplicada_entity_1.VacunaAplicada, vacuna => vacuna.paciente),
+    __metadata("design:type", Array)
+], Paciente.prototype, "vacunas", void 0);
 exports.Paciente = Paciente = __decorate([
     (0, typeorm_1.Entity)('pacientes')
 ], Paciente);

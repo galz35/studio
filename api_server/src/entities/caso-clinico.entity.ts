@@ -2,6 +2,7 @@ import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToOne, JoinColumn
 import { Paciente } from './paciente.entity';
 import { CitaMedica } from './cita-medica.entity';
 import { Seguimiento } from './seguimiento.entity';
+import { ExamenMedico } from './examen-medico.entity';
 
 @Entity('casos_clinicos')
 @Index(['codigo_caso'], { unique: true })
@@ -31,6 +32,12 @@ export class CasoClinico {
     @Column({ type: 'text', nullable: true })
     resumen_clinico_usuario: string;
 
+    @Column({ type: 'text', nullable: true })
+    diagnostico_usuario: string;
+
+    @Column({ type: 'jsonb', nullable: true })
+    datos_extra: any;
+
     // Relaciones
     @OneToOne(() => CitaMedica, cita => cita.caso_clinico, { nullable: true })
     @JoinColumn({ name: 'id_cita_principal' })
@@ -38,4 +45,7 @@ export class CasoClinico {
 
     @OneToMany(() => Seguimiento, seguimiento => seguimiento.caso_clinico)
     seguimientos: Seguimiento[];
+
+    @OneToMany(() => ExamenMedico, examen => examen.caso_clinico)
+    examenes: ExamenMedico[];
 }

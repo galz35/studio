@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useMemo } from 'react';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import * as api from '@/lib/services/api.mock';
+import { AdminService } from '@/lib/services/admin.service';
 import { EmpleadoEmp2024 } from '@/lib/types/domain';
 import { DataTable } from '@/components/shared/DataTable';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -24,14 +24,14 @@ export default function GestionEmpleadosPage() {
     const fetchEmpleados = async () => {
       setIsLoading(true);
       try {
-        const data: EmpleadoEmp2024[] = await api.getEmpleados();
+        const data: EmpleadoEmp2024[] = await AdminService.getEmpleados();
         setEmpleadosData(data);
       } catch (error) {
         console.error(error);
         toast({
-            variant: 'destructive',
-            title: 'Error',
-            description: 'No se pudieron cargar los datos de los empleados.'
+          variant: 'destructive',
+          title: 'Error',
+          description: 'No se pudieron cargar los datos de los empleados.'
         });
       } finally {
         setIsLoading(false);
@@ -45,7 +45,7 @@ export default function GestionEmpleadosPage() {
     if (!empleadosData || !pais) return [];
     return empleadosData.filter(e => e.pais === pais);
   }, [empleadosData, pais]);
-  
+
 
   const columns = [
     { accessor: 'carnet', header: 'Carnet' },
@@ -67,28 +67,28 @@ export default function GestionEmpleadosPage() {
   ];
 
   if (isLoading) return (
-      <div className="space-y-6">
-        <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
-            <div>
-                <Skeleton className="h-9 w-64" />
-                <Skeleton className="h-4 w-80 mt-2" />
-            </div>
-            <Skeleton className="h-10 w-full md:w-48" />
+    <div className="space-y-6">
+      <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
+        <div>
+          <Skeleton className="h-9 w-64" />
+          <Skeleton className="h-4 w-80 mt-2" />
         </div>
-        <Card>
-            <CardHeader>
-                <Skeleton className="h-6 w-52" />
-                <Skeleton className="h-4 w-96 mt-2" />
-            </CardHeader>
-            <CardContent>
-                <div className="space-y-2">
-                    <Skeleton className="h-10 w-full" />
-                    <Skeleton className="h-12 w-full" />
-                    <Skeleton className="h-12 w-full" />
-                    <Skeleton className="h-12 w-full" />
-                </div>
-            </CardContent>
-        </Card>
+        <Skeleton className="h-10 w-full md:w-48" />
+      </div>
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-6 w-52" />
+          <Skeleton className="h-4 w-96 mt-2" />
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-12 w-full" />
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 
@@ -96,8 +96,8 @@ export default function GestionEmpleadosPage() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
         <div>
-            <h1 className="text-3xl font-bold">Gestión de Empleados</h1>
-            <p className="text-muted-foreground">Base de datos central de colaboradores.</p>
+          <h1 className="text-3xl font-bold">Gestión de Empleados</h1>
+          <p className="text-muted-foreground">Base de datos central de colaboradores.</p>
         </div>
         <Button className="gap-2 w-full md:w-auto">
           <UploadCloud />
@@ -106,10 +106,10 @@ export default function GestionEmpleadosPage() {
       </div>
       <Card>
         <CardHeader>
-            <CardTitle>Listado de Empleados ({pais})</CardTitle>
-            <CardDescription>
-                Esta tabla muestra todos los empleados activos e inactivos de la base de datos.
-            </CardDescription>
+          <CardTitle>Listado de Empleados ({pais})</CardTitle>
+          <CardDescription>
+            Esta tabla muestra todos los empleados activos e inactivos de la base de datos.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <DataTable columns={columns} data={empleadosDelPais} filterColumn="nombreCompleto" filterPlaceholder="Filtrar por nombre, carnet, etc..." />

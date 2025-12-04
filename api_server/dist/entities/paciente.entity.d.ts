@@ -1,6 +1,8 @@
 import { Usuario } from './usuario.entity';
 import { CasoClinico } from './caso-clinico.entity';
 import { Seguimiento } from './seguimiento.entity';
+import { ExamenMedico } from './examen-medico.entity';
+import { VacunaAplicada } from './vacuna-aplicada.entity';
 export declare class Paciente {
     id_paciente: number;
     carnet: string;
@@ -16,4 +18,6 @@ export declare class Paciente {
     usuario: Usuario;
     casos_clinicos: CasoClinico[];
     seguimientos: Seguimiento[];
+    examenes: ExamenMedico[];
+    vacunas: VacunaAplicada[];
 }

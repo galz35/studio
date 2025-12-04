@@ -37,6 +37,48 @@ let MedicoController = class MedicoController {
     crearAtencion(crearAtencionDto) {
         return this.medicoService.crearAtencion(crearAtencionDto);
     }
+    getPacientes(req) {
+        return this.medicoService.getPacientes(req.user.pais);
+    }
+    getChequeosPorPaciente(id) {
+        return this.medicoService.getChequeosPorPaciente(+id);
+    }
+    getCitasPorPaciente(id) {
+        return this.medicoService.getCitasPorPaciente(+id);
+    }
+    getExamenesPorPaciente(id) {
+        return this.medicoService.getExamenesPorPaciente(+id);
+    }
+    getVacunasPorPaciente(id) {
+        return this.medicoService.getVacunasPorPaciente(+id);
+    }
+    getCasosClinicos(req, estado) {
+        return this.medicoService.getCasosClinicos(req.user.pais, estado);
+    }
+    getCasoById(id) {
+        return this.medicoService.getCasoById(+id);
+    }
+    updateCaso(id, data) {
+        return this.medicoService.updateCaso(+id, data);
+    }
+    getCitaById(id) {
+        return this.medicoService.getCitaById(+id);
+    }
+    getExamenes(req) {
+        return this.medicoService.getExamenes(req.user.pais);
+    }
+    getSeguimientos(req) {
+        return this.medicoService.getSeguimientos(req.user.pais);
+    }
+    updateSeguimiento(id, data) {
+        return this.medicoService.updateSeguimiento(+id, data);
+    }
+    getCitasPorMedico(req) {
+        return this.medicoService.getCitasPorMedico(req.user.idMedico, req.user.pais);
+    }
+    registrarVacuna(data) {
+        return this.medicoService.registrarVacuna(data);
+    }
 };
 exports.MedicoController = MedicoController;
 __decorate([
@@ -71,6 +113,121 @@ __decorate([
     __metadata("design:paramtypes", [crear_atencion_dto_1.CrearAtencionDto]),
     __metadata("design:returntype", void 0)
 ], MedicoController.prototype, "crearAtencion", null);
+__decorate([
+    (0, common_1.Get)('pacientes'),
+    (0, swagger_1.ApiOperation)({ summary: 'Obtener lista de pacientes del país' }),
+    __param(0, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], MedicoController.prototype, "getPacientes", null);
+__decorate([
+    (0, common_1.Get)('pacientes/:id/chequeos'),
+    (0, swagger_1.ApiOperation)({ summary: 'Obtener chequeos de un paciente' }),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], MedicoController.prototype, "getChequeosPorPaciente", null);
+__decorate([
+    (0, common_1.Get)('pacientes/:id/citas'),
+    (0, swagger_1.ApiOperation)({ summary: 'Obtener citas de un paciente' }),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], MedicoController.prototype, "getCitasPorPaciente", null);
+__decorate([
+    (0, common_1.Get)('pacientes/:id/examenes'),
+    (0, swagger_1.ApiOperation)({ summary: 'Obtener exámenes de un paciente' }),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], MedicoController.prototype, "getExamenesPorPaciente", null);
+__decorate([
+    (0, common_1.Get)('pacientes/:id/vacunas'),
+    (0, swagger_1.ApiOperation)({ summary: 'Obtener vacunas de un paciente' }),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], MedicoController.prototype, "getVacunasPorPaciente", null);
+__decorate([
+    (0, common_1.Get)('casos'),
+    (0, swagger_1.ApiOperation)({ summary: 'Obtener casos clínicos' }),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Query)('estado')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", void 0)
+], MedicoController.prototype, "getCasosClinicos", null);
+__decorate([
+    (0, common_1.Get)('casos/:id'),
+    (0, swagger_1.ApiOperation)({ summary: 'Obtener caso clínico por ID' }),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], MedicoController.prototype, "getCasoById", null);
+__decorate([
+    (0, common_1.Patch)('casos/:id'),
+    (0, swagger_1.ApiOperation)({ summary: 'Actualizar caso clínico' }),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], MedicoController.prototype, "updateCaso", null);
+__decorate([
+    (0, common_1.Get)('citas/:id'),
+    (0, swagger_1.ApiOperation)({ summary: 'Obtener cita por ID' }),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], MedicoController.prototype, "getCitaById", null);
+__decorate([
+    (0, common_1.Get)('examenes'),
+    (0, swagger_1.ApiOperation)({ summary: 'Listar todos los exámenes' }),
+    __param(0, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], MedicoController.prototype, "getExamenes", null);
+__decorate([
+    (0, common_1.Get)('seguimientos'),
+    (0, swagger_1.ApiOperation)({ summary: 'Listar todos los seguimientos' }),
+    __param(0, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], MedicoController.prototype, "getSeguimientos", null);
+__decorate([
+    (0, common_1.Patch)('seguimientos/:id'),
+    (0, swagger_1.ApiOperation)({ summary: 'Actualizar seguimiento' }),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], MedicoController.prototype, "updateSeguimiento", null);
+__decorate([
+    (0, common_1.Get)('citas'),
+    (0, swagger_1.ApiOperation)({ summary: 'Obtener citas del médico (calendario)' }),
+    __param(0, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], MedicoController.prototype, "getCitasPorMedico", null);
+__decorate([
+    (0, common_1.Post)('vacunas'),
+    (0, swagger_1.ApiOperation)({ summary: 'Registrar vacuna' }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], MedicoController.prototype, "registrarVacuna", null);
 exports.MedicoController = MedicoController = __decorate([
     (0, swagger_1.ApiTags)('medico'),
     (0, swagger_1.ApiBearerAuth)(),

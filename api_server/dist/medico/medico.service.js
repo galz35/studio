@@ -21,33 +21,88 @@ const caso_clinico_entity_1 = require("../entities/caso-clinico.entity");
 const atencion_medica_entity_1 = require("../entities/atencion-medica.entity");
 const paciente_entity_1 = require("../entities/paciente.entity");
 const medico_entity_1 = require("../entities/medico.entity");
+const examen_medico_entity_1 = require("../entities/examen-medico.entity");
+const vacuna_aplicada_entity_1 = require("../entities/vacuna-aplicada.entity");
+const chequeo_bienestar_entity_1 = require("../entities/chequeo-bienestar.entity");
+const seguimiento_entity_1 = require("../entities/seguimiento.entity");
 let MedicoService = class MedicoService {
-    constructor(citasRepository, casosRepository, atencionesRepository, pacientesRepository, medicosRepository, dataSource) {
+    constructor(citasRepository, casosRepository, atencionesRepository, pacientesRepository, examenesRepository, vacunasRepository, chequeosRepository, seguimientosRepository, dataSource) {
         this.citasRepository = citasRepository;
         this.casosRepository = casosRepository;
         this.atencionesRepository = atencionesRepository;
         this.pacientesRepository = pacientesRepository;
-        this.medicosRepository = medicosRepository;
+        this.examenesRepository = examenesRepository;
+        this.vacunasRepository = vacunasRepository;
+        this.chequeosRepository = chequeosRepository;
+        this.seguimientosRepository = seguimientosRepository;
         this.dataSource = dataSource;
     }
+    async getPacientes(pais) {
+        return this.pacientesRepository.find({
+            where: { usuario: { pais } },
+            relations: ['usuario']
+        });
+    }
+    async getChequeosPorPaciente(idPaciente) {
+        return this.chequeosRepository.find({
+            where: { paciente: { id_paciente: idPaciente } },
+            order: { fecha_chequeo: 'DESC' }
+        });
+    }
+    async getCitasPorPaciente(idPaciente) {
+        return this.citasRepository.find({
+            where: { paciente: { id_paciente: idPaciente } },
+            relations: ['medico', 'caso_clinico'],
+            order: { fecha_cita: 'DESC' }
+        });
+    }
+    async getExamenesPorPaciente(idPaciente) {
+        return this.examenesRepository.find({
+            where: { paciente: { id_paciente: idPaciente } },
+            order: { fecha_solicitud: 'DESC' }
+        });
+    }
+    async getVacunasPorPaciente(idPaciente) {
+        return this.vacunasRepository.find({
+            where: { paciente: { id_paciente: idPaciente } },
+            relations: ['medico'],
+            order: { fecha_aplicacion: 'DESC' }
+        });
+    }
     async getDashboardStats(idMedico, pais) {
-        const citasHoy = await this.citasRepository.count({
+        const startOfDay = new Date();
+        startOfDay.setHours(0, 0, 0, 0);
+        const endOfDay = new Date();
+        endOfDay.setHours(23, 59, 59, 999);
+        const citasHoy = await this.citasRepository.find({
             where: {
                 medico: { id_medico: idMedico },
-                fecha_cita: new Date(),
+                fecha_cita: (0, typeorm_2.Between)(startOfDay, endOfDay),
                 estado_cita: 'PROGRAMADA'
-            }
+            },
+            relations: ['paciente', 'caso_clinico'],
+            order: { hora_cita: 'ASC' }
         });
-        const pacientesEnRojo = await this.pacientesRepository.count({
+        const pacientesEnRojo = await this.pacientesRepository.find({
             where: {
                 nivel_semaforo: 'R',
                 usuario: { pais }
             },
-            relations: ['usuario']
+            relations: ['usuario'],
+            take: 5
+        });
+        const casosAbiertos = await this.casosRepository.count({
+            where: {
+                estado_caso: 'Abierto',
+                paciente: { usuario: { pais } }
+            }
         });
         return {
+            citasHoyCount: citasHoy.length,
             citasHoy,
+            pacientesEnRojoCount: pacientesEnRojo.length,
             pacientesEnRojo,
+            casosAbiertos
         };
     }
     async getAgendaCitas(pais) {
@@ -57,6 +112,33 @@ let MedicoService = class MedicoService {
                 paciente: { usuario: { pais } }
             },
             relations: ['paciente', 'paciente.usuario']
+        });
+    }
+    async getCasosClinicos(pais, estado) {
+        const where = { paciente: { usuario: { pais } } };
+        if (estado) {
+            where.estado_caso = estado;
+        }
+        return this.casosRepository.find({
+            where,
+            relations: ['paciente', 'paciente.usuario'],
+            order: { fecha_creacion: 'DESC' }
+        });
+    }
+    async getCasoById(id) {
+        return this.casosRepository.findOne({
+            where: { id_caso: id },
+            relations: ['paciente', 'paciente.usuario', 'cita_principal', 'examenes', 'seguimientos']
+        });
+    }
+    async updateCaso(id, data) {
+        await this.casosRepository.update(id, data);
+        return this.getCasoById(id);
+    }
+    async getCitaById(id) {
+        return this.citasRepository.findOne({
+            where: { id_cita: id },
+            relations: ['paciente', 'paciente.usuario', 'medico', 'caso_clinico', 'atencion_medica']
         });
     }
     async agendarCita(agendarCitaDto) {
@@ -139,6 +221,45 @@ let MedicoService = class MedicoService {
             await queryRunner.release();
         }
     }
+    async getExamenes(pais) {
+        return this.examenesRepository.find({
+            where: { paciente: { usuario: { pais } } },
+            relations: ['paciente', 'paciente.usuario'],
+            order: { fecha_solicitud: 'DESC' }
+        });
+    }
+    async getSeguimientos(pais) {
+        return this.seguimientosRepository.find({
+            where: { paciente: { usuario: { pais } } },
+            relations: ['paciente', 'paciente.usuario'],
+            order: { fecha_programada: 'ASC' }
+        });
+    }
+    async updateSeguimiento(id, data) {
+        await this.seguimientosRepository.update(id, data);
+        return this.seguimientosRepository.findOne({ where: { id_seguimiento: id } });
+    }
+    async getCitasPorMedico(idMedico, pais) {
+        return this.citasRepository.find({
+            where: {
+                medico: { id_medico: idMedico },
+                paciente: { usuario: { pais } }
+            },
+            relations: ['paciente', 'paciente.usuario'],
+            order: { fecha_cita: 'ASC', hora_cita: 'ASC' }
+        });
+    }
+    async registrarVacuna(data) {
+        const vacuna = this.vacunasRepository.create({
+            paciente: { id_paciente: +data.idPaciente },
+            medico: { id_medico: +data.idMedico },
+            tipo_vacuna: data.tipoVacuna,
+            dosis: data.dosis,
+            fecha_aplicacion: new Date(data.fechaAplicacion),
+            observaciones: data.observaciones
+        });
+        return this.vacunasRepository.save(vacuna);
+    }
 };
 exports.MedicoService = MedicoService;
 exports.MedicoService = MedicoService = __decorate([
@@ -147,8 +268,14 @@ exports.MedicoService = MedicoService = __decorate([
     __param(1, (0, typeorm_1.InjectRepository)(caso_clinico_entity_1.CasoClinico)),
     __param(2, (0, typeorm_1.InjectRepository)(atencion_medica_entity_1.AtencionMedica)),
     __param(3, (0, typeorm_1.InjectRepository)(paciente_entity_1.Paciente)),
-    __param(4, (0, typeorm_1.InjectRepository)(medico_entity_1.Medico)),
+    __param(4, (0, typeorm_1.InjectRepository)(examen_medico_entity_1.ExamenMedico)),
+    __param(5, (0, typeorm_1.InjectRepository)(vacuna_aplicada_entity_1.VacunaAplicada)),
+    __param(6, (0, typeorm_1.InjectRepository)(chequeo_bienestar_entity_1.ChequeoBienestar)),
+    __param(7, (0, typeorm_1.InjectRepository)(seguimiento_entity_1.Seguimiento)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
+        typeorm_2.Repository,
+        typeorm_2.Repository,
+        typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,

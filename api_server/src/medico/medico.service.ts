@@ -1,11 +1,15 @@
 import { Injectable, NotFoundException, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
+import { Repository, DataSource, Between } from 'typeorm';
 import { CitaMedica } from '../entities/cita-medica.entity';
 import { CasoClinico } from '../entities/caso-clinico.entity';
 import { AtencionMedica } from '../entities/atencion-medica.entity';
 import { Paciente } from '../entities/paciente.entity';
 import { Medico } from '../entities/medico.entity';
+import { ExamenMedico } from '../entities/examen-medico.entity';
+import { VacunaAplicada } from '../entities/vacuna-aplicada.entity';
+import { ChequeoBienestar } from '../entities/chequeo-bienestar.entity';
+import { Seguimiento } from '../entities/seguimiento.entity';
 import { AgendarCitaDto } from './dto/agendar-cita.dto';
 import { CrearAtencionDto } from './dto/crear-atencion.dto';
 
@@ -20,31 +24,95 @@ export class MedicoService {
         private atencionesRepository: Repository<AtencionMedica>,
         @InjectRepository(Paciente)
         private pacientesRepository: Repository<Paciente>,
-        @InjectRepository(Medico)
-        private medicosRepository: Repository<Medico>,
+        @InjectRepository(ExamenMedico)
+        private examenesRepository: Repository<ExamenMedico>,
+        @InjectRepository(VacunaAplicada)
+        private vacunasRepository: Repository<VacunaAplicada>,
+        @InjectRepository(ChequeoBienestar)
+        private chequeosRepository: Repository<ChequeoBienestar>,
+        @InjectRepository(Seguimiento)
+        private seguimientosRepository: Repository<Seguimiento>,
         private dataSource: DataSource,
     ) { }
 
+    async getPacientes(pais: string) {
+        return this.pacientesRepository.find({
+            where: { usuario: { pais } },
+            relations: ['usuario']
+        });
+    }
+
+    async getChequeosPorPaciente(idPaciente: number) {
+        return this.chequeosRepository.find({
+            where: { paciente: { id_paciente: idPaciente } },
+            order: { fecha_chequeo: 'DESC' }
+        });
+    }
+
+    async getCitasPorPaciente(idPaciente: number) {
+        return this.citasRepository.find({
+            where: { paciente: { id_paciente: idPaciente } },
+            relations: ['medico', 'caso_clinico'],
+            order: { fecha_cita: 'DESC' }
+        });
+    }
+
+    async getExamenesPorPaciente(idPaciente: number) {
+        return this.examenesRepository.find({
+            where: { paciente: { id_paciente: idPaciente } },
+            order: { fecha_solicitud: 'DESC' }
+        });
+    }
+
+    async getVacunasPorPaciente(idPaciente: number) {
+        return this.vacunasRepository.find({
+            where: { paciente: { id_paciente: idPaciente } },
+            relations: ['medico'],
+            order: { fecha_aplicacion: 'DESC' }
+        });
+    }
+
     async getDashboardStats(idMedico: number, pais: string) {
-        const citasHoy = await this.citasRepository.count({
+        // 1. Citas de Hoy
+        const startOfDay = new Date();
+        startOfDay.setHours(0, 0, 0, 0);
+        const endOfDay = new Date();
+        endOfDay.setHours(23, 59, 59, 999);
+
+        const citasHoy = await this.citasRepository.find({
             where: {
                 medico: { id_medico: idMedico },
-                fecha_cita: new Date(), // This might need date formatting depending on DB timezone
+                fecha_cita: Between(startOfDay, endOfDay),
                 estado_cita: 'PROGRAMADA'
-            }
+            },
+            relations: ['paciente', 'caso_clinico'],
+            order: { hora_cita: 'ASC' }
         });
 
-        const pacientesEnRojo = await this.pacientesRepository.count({
+        // 2. Pacientes en Rojo (Alertas)
+        const pacientesEnRojo = await this.pacientesRepository.find({
             where: {
                 nivel_semaforo: 'R',
                 usuario: { pais }
             },
-            relations: ['usuario']
+            relations: ['usuario'],
+            take: 5 // Limit to 5 for dashboard
+        });
+
+        // 3. Casos Abiertos (Agenda pendiente)
+        const casosAbiertos = await this.casosRepository.count({
+            where: {
+                estado_caso: 'Abierto',
+                paciente: { usuario: { pais } }
+            }
         });
 
         return {
+            citasHoyCount: citasHoy.length,
             citasHoy,
+            pacientesEnRojoCount: pacientesEnRojo.length,
             pacientesEnRojo,
+            casosAbiertos
         };
     }
 
@@ -55,6 +123,37 @@ export class MedicoService {
                 paciente: { usuario: { pais } }
             },
             relations: ['paciente', 'paciente.usuario']
+        });
+    }
+
+    async getCasosClinicos(pais: string, estado?: string) {
+        const where: any = { paciente: { usuario: { pais } } };
+        if (estado) {
+            where.estado_caso = estado;
+        }
+        return this.casosRepository.find({
+            where,
+            relations: ['paciente', 'paciente.usuario'],
+            order: { fecha_creacion: 'DESC' }
+        });
+    }
+
+    async getCasoById(id: number) {
+        return this.casosRepository.findOne({
+            where: { id_caso: id },
+            relations: ['paciente', 'paciente.usuario', 'cita_principal', 'examenes', 'seguimientos']
+        });
+    }
+
+    async updateCaso(id: number, data: Partial<CasoClinico>) {
+        await this.casosRepository.update(id, data);
+        return this.getCasoById(id);
+    }
+
+    async getCitaById(id: number) {
+        return this.citasRepository.findOne({
+            where: { id_cita: id },
+            relations: ['paciente', 'paciente.usuario', 'medico', 'caso_clinico', 'atencion_medica']
         });
     }
 
@@ -148,5 +247,49 @@ export class MedicoService {
         } finally {
             await queryRunner.release();
         }
+    }
+
+    async getExamenes(pais: string) {
+        return this.examenesRepository.find({
+            where: { paciente: { usuario: { pais } } },
+            relations: ['paciente', 'paciente.usuario'],
+            order: { fecha_solicitud: 'DESC' }
+        });
+    }
+
+    async getSeguimientos(pais: string) {
+        return this.seguimientosRepository.find({
+            where: { paciente: { usuario: { pais } } },
+            relations: ['paciente', 'paciente.usuario'],
+            order: { fecha_programada: 'ASC' }
+        });
+    }
+
+    async updateSeguimiento(id: number, data: any) {
+        await this.seguimientosRepository.update(id, data);
+        return this.seguimientosRepository.findOne({ where: { id_seguimiento: id } });
+    }
+
+    async getCitasPorMedico(idMedico: number, pais: string) {
+        return this.citasRepository.find({
+            where: {
+                medico: { id_medico: idMedico },
+                paciente: { usuario: { pais } }
+            },
+            relations: ['paciente', 'paciente.usuario'],
+            order: { fecha_cita: 'ASC', hora_cita: 'ASC' }
+        });
+    }
+
+    async registrarVacuna(data: any) {
+        const vacuna = this.vacunasRepository.create({
+            paciente: { id_paciente: +data.idPaciente },
+            medico: { id_medico: +data.idMedico },
+            tipo_vacuna: data.tipoVacuna,
+            dosis: data.dosis,
+            fecha_aplicacion: new Date(data.fechaAplicacion),
+            observaciones: data.observaciones
+        });
+        return this.vacunasRepository.save(vacuna);
     }
 }

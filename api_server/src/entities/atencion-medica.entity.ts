@@ -1,6 +1,8 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToOne, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToOne, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
 import { CitaMedica } from './cita-medica.entity';
 import { Medico } from './medico.entity';
+import { ExamenMedico } from './examen-medico.entity';
+import { VacunaAplicada } from './vacuna-aplicada.entity';
 
 @Entity('atenciones_medicas')
 export class AtencionMedica {
@@ -48,4 +50,10 @@ export class AtencionMedica {
 
     @Column({ type: 'text', nullable: true })
     notas_seguimiento_medico: string | null;
+
+    @OneToMany(() => ExamenMedico, examen => examen.atencion_medica)
+    examenes: ExamenMedico[];
+
+    @OneToMany(() => VacunaAplicada, vacuna => vacuna.atencion_medica)
+    vacunas: VacunaAplicada[];
 }

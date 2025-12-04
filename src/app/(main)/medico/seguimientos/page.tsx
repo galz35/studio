@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
-import * as api from '@/lib/services/api.mock';
+import { MedicoService } from '@/lib/services/medico.service';
 import type { SeguimientoPaciente, Paciente, CasoClinico } from '@/lib/types/domain';
 import { DataTable } from '@/components/shared/DataTable';
 import { Button } from '@/components/ui/button';
@@ -31,33 +31,46 @@ export default function SeguimientosPage() {
 
   useEffect(() => {
     if (pais) {
-      api.getSeguimientos({ pais })
+      MedicoService.getSeguimientos({ pais })
         .then(data => {
           setSeguimientos(data);
+          setLoading(false);
+        })
+        .catch(err => {
+          console.error("Error loading follow-ups", err);
           setLoading(false);
         });
     }
   }, [pais]);
 
-  const handleUpdateSeguimiento = (formData: { notas: string, estado: SeguimientoPaciente['estadoSeguimiento'] }) => {
+  const handleUpdateSeguimiento = async (formData: { notas: string, estado: SeguimientoPaciente['estadoSeguimiento'] }) => {
     if (!selectedSeguimiento) return;
 
-    // Mock update
-    setSeguimientos(prev => prev.map(s => s.idSeguimiento === selectedSeguimiento.idSeguimiento ? { 
-        ...s, 
+    try {
+      // Assuming we have an update endpoint
+      await MedicoService.updateSeguimiento(selectedSeguimiento.idSeguimiento, {
         estadoSeguimiento: formData.estado,
-        // Append new note to existing notes
-        notasSeguimiento: `${s.notasSeguimiento}\n[${new Date().toLocaleString('es-ES')}] - ${formData.notas}`,
-        ...(formData.estado === 'RESUELTO' && { fechaReal: new Date().toISOString().split('T')[0] })
-     } : s));
+        notasSeguimiento: `${selectedSeguimiento.notasSeguimiento || ''}\n[${new Date().toLocaleString('es-ES')}] - ${formData.notas}`,
+        fechaReal: formData.estado === 'RESUELTO' ? new Date().toISOString().split('T')[0] : undefined
+      });
 
-    toast({ title: 'Seguimiento actualizado', description: 'La nota y el estado se han guardado.' });
-    
-    // Close modal and reset selection
-    setNoteModalOpen(false);
-    setSelectedSeguimiento(null);
+      // Optimistic update or refetch
+      setSeguimientos(prev => prev.map(s => s.idSeguimiento === selectedSeguimiento.idSeguimiento ? {
+        ...s,
+        estadoSeguimiento: formData.estado,
+        notasSeguimiento: `${s.notasSeguimiento || ''}\n[${new Date().toLocaleString('es-ES')}] - ${formData.notas}`,
+        ...(formData.estado === 'RESUELTO' && { fechaReal: new Date().toISOString().split('T')[0] })
+      } : s));
+
+      toast({ title: 'Seguimiento actualizado', description: 'La nota y el estado se han guardado.' });
+      setNoteModalOpen(false);
+      setSelectedSeguimiento(null);
+    } catch (error) {
+      console.error("Error updating follow-up", error);
+      toast({ variant: 'destructive', title: 'Error', description: 'No se pudo actualizar el seguimiento.' });
+    }
   };
-  
+
   const getStatusClass = (status: SeguimientoPaciente['estadoSeguimiento']) => {
     switch (status) {
       case 'PENDIENTE': return 'bg-yellow-100 text-yellow-800';
@@ -86,23 +99,23 @@ export default function SeguimientosPage() {
       header: 'Acciones',
       cell: (row: SeguimientoConDetalle) => (
         <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-8 w-8 p-0">
-                    <span className="sr-only">Abrir menú</span>
-                    <MoreHorizontal className="h-4 w-4" />
-                </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-                 <DropdownMenuItem onClick={() => { setSelectedSeguimiento(row); setNoteModalOpen(true); }}>
-                    <MessageSquarePlus className="mr-2 h-4 w-4" /> Registrar Nota
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                     <Link href={`/medico/casos/${row.idCaso}`}>
-                        <Eye className="mr-2 h-4 w-4" /> Ver Caso Asociado
-                    </Link>
-                </DropdownMenuItem>
-            </DropdownMenuContent>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="h-8 w-8 p-0">
+              <span className="sr-only">Abrir menú</span>
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => { setSelectedSeguimiento(row); setNoteModalOpen(true); }}>
+              <MessageSquarePlus className="mr-2 h-4 w-4" /> Registrar Nota
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link href={`/medico/casos/${row.idCaso}`}>
+                <Eye className="mr-2 h-4 w-4" /> Ver Caso Asociado
+              </Link>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
         </DropdownMenu>
       ),
     },
@@ -119,51 +132,51 @@ export default function SeguimientosPage() {
           <DataTable columns={columns} data={seguimientos} filterColumn="estadoSeguimiento" filterPlaceholder="Filtrar por estado..." />
         </CardContent>
       </Card>
-      
+
       <Dialog open={isNoteModalOpen} onOpenChange={(open) => { if (!open) setSelectedSeguimiento(null); setNoteModalOpen(open); }}>
         <DialogContent>
-            <DialogHeader>
-                <DialogTitle>Registrar Nota de Seguimiento</DialogTitle>
-                <DialogDescription>Paciente: {selectedSeguimiento?.paciente.nombreCompleto}</DialogDescription>
-            </DialogHeader>
-            <form id="note-form" onSubmit={(e) => {
-                e.preventDefault();
-                const formData = new FormData(e.currentTarget);
-                const data = {
-                    notas: formData.get('notas-seguimiento') as string,
-                    estado: formData.get('estado-seguimiento') as SeguimientoPaciente['estadoSeguimiento']
-                };
-                handleUpdateSeguimiento(data);
-            }}>
-                <div className="space-y-4 py-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="notas-seguimiento">Nota</Label>
-                        <Textarea id="notas-seguimiento" name="notas-seguimiento" placeholder="Ej: Contactado por llamada, reporta mejoría. Se indica continuar tratamiento..." required />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="estado-seguimiento">Actualizar Estado</Label>
-                        <Select name="estado-seguimiento" defaultValue={selectedSeguimiento?.estadoSeguimiento}>
-                            <SelectTrigger id="estado-seguimiento"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="PENDIENTE">Pendiente</SelectItem>
-                                <SelectItem value="EN_PROCESO">En Proceso</SelectItem>
-                                <SelectItem value="RESUELTO">Resuelto</SelectItem>
-                                <SelectItem value="CANCELADO">Cancelado</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <Card className='bg-muted/50 max-h-32 overflow-y-auto'>
-                        <CardHeader className='p-2 pb-0'><CardTitle className='text-sm'>Historial de Notas</CardTitle></CardHeader>
-                        <CardContent className='p-2 text-xs'>
-                           <pre className='whitespace-pre-wrap font-sans'>{selectedSeguimiento?.notasSeguimiento}</pre>
-                        </CardContent>
-                    </Card>
-                </div>
-                <DialogFooter>
-                    <DialogClose asChild><Button type="button" variant="ghost">Cancelar</Button></DialogClose>
-                    <Button type="submit">Guardar Nota</Button>
-                </DialogFooter>
-            </form>
+          <DialogHeader>
+            <DialogTitle>Registrar Nota de Seguimiento</DialogTitle>
+            <DialogDescription>Paciente: {selectedSeguimiento?.paciente.nombreCompleto}</DialogDescription>
+          </DialogHeader>
+          <form id="note-form" onSubmit={(e) => {
+            e.preventDefault();
+            const formData = new FormData(e.currentTarget);
+            const data = {
+              notas: formData.get('notas-seguimiento') as string,
+              estado: formData.get('estado-seguimiento') as SeguimientoPaciente['estadoSeguimiento']
+            };
+            handleUpdateSeguimiento(data);
+          }}>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="notas-seguimiento">Nota</Label>
+                <Textarea id="notas-seguimiento" name="notas-seguimiento" placeholder="Ej: Contactado por llamada, reporta mejoría. Se indica continuar tratamiento..." required />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="estado-seguimiento">Actualizar Estado</Label>
+                <Select name="estado-seguimiento" defaultValue={selectedSeguimiento?.estadoSeguimiento}>
+                  <SelectTrigger id="estado-seguimiento"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="PENDIENTE">Pendiente</SelectItem>
+                    <SelectItem value="EN_PROCESO">En Proceso</SelectItem>
+                    <SelectItem value="RESUELTO">Resuelto</SelectItem>
+                    <SelectItem value="CANCELADO">Cancelado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Card className='bg-muted/50 max-h-32 overflow-y-auto'>
+                <CardHeader className='p-2 pb-0'><CardTitle className='text-sm'>Historial de Notas</CardTitle></CardHeader>
+                <CardContent className='p-2 text-xs'>
+                  <pre className='whitespace-pre-wrap font-sans'>{selectedSeguimiento?.notasSeguimiento}</pre>
+                </CardContent>
+              </Card>
+            </div>
+            <DialogFooter>
+              <DialogClose asChild><Button type="button" variant="ghost">Cancelar</Button></DialogClose>
+              <Button type="submit">Guardar Nota</Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </div>

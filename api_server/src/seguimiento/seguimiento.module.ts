@@ -7,10 +7,12 @@ import { CasoClinico } from '../entities/caso-clinico.entity';
 import { Paciente } from '../entities/paciente.entity';
 import { AtencionMedica } from '../entities/atencion-medica.entity';
 import { Usuario } from '../entities/usuario.entity';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
     imports: [
         TypeOrmModule.forFeature([Seguimiento, CasoClinico, Paciente, AtencionMedica, Usuario]),
+        AuthModule,
     ],
     controllers: [SeguimientoController],
     providers: [SeguimientoService],

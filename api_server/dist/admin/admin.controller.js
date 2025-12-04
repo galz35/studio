@@ -16,6 +16,7 @@ exports.AdminController = void 0;
 const common_1 = require("@nestjs/common");
 const admin_service_1 = require("./admin.service");
 const crear_usuario_dto_1 = require("./dto/crear-usuario.dto");
+const debug_set_password_dto_1 = require("./dto/debug-set-password.dto");
 const jwt_auth_guard_1 = require("../auth/jwt-auth.guard");
 const roles_guard_1 = require("../auth/roles.guard");
 const roles_decorator_1 = require("../auth/roles.decorator");
@@ -33,8 +34,23 @@ let AdminController = class AdminController {
     getUsuarios(req) {
         return this.adminService.getUsuarios(req.user.pais);
     }
+    updateUsuario(id, data) {
+        return this.adminService.updateUsuario(+id, data);
+    }
     getMedicos(req) {
         return this.adminService.getMedicos(req.user.pais);
+    }
+    crearMedico(data) {
+        return this.adminService.crearMedico(data);
+    }
+    getEmpleados(req, carnet) {
+        return this.adminService.getEmpleados(req.user.pais, carnet);
+    }
+    getReportesAtenciones(req, filters) {
+        return this.adminService.getReportesAtenciones(req.user.pais, filters);
+    }
+    debugSetPassword(body) {
+        return this.adminService.debugSetPassword(body.carnet, body.newPass);
     }
 };
 exports.AdminController = AdminController;
@@ -63,6 +79,15 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], AdminController.prototype, "getUsuarios", null);
 __decorate([
+    (0, common_1.Patch)('usuarios/:id'),
+    (0, swagger_1.ApiOperation)({ summary: 'Actualizar usuario' }),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "updateUsuario", null);
+__decorate([
     (0, common_1.Get)('medicos'),
     (0, swagger_1.ApiOperation)({ summary: 'Listar médicos del país' }),
     __param(0, (0, common_1.Request)()),
@@ -70,6 +95,40 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], AdminController.prototype, "getMedicos", null);
+__decorate([
+    (0, common_1.Post)('medicos'),
+    (0, swagger_1.ApiOperation)({ summary: 'Crear un nuevo médico' }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "crearMedico", null);
+__decorate([
+    (0, common_1.Get)('empleados'),
+    (0, swagger_1.ApiOperation)({ summary: 'Listar empleados' }),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Query)('carnet')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "getEmpleados", null);
+__decorate([
+    (0, common_1.Get)('reportes/atenciones'),
+    (0, swagger_1.ApiOperation)({ summary: 'Obtener reporte de atenciones' }),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "getReportesAtenciones", null);
+__decorate([
+    (0, common_1.Post)('debug/set-password'),
+    (0, swagger_1.ApiOperation)({ summary: 'DEBUG: Resetear contraseña de usuario' }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [debug_set_password_dto_1.DebugSetPasswordDto]),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "debugSetPassword", null);
 exports.AdminController = AdminController = __decorate([
     (0, swagger_1.ApiTags)('admin'),
     (0, swagger_1.ApiBearerAuth)(),

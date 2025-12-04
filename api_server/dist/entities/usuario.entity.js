@@ -67,6 +67,10 @@ __decorate([
     (0, typeorm_1.OneToMany)(() => seguimiento_entity_1.Seguimiento, seguimiento => seguimiento.usuario_responsable),
     __metadata("design:type", Array)
 ], Usuario.prototype, "seguimientos", void 0);
+__decorate([
+    (0, typeorm_1.CreateDateColumn)({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP', comment: 'Fecha de creación del registro.' }),
+    __metadata("design:type", Date)
+], Usuario.prototype, "fecha_creacion", void 0);
 exports.Usuario = Usuario = __decorate([
     (0, typeorm_1.Entity)('usuarios')
 ], Usuario);

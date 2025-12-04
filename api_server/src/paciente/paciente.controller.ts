@@ -31,4 +31,22 @@ export class PacienteController {
     getMisCitas(@Request() req) {
         return this.pacienteService.getMisCitas(req.user.idPaciente);
     }
+
+    @Get('mis-chequeos')
+    @ApiOperation({ summary: 'Obtener historial de chequeos' })
+    getMisChequeos(@Request() req) {
+        return this.pacienteService.getMisChequeos(req.user.idPaciente);
+    }
+
+    @Get('mis-examenes')
+    @ApiOperation({ summary: 'Obtener historial de exámenes' })
+    getMisExamenes(@Request() req) {
+        return this.pacienteService.getMisExamenes(req.user.idPaciente);
+    }
+
+    @Get('mis-vacunas')
+    @ApiOperation({ summary: 'Obtener historial de vacunas' })
+    getMisVacunas(@Request() req) {
+        return this.pacienteService.getMisVacunas(req.user.idPaciente);
+    }
 }

@@ -14,4 +14,5 @@ export declare class Usuario {
     paciente: Paciente;
     medico: Medico;
     seguimientos: Seguimiento[];
+    fecha_creacion: Date;
 }

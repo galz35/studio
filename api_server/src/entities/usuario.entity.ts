@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn, OneToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn, OneToMany, CreateDateColumn } from 'typeorm';
 import { Paciente } from './paciente.entity';
 import { Medico } from './medico.entity';
 import { Seguimiento } from './seguimiento.entity';
@@ -43,4 +43,7 @@ export class Usuario {
 
     @OneToMany(() => Seguimiento, seguimiento => seguimiento.usuario_responsable)
     seguimientos: Seguimiento[];
+
+    @CreateDateColumn({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP', comment: 'Fecha de creación del registro.' })
+    fecha_creacion: Date;
 }

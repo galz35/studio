@@ -1,87 +1,78 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import * as api from '@/lib/services/api.mock';
+import { MedicoService, MedicoDashboardData } from '@/lib/services/medico.service';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { KpiCard } from '@/components/shared/KpiCard';
-import { CalendarCheck, UserX, Repeat, FlaskConical, AlertTriangle, Clock } from 'lucide-react';
+import { CalendarCheck, UserX, Repeat, FlaskConical, AlertTriangle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { SemaforoBadge } from '@/components/shared/SemaforoBadge';
 import { Button } from '@/components/ui/button';
-import { CitaMedica, Paciente, CasoClinico } from '@/lib/types/domain';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
-
-type PopulatedCita = CitaMedica & { paciente: Paciente | null, caso: CasoClinico | null, id: string };
-
-type DashboardData = {
-  kpis: {
-    citasHoy: number;
-    pacientesEnRojo: number;
-    seguimientosPendientes: number;
-    examenesSinResultado: number;
-  };
-  citasDelDia: PopulatedCita[];
-  alertas: { message: string, type: 'danger' | 'warning' }[];
-};
+import { EmptyState } from '@/components/shared/EmptyState';
 
 export default function DashboardMedicoPage() {
   const { userProfile, pais } = useUserProfile();
-  const [data, setData] = useState<DashboardData | null>(null);
+  const [data, setData] = useState<MedicoDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    if (userProfile?.idMedico && pais) {
+    if (userProfile?.idMedico) {
       setLoading(true);
-      api.getDashboardMedico(userProfile.idMedico, pais)
+      MedicoService.getDashboard()
         .then(dashboardData => {
           setData(dashboardData);
           setLoading(false);
         }).catch(err => {
-            console.error(err);
-            setLoading(false);
+          console.error(err);
+          setLoading(false);
         });
+    } else if (!userProfile?.idMedico && !loading) {
+      setLoading(false);
     }
-  }, [userProfile?.idMedico, pais]);
+  }, [userProfile?.idMedico]);
 
   if (loading) return (
     <div className="space-y-6">
-        <Skeleton className="h-9 w-72" />
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Skeleton className="h-28 w-full" />
-            <Skeleton className="h-28 w-full" />
-            <Skeleton className="h-28 w-full" />
-            <Skeleton className="h-28 w-full" />
-        </div>
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-             <Card className="lg:col-span-2">
-                <CardHeader><Skeleton className="h-6 w-48" /></CardHeader>
-                <CardContent><Skeleton className="h-40 w-full" /></CardContent>
-            </Card>
-             <Card>
-                <CardHeader><Skeleton className="h-6 w-32" /></CardHeader>
-                <CardContent><Skeleton className="h-40 w-full" /></CardContent>
-            </Card>
-        </div>
+      <Skeleton className="h-9 w-72" />
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Skeleton className="h-28 w-full" />
+        <Skeleton className="h-28 w-full" />
+        <Skeleton className="h-28 w-full" />
+        <Skeleton className="h-28 w-full" />
+      </div>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
+          <CardHeader><Skeleton className="h-6 w-48" /></CardHeader>
+          <CardContent><Skeleton className="h-40 w-full" /></CardContent>
+        </Card>
+        <Card>
+          <CardHeader><Skeleton className="h-6 w-32" /></CardHeader>
+          <CardContent><Skeleton className="h-40 w-full" /></CardContent>
+        </Card>
+      </div>
     </div>
   );
-  if (!data) return <div>No se pudo cargar la información.</div>;
-  
-  const { kpis, citasDelDia, alertas } = data;
+
+  if (!userProfile?.idMedico) return <EmptyState title="No autorizado" message="Este perfil no es de médico." />;
+  if (!data) return <EmptyState title="Sin información" message="No se pudo cargar el dashboard." />;
+
+  const { citasHoyCount, citasHoy, pacientesEnRojoCount, pacientesEnRojo, casosAbiertos } = data;
 
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold">Dashboard del Médico</h1>
-      
+
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <KpiCard title="Citas de Hoy" value={kpis.citasHoy} icon={CalendarCheck} />
-        <KpiCard title="Pacientes en Rojo" value={kpis.pacientesEnRojo} icon={UserX} color="text-red-500" />
-        <KpiCard title="Seguimientos Pendientes" value={kpis.seguimientosPendientes} icon={Repeat} />
-        <KpiCard title="Exámenes sin Resultado" value={kpis.examenesSinResultado} icon={FlaskConical} />
+        <KpiCard title="Citas de Hoy" value={citasHoyCount} icon={CalendarCheck} />
+        <KpiCard title="Pacientes en Rojo" value={pacientesEnRojoCount} icon={UserX} color="text-red-500" />
+        <KpiCard title="Casos Abiertos" value={casosAbiertos} icon={Repeat} />
+        {/* Placeholder for future KPI */}
+        <KpiCard title="Exámenes Pendientes" value={0} icon={FlaskConical} />
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -100,15 +91,15 @@ export default function DashboardMedicoPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {citasDelDia.length > 0 ? citasDelDia.map(cita => (
-                  <TableRow key={cita.id}>
-                    <TableCell>{cita.horaCita}</TableCell>
-                    <TableCell>{cita.paciente?.nombreCompleto || 'N/A'}</TableCell>
-                    <TableCell>{cita.motivoResumen || "N/A"}</TableCell>
-                    <TableCell>{cita.estadoCita}</TableCell>
-                    <TableCell><SemaforoBadge nivel={cita.paciente?.nivelSemaforo!} /></TableCell>
+                {citasHoy.length > 0 ? citasHoy.map((cita: any) => (
+                  <TableRow key={cita.id_cita}>
+                    <TableCell>{cita.hora_cita}</TableCell>
+                    <TableCell>{cita.paciente?.nombre_completo || 'N/A'}</TableCell>
+                    <TableCell>{cita.caso_clinico?.motivo_consulta || "Consulta General"}</TableCell>
+                    <TableCell>{cita.estado_cita}</TableCell>
+                    <TableCell><SemaforoBadge nivel={cita.paciente?.nivel_semaforo || 'V'} /></TableCell>
                     <TableCell>
-                      <Button size="sm" onClick={() => router.push(`/medico/atencion/${cita.id}`)}>
+                      <Button size="sm" onClick={() => router.push(`/medico/atencion/${cita.id_cita}`)}>
                         Atender
                       </Button>
                     </TableCell>
@@ -122,16 +113,19 @@ export default function DashboardMedicoPage() {
         </Card>
 
         <Card>
-          <CardHeader><CardTitle>Alertas</CardTitle></CardHeader>
+          <CardHeader><CardTitle>Pacientes en Alerta (Rojo)</CardTitle></CardHeader>
           <CardContent className="space-y-4">
-            {alertas.map((alerta, index) => (
-              <Alert key={index} variant={alerta.type === 'danger' ? 'destructive' : 'default'} className={alerta.type === 'warning' ? 'bg-yellow-50 border-yellow-200' : ''}>
+            {pacientesEnRojo.length > 0 ? pacientesEnRojo.map((paciente: any, index: number) => (
+              <Alert key={index} variant="destructive">
                 <AlertTriangle className="h-4 w-4" />
-                <AlertTitle>{alerta.type === 'danger' ? 'Alerta Crítica' : 'Advertencia'}</AlertTitle>
-                <AlertDescription>{alerta.message}</AlertDescription>
+                <AlertTitle>Atención Requerida</AlertTitle>
+                <AlertDescription>
+                  {paciente.nombre_completo} requiere seguimiento inmediato.
+                </AlertDescription>
               </Alert>
-            ))}
-            {alertas.length === 0 && <p className="text-sm text-muted-foreground text-center">No hay alertas.</p>}
+            )) : (
+              <p className="text-sm text-muted-foreground text-center">No hay pacientes en estado crítico.</p>
+            )}
           </CardContent>
         </Card>
       </div>

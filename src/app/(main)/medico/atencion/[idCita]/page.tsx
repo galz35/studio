@@ -2,17 +2,9 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import * as api from '@/lib/services/api.mock';
-import type { CitaMedica, Paciente, EmpleadoEmp2024, CasoClinico } from '@/lib/types/domain';
+import { MedicoService, AtencionPageData } from '@/lib/services/medico.service';
 import { AtencionCitaWizard } from '@/components/medico/AtencionCitaWizard';
 import { Skeleton } from '@/components/ui/skeleton';
-
-export type AtencionPageData = {
-  cita: CitaMedica;
-  paciente: Paciente;
-  empleado: EmpleadoEmp2024;
-  caso: CasoClinico;
-};
 
 export default function AtencionCitaPage() {
   const params = useParams();
@@ -30,9 +22,9 @@ export default function AtencionCitaPage() {
 
     const fetchData = async () => {
       try {
-        const atencionData = await api.getAtencionMedicaData(idCita) as AtencionPageData;
+        const atencionData = await MedicoService.getAtencionMedicaData(idCita);
         if (!atencionData) {
-            throw new Error("No se encontraron los datos para la atención");
+          throw new Error("No se encontraron los datos para la atención");
         }
         setData(atencionData);
       } catch (err: any) {

@@ -13,6 +13,8 @@ exports.AtencionMedica = void 0;
 const typeorm_1 = require("typeorm");
 const cita_medica_entity_1 = require("./cita-medica.entity");
 const medico_entity_1 = require("./medico.entity");
+const examen_medico_entity_1 = require("./examen-medico.entity");
+const vacuna_aplicada_entity_1 = require("./vacuna-aplicada.entity");
 let AtencionMedica = class AtencionMedica {
 };
 exports.AtencionMedica = AtencionMedica;
@@ -74,6 +76,14 @@ __decorate([
     (0, typeorm_1.Column)({ type: 'text', nullable: true }),
     __metadata("design:type", Object)
 ], AtencionMedica.prototype, "notas_seguimiento_medico", void 0);
+__decorate([
+    (0, typeorm_1.OneToMany)(() => examen_medico_entity_1.ExamenMedico, examen => examen.atencion_medica),
+    __metadata("design:type", Array)
+], AtencionMedica.prototype, "examenes", void 0);
+__decorate([
+    (0, typeorm_1.OneToMany)(() => vacuna_aplicada_entity_1.VacunaAplicada, vacuna => vacuna.atencion_medica),
+    __metadata("design:type", Array)
+], AtencionMedica.prototype, "vacunas", void 0);
 exports.AtencionMedica = AtencionMedica = __decorate([
     (0, typeorm_1.Entity)('atenciones_medicas')
 ], AtencionMedica);

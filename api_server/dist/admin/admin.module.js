@@ -15,13 +15,15 @@ const usuario_entity_1 = require("../entities/usuario.entity");
 const medico_entity_1 = require("../entities/medico.entity");
 const paciente_entity_1 = require("../entities/paciente.entity");
 const cita_medica_entity_1 = require("../entities/cita-medica.entity");
+const empleado_entity_1 = require("../entities/empleado.entity");
+const atencion_medica_entity_1 = require("../entities/atencion-medica.entity");
 let AdminModule = class AdminModule {
 };
 exports.AdminModule = AdminModule;
 exports.AdminModule = AdminModule = __decorate([
     (0, common_1.Module)({
         imports: [
-            typeorm_1.TypeOrmModule.forFeature([usuario_entity_1.Usuario, medico_entity_1.Medico, paciente_entity_1.Paciente, cita_medica_entity_1.CitaMedica]),
+            typeorm_1.TypeOrmModule.forFeature([usuario_entity_1.Usuario, medico_entity_1.Medico, paciente_entity_1.Paciente, cita_medica_entity_1.CitaMedica, empleado_entity_1.Empleado, atencion_medica_entity_1.AtencionMedica]),
         ],
         controllers: [admin_controller_1.AdminController],
         providers: [admin_service_1.AdminService],

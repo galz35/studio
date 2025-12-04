@@ -1,133 +1,125 @@
-"use client";
+'use client';
 
-import React, { createContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import api from '@/lib/api';
 import { useRouter } from 'next/navigation';
-import { useToast } from '@/hooks/use-toast';
-import { usuarios } from '@/lib/mock';
-import { UsuarioAplicacion, Pais, Rol } from '../types/domain';
+
+// Define the User interface based on what the API returns
+export interface User {
+  id_usuario: number;
+  carnet: string;
+  nombre_completo: string;
+  correo: string;
+  rol: 'PACIENTE' | 'MEDICO' | 'ADMIN';
+  pais: string;
+  estado: string;
+  idPaciente?: number;
+  idMedico?: number;
+}
 
 export interface AuthContextType {
-  usuarioActual: UsuarioAplicacion | null;
+  user: User | null;
   loading: boolean;
-  pais: Pais;
-  setPais: (pais: Pais) => void;
-  login: (carnet: string) => Promise<void>;
+  error: string | null;
+  login: (carnet: string, pass: string) => Promise<void>;
   logout: () => void;
-  switchRole: (rol: Rol) => void;
+  pais: string;
+  setPais: (pais: string) => void;
+  switchRole: (role: 'PACIENTE' | 'MEDICO' | 'ADMIN') => void;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const getDashboardUrl = (rol: 'PACIENTE' | 'MEDICO' | 'ADMIN') => {
-  switch (rol) {
-    case 'PACIENTE': return '/paciente/dashboard';
-    case 'MEDICO': return '/medico/dashboard';
-    case 'ADMIN': return '/admin/dashboard';
-    default: return '/login';
-  }
-};
-
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [usuarioActual, setUsuarioActual] = useState<UsuarioAplicacion | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [pais, setPaisState] = useState<Pais>('NI');
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-  const { toast } = useToast();
+
+  const [pais, setPais] = useState<string>('NI'); // Default to Nicaragua
 
   useEffect(() => {
-    // Check for stored user on initial load
-    const storedUser = localStorage.getItem('usuarioActual');
-    const storedPais = localStorage.getItem('pais') as Pais;
-    if (storedUser) {
-      setUsuarioActual(JSON.parse(storedUser));
-    }
-    if (storedPais) {
-      setPaisState(storedPais);
-    }
-    setLoading(false);
+    const checkAuth = async () => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          const storedUser = localStorage.getItem('user');
+          if (storedUser) {
+            setUser(JSON.parse(storedUser));
+          }
+        } catch (err) {
+          console.error('Auth check failed', err);
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+        }
+      }
+      setLoading(false);
+    };
+
+    checkAuth();
   }, []);
 
-  const login = async (carnet: string) => {
-    setLoading(true);
-    // Find the user to log in from 'usuarios'
-    const userToLogin = usuarios.find(u => u.carnet.toLowerCase() === carnet.toLowerCase());
-
-    if (userToLogin) {
-        setUsuarioActual(userToLogin);
-        setPaisState(userToLogin.pais);
-        localStorage.setItem('usuarioActual', JSON.stringify(userToLogin));
-        localStorage.setItem('pais', userToLogin.pais);
-        router.push(getDashboardUrl(userToLogin.rol));
-    } else {
-      toast({
-        variant: "destructive",
-        title: "Error de Autenticación",
-        description: "Carnet no encontrado. Por favor, verifique sus credenciales.",
-      });
+  const getDashboardUrl = (rol: string) => {
+    switch (rol) {
+      case 'PACIENTE': return '/paciente/dashboard';
+      case 'MEDICO': return '/medico/dashboard';
+      case 'ADMIN': return '/admin/dashboard';
+      default: return '/dashboard';
     }
-    setLoading(false);
   };
 
-  const logout = async () => {
+  const login = async (carnet: string, pass: string) => {
     setLoading(true);
-    setUsuarioActual(null);
-    localStorage.removeItem('usuarioActual');
-    localStorage.removeItem('pais');
+    setError(null);
+    try {
+      const response = await api.post('/auth/login', { carnet, password: pass });
+      const { access_token, user } = response.data;
+
+      localStorage.setItem('token', access_token);
+      localStorage.setItem('user', JSON.stringify(user));
+      setUser(user);
+
+      const redirectUrl = getDashboardUrl(user.rol);
+      router.push(redirectUrl);
+    } catch (err: any) {
+      console.error('Login error:', err);
+      setError(err.response?.data?.message || 'Error al iniciar sesión');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const logout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setUser(null);
     router.push('/login');
-    setLoading(false);
   };
-  
-  const setPais = (newPais: Pais) => {
-      setPaisState(newPais);
-      localStorage.setItem('pais', newPais);
-  }
 
-  const switchRole = (newRole: Rol) => {
-    if (usuarioActual) {
-        // Find a user profile that matches the original carnet but has the new role
-        const potentialUser = usuarios.find(u => u.carnet === usuarioActual.carnet && u.rol === newRole);
-        
-        if (potentialUser) {
-            setUsuarioActual(potentialUser);
-            localStorage.setItem('usuarioActual', JSON.stringify(potentialUser));
-            router.push(getDashboardUrl(newRole));
-        } else {
-            // If no specific user for that role, we create a temporary one for navigation,
-            // but this logic might need to be more robust depending on requirements.
-            const baseUser = usuarios.find(u => u.carnet === usuarioActual.carnet);
-            if (baseUser) {
-                 const tempUser: UsuarioAplicacion = {
-                    ...baseUser,
-                    rol: newRole,
-                    // Reset role-specific IDs
-                    idPaciente: newRole === 'PACIENTE' ? baseUser.idPaciente : undefined,
-                    idMedico: newRole === 'MEDICO' ? baseUser.idMedico : undefined,
-                };
-                setUsuarioActual(tempUser);
-                localStorage.setItem('usuarioActual', JSON.stringify(tempUser));
-                router.push(getDashboardUrl(newRole));
-            } else {
-                 toast({
-                    variant: 'destructive',
-                    title: 'Rol no disponible',
-                    description: 'No tiene acceso a este rol.'
-                });
-            }
-        }
+  const switchRole = (newRole: 'PACIENTE' | 'MEDICO' | 'ADMIN') => {
+    if (user) {
+      const updatedUser = { ...user, rol: newRole };
+      setUser(updatedUser);
+      // In a real app, you might want to validate if the user HAS this role
+      // For now, we just switch the UI context
+      const redirectUrl = getDashboardUrl(newRole);
+      router.push(redirectUrl);
     }
-  }
+  };
 
   return (
-    <AuthContext.Provider value={{ 
-        usuarioActual, 
-        loading,
-        pais,
-        setPais,
-        login, 
-        logout,
-        switchRole
-    }}>
+    <AuthContext.Provider value={{ user, loading, error, login, logout, pais, setPais, switchRole }}>
       {children}
     </AuthContext.Provider>
   );
+};
+
+// Export useAuth here as well for convenience, though existing code might use the hook file
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 };

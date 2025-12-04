@@ -1,269 +1,96 @@
 "use client";
 
-import React, { useEffect, useState, useMemo } from 'react';
-import * as api from '@/lib/services/api.mock';
+import React, { useEffect, useState } from 'react';
+import { AdminService, AdminDashboardData } from '@/lib/services/admin.service';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { KpiCard } from '@/components/shared/KpiCard';
-import { Users, Stethoscope, ClipboardList, CalendarCheck, Clock, AreaChart, PieChart, TrendingDown, Repeat } from 'lucide-react';
+import { Users, Stethoscope, ClipboardList, Activity } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Button } from '@/components/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon } from "lucide-react";
-import { DateRange } from "react-day-picker";
-import { addDays, format, differenceInDays } from "date-fns";
-import { Calendar } from "@/components/ui/calendar";
-import { cn } from "@/lib/utils";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import type { CasoClinico, AtencionMedica, SeguimientoPaciente, EmpleadoEmp2024 } from '@/lib/types/domain';
-
-
-type DashboardData = {
-    casos: CasoClinico[];
-    atenciones: (AtencionMedica & { paciente?: { carnet: string } })[]; // Paciente can be optional
-    seguimientos: SeguimientoPaciente[];
-    empleados: EmpleadoEmp2024[];
-};
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Skeleton } from '@/components/ui/skeleton';
+import { EmptyState } from '@/components/shared/EmptyState';
 
 export default function DashboardAdminPage() {
   const { pais } = useUserProfile();
-  const [data, setData] = useState<DashboardData>({ casos: [], atenciones: [], seguimientos: [], empleados: [] });
+  const [data, setData] = useState<AdminDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // State for filters
-  const [date, setDate] = React.useState<DateRange | undefined>({
-    from: addDays(new Date(), -30),
-    to: new Date(),
-  });
-  const [gerencia, setGerencia] = useState('all');
-
   useEffect(() => {
-    if (!pais) return;
+    // Only fetch if we have a country (though admin usually sees all or specific)
+    // Assuming admin is tied to a country or 'Global'
     setLoading(true);
-    // This is a simplified fetch. In a real scenario, you'd fetch based on filters.
-    // For this mock, we fetch all and then filter on the client.
-    Promise.all([
-      api.getCasosClinicos(),
-      api.getAtencionMedicaData(),
-      api.getSeguimientos({ pais }),
-      api.getEmpleados(),
-    ]).then(([casosRes, atencionesRes, seguimientosRes, empleadosRes]) => {
-      setData({
-          casos: casosRes as any,
-          atenciones: atencionesRes as any,
-          seguimientos: seguimientosRes,
-          empleados: empleadosRes,
+    AdminService.getDashboard()
+      .then(dashboardData => {
+        setData(dashboardData);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error(err);
+        setLoading(false);
       });
+  }, []);
 
-      setLoading(false);
-    });
-  }, [pais]);
+  if (loading) return (
+    <div className="space-y-6">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Skeleton className="h-28 w-full" />
+        <Skeleton className="h-28 w-full" />
+        <Skeleton className="h-28 w-full" />
+        <Skeleton className="h-28 w-full" />
+      </div>
+      <Skeleton className="h-64 w-full" />
+    </div>
+  );
 
+  if (!data) return <EmptyState title="Sin datos" message="No se pudo cargar el dashboard administrativo." />;
 
-  const filteredData = useMemo(() => {
-    if (!data.casos.length) return { casos: [], atenciones: [], seguimientos: [] };
+  const { totalUsuarios, medicosActivos, pacientesActivos, ultimosUsuarios } = data;
 
-    const fromDate = date?.from ? new Date(date.from) : new Date('1970-01-01');
-    const toDate = date?.to ? new Date(date.to) : new Date();
-    
-    fromDate.setHours(0,0,0,0);
-    toDate.setHours(23,59,59,999);
-
-    let filteredCasos = data.casos.filter(caso => {
-        const casoDate = new Date(caso.fechaCreacion);
-        return casoDate >= fromDate && casoDate <= toDate;
-    });
-
-    let filteredAtenciones = data.atenciones.filter(atencion => {
-        if (!atencion.fechaAtencion) return false;
-        const atencionDate = new Date(atencion.fechaAtencion);
-        return atencionDate >= fromDate && atencionDate <= toDate;
-    });
-
-    let filteredSeguimientos = data.seguimientos.filter(s => {
-        const seguimientoDate = new Date(s.fechaProgramada);
-        return seguimientoDate >= fromDate && seguimientoDate <= toDate;
-    });
-    
-    if (gerencia !== 'all') {
-        const empleadosGerencia = data.empleados.filter(e => e.gerencia === gerencia).map(e => e.carnet);
-        const setCarnets = new Set(empleadosGerencia);
-
-        // This logic is flawed because mock data is not fully relational
-        // filteredCasos = filteredCasos.filter(c => c.paciente && setCarnets.has(c.paciente.carnet));
-        filteredAtenciones = filteredAtenciones.filter(a => a.paciente && setCarnets.has(a.paciente.carnet));
-    }
-
-    return { casos: filteredCasos, atenciones: filteredAtenciones, seguimientos: filteredSeguimientos };
-
-  }, [data, date, gerencia]);
-  
-  const gerenciasUnicas = useMemo(() => {
-     if (!data.empleados) return [];
-     const gerencias = data.empleados.map(e => e.gerencia).filter(Boolean);
-     return ['all', ...Array.from(new Set(gerencias))];
-  }, [data.empleados]);
-
-  const kpis = useMemo(() => {
-    const totalCasos = filteredData.casos.length;
-    const casosCerrados = filteredData.casos.filter(c => c.estadoCaso === 'Cerrado' || c.estadoCaso === 'FINALIZADA').length;
-    
-    const tiemposDeCierre = filteredData.casos
-        .filter(c => (c.estadoCaso === 'Cerrado' || c.estadoCaso === 'FINALIZADA'))
-        .map(c => {
-            const fechaFin = new Date(); // Mock
-            const fechaInicio = new Date(c.fechaCreacion);
-            return differenceInDays(fechaFin, fechaInicio);
-        })
-        .filter(d => d >= 0);
-
-    const promedioCierre = tiemposDeCierre.length > 0 ? Math.round(tiemposDeCierre.reduce((a,b) => a+b, 0) / tiemposDeCierre.length) : 0;
-    
-    const seguimientosPendientes = filteredData.seguimientos.filter(s => s.estadoSeguimiento === 'PENDIENTE').length;
-
-    return {
-        atencionesRealizadas: filteredData.atenciones.length,
-        casosAbiertos: totalCasos - casosCerrados,
-        casosCerrados: casosCerrados,
-        tiempoPromedioCierre: promedioCierre,
-        seguimientosPendientes: seguimientosPendientes,
-    }
-  }, [filteredData]);
-  
-  const atencionesPorGerencia = useMemo(() => {
-    if (!filteredData.atenciones || !data.empleados) return [];
-    return filteredData.atenciones.reduce((acc, atencion) => {
-      const empleado = data.empleados.find(e => e.carnet === atencion.paciente?.carnet);
-      const gerencia = empleado?.gerencia || 'Desconocida';
-      const found = acc.find(item => item.name === gerencia);
-      if (found) {
-        found.value += 1;
-      } else {
-        acc.push({ name: gerencia, value: 1 });
-      }
-      return acc;
-    }, [] as { name: string; value: number }[]);
-  }, [filteredData.atenciones, data.empleados]);
-  
-  const topDiagnosticos = useMemo(() => {
-      if (!filteredData.atenciones) return [];
-      const allDiagnosticos = filteredData.atenciones.map(a => a.diagnosticoPrincipal).filter(Boolean);
-      const counts = allDiagnosticos.reduce((acc, value) => {
-          acc[value] = (acc[value] || 0) + 1;
-          return acc;
-      }, {} as Record<string, number>);
-
-      return Object.entries(counts)
-        .sort(([,a],[,b]) => b-a)
-        .slice(0, 5)
-        .map(([name, value]) => ({ name, value }));
-
-  }, [filteredData.atenciones]);
-
-  if (loading) return <div>Cargando dashboard...</div>;
-  
   return (
     <div className="space-y-6">
       <div className='flex flex-col md:flex-row justify-between items-center gap-4'>
-        <h1 className="text-3xl font-bold">Dashboard Gerencial</h1>
-        <div className='flex gap-2 w-full md:w-auto'>
-            <Popover>
-                <PopoverTrigger asChild>
-                <Button
-                    id="date"
-                    variant={"outline"}
-                    className={cn(
-                    "w-full md:w-[300px] justify-start text-left font-normal",
-                    !date && "text-muted-foreground"
-                    )}
-                >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {date?.from ? (
-                    date.to ? (
-                        <>
-                        {format(date.from, "LLL dd, y")} -{" "}
-                        {format(date.to, "LLL dd, y")}
-                        </>
-                    ) : (
-                        format(date.from, "LLL dd, y")
-                    )
-                    ) : (
-                    <span>Seleccione un rango</span>
-                    )}
-                </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="end">
-                <Calendar
-                    initialFocus
-                    mode="range"
-                    defaultMonth={date?.from}
-                    selected={date}
-                    onSelect={setDate}
-                    numberOfMonths={2}
-                />
-                </PopoverContent>
-            </Popover>
-            <Select value={gerencia} onValueChange={setGerencia}>
-                <SelectTrigger className="w-full md:w-[180px]">
-                    <SelectValue placeholder="Gerencia" />
-                </SelectTrigger>
-                <SelectContent>
-                    {gerenciasUnicas.map(g => <SelectItem key={g} value={g}>{g === 'all' ? 'Todas las Gerencias' : g}</SelectItem>)}
-                </SelectContent>
-            </Select>
-        </div>
-      </div>
-      
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <KpiCard title="Atenciones Realizadas" value={kpis.atencionesRealizadas} icon={Stethoscope} description="Consultas completadas en el periodo." />
-        <KpiCard title="Casos Abiertos / Cerrados" value={`${kpis.casosAbiertos} / ${kpis.casosCerrados}`} icon={ClipboardList} description="Flujo de casos en el periodo." />
-        <KpiCard title="Tiempo Prom. de Cierre" value={`${kpis.tiempoPromedioCierre} días`} icon={Clock} description="Desde apertura hasta atención final." />
-        <KpiCard title="Seguimientos Pendientes" value={kpis.seguimientosPendientes} icon={Repeat} description="Tareas de seguimiento por realizar." color="text-orange-500" />
+        <h1 className="text-3xl font-bold">Dashboard Administrativo</h1>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
-        <Card className='lg:col-span-3'>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <KpiCard title="Total Usuarios" value={totalUsuarios} icon={Users} description="Usuarios registrados activos." />
+        <KpiCard title="Médicos Activos" value={medicosActivos} icon={Stethoscope} description="Personal médico disponible." />
+        <KpiCard title="Pacientes Activos" value={pacientesActivos} icon={Activity} description="Pacientes registrados en plataforma." />
+        {/* Placeholder for future KPI */}
+        <KpiCard title="Reportes Generados" value={0} icon={ClipboardList} description="En el último mes." />
+      </div>
+
+      <div className="grid grid-cols-1 gap-6">
+        <Card>
           <CardHeader>
-            <CardTitle>Atenciones por Gerencia</CardTitle>
-            <CardDescription>Volumen de consultas médicas por cada gerencia.</CardDescription>
+            <CardTitle>Últimos Usuarios Registrados</CardTitle>
+            <CardDescription>Actividad reciente de registro en la plataforma.</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={atencionesPorGerencia} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} />
-                <YAxis fontSize={12} tickLine={false} axisLine={false} />
-                <Tooltip />
-                <Bar dataKey="value" fill="hsl(var(--primary))" name="Atenciones" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-        <Card className='lg:col-span-2'>
-          <CardHeader>
-            <CardTitle>Top 5 Diagnósticos Comunes</CardTitle>
-            <CardDescription>Diagnósticos más frecuentes en el periodo.</CardDescription>
-          </CardHeader>
-          <CardContent>
-             <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={topDiagnosticos} layout="vertical" margin={{ top: 5, right: 20, left: 30, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis type="number" hide />
-                    <YAxis dataKey="name" type="category" width={100} tickLine={false} axisLine={false} fontSize={12} />
-                    <Tooltip />
-                    <Bar dataKey="value" fill="hsl(var(--accent))" name="Cantidad" radius={[0, 4, 4, 0]}>
-                         {topDiagnosticos.map((entry, index) => (
-                            <Bar key={`cell-${index}`} fill={index % 2 === 0 ? "hsl(var(--accent))" : "hsl(var(--accent) / 0.8)"} />
-                         ))}
-                    </Bar>
-                </BarChart>
-            </ResponsiveContainer>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nombre</TableHead>
+                  <TableHead>Correo</TableHead>
+                  <TableHead>Rol</TableHead>
+                  <TableHead>País</TableHead>
+                  <TableHead>Fecha Registro</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {ultimosUsuarios.length > 0 ? ultimosUsuarios.map((usuario: any) => (
+                  <TableRow key={usuario.id_usuario}>
+                    <TableCell>{usuario.nombre_completo}</TableCell>
+                    <TableCell>{usuario.correo}</TableCell>
+                    <TableCell>{usuario.rol}</TableCell>
+                    <TableCell>{usuario.pais}</TableCell>
+                    <TableCell>{new Date(usuario.fecha_creacion).toLocaleDateString()}</TableCell>
+                  </TableRow>
+                )) : (
+                  <TableRow><TableCell colSpan={5} className="text-center">No hay usuarios recientes.</TableCell></TableRow>
+                )}
+              </TableBody>
+            </Table>
           </CardContent>
         </Card>
       </div>

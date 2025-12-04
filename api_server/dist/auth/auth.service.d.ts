@@ -11,6 +11,7 @@ export declare class AuthService {
         access_token: string;
         user: any;
     }>;
+    L: any;
     createInitialAdmin(): Promise<{
         message: string;
     }>;

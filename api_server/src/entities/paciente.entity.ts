@@ -2,6 +2,8 @@ import { Entity, PrimaryGeneratedColumn, Column, OneToOne, OneToMany } from 'typ
 import { Usuario } from './usuario.entity';
 import { CasoClinico } from './caso-clinico.entity';
 import { Seguimiento } from './seguimiento.entity';
+import { ExamenMedico } from './examen-medico.entity';
+import { VacunaAplicada } from './vacuna-aplicada.entity';
 
 @Entity('pacientes')
 export class Paciente {
@@ -47,4 +49,10 @@ export class Paciente {
 
     @OneToMany(() => Seguimiento, seguimiento => seguimiento.paciente)
     seguimientos: Seguimiento[];
+
+    @OneToMany(() => ExamenMedico, examen => examen.paciente)
+    examenes: ExamenMedico[];
+
+    @OneToMany(() => VacunaAplicada, vacuna => vacuna.paciente)
+    vacunas: VacunaAplicada[];
 }

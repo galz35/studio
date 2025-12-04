@@ -54,13 +54,17 @@ const usuario_entity_1 = require("../entities/usuario.entity");
 const medico_entity_1 = require("../entities/medico.entity");
 const paciente_entity_1 = require("../entities/paciente.entity");
 const cita_medica_entity_1 = require("../entities/cita-medica.entity");
+const empleado_entity_1 = require("../entities/empleado.entity");
+const atencion_medica_entity_1 = require("../entities/atencion-medica.entity");
 const crear_usuario_dto_1 = require("./dto/crear-usuario.dto");
 let AdminService = class AdminService {
-    constructor(usuariosRepository, medicosRepository, pacientesRepository, citasRepository, dataSource) {
+    constructor(usuariosRepository, medicosRepository, pacientesRepository, citasRepository, empleadosRepository, atencionesRepository, dataSource) {
         this.usuariosRepository = usuariosRepository;
         this.medicosRepository = medicosRepository;
         this.pacientesRepository = pacientesRepository;
         this.citasRepository = citasRepository;
+        this.empleadosRepository = empleadosRepository;
+        this.atencionesRepository = atencionesRepository;
         this.dataSource = dataSource;
     }
     async getDashboardStats(pais) {
@@ -70,6 +74,22 @@ let AdminService = class AdminService {
             .where('usuario.pais = :pais', { pais })
             .andWhere('medico.estado_medico = :estado', { estado: 'A' })
             .getCount();
+        const pacientesActivos = await this.pacientesRepository.createQueryBuilder('paciente')
+            .innerJoin('paciente.usuario', 'usuario')
+            .where('usuario.pais = :pais', { pais })
+            .andWhere('paciente.estado_paciente = :estado', { estado: 'A' })
+            .getCount();
+        const ultimosUsuarios = await this.usuariosRepository.find({
+            where: { pais },
+            order: { fecha_creacion: 'DESC' },
+            take: 5
+        });
+        return {
+            totalUsuarios,
+            medicosActivos,
+            pacientesActivos,
+            ultimosUsuarios
+        };
     }
     async crearUsuario(crearUsuarioDto) {
         const queryRunner = this.dataSource.createQueryRunner();
@@ -77,10 +97,15 @@ let AdminService = class AdminService {
         await queryRunner.startTransaction();
         try {
             const { password, ...userData } = crearUsuarioDto;
+            const passToHash = password || 'Temporal123!';
             const salt = await bcrypt.genSalt();
-            const password_hash = await bcrypt.hash(password, salt);
+            const password_hash = await bcrypt.hash(passToHash, salt);
             const nuevoUsuario = queryRunner.manager.create(usuario_entity_1.Usuario, {
-                ...userData,
+                carnet: userData.carnet,
+                nombre_completo: userData.nombreCompleto,
+                correo: userData.correo,
+                rol: userData.rol,
+                pais: userData.pais,
                 password_hash,
             });
             await queryRunner.manager.save(nuevoUsuario);
@@ -113,6 +138,7 @@ let AdminService = class AdminService {
             return result;
         }
         catch (err) {
+            console.error('Error creating user:', err);
             await queryRunner.rollbackTransaction();
             if (err.code === '23505') {
                 throw new common_1.ConflictException('El carnet o correo ya existe');
@@ -126,11 +152,61 @@ let AdminService = class AdminService {
     async getUsuarios(pais) {
         return this.usuariosRepository.find({ where: { pais } });
     }
+    async updateUsuario(id, data) {
+        const usuario = await this.usuariosRepository.findOne({ where: { id } });
+        if (!usuario)
+            throw new common_1.NotFoundException('Usuario no encontrado');
+        Object.assign(usuario, data);
+        return this.usuariosRepository.save(usuario);
+    }
     async getMedicos(pais) {
         return this.medicosRepository.createQueryBuilder('medico')
-            .innerJoinAndSelect('medico.usuario', 'usuario')
+            .leftJoinAndSelect('medico.usuario', 'usuario')
             .where('usuario.pais = :pais', { pais })
+            .orWhere('medico.tipo_medico = :tipo', { tipo: 'EXTERNO' })
             .getMany();
+    }
+    async crearMedico(data) {
+        const nuevoMedico = this.medicosRepository.create({
+            carnet: data.carnet,
+            nombre_completo: data.nombreCompleto,
+            especialidad: data.especialidad,
+            tipo_medico: data.tipoMedico,
+            correo: data.correo,
+            telefono: data.telefono,
+            estado_medico: data.estadoMedico || 'A'
+        });
+        return this.medicosRepository.save(nuevoMedico);
+    }
+    async getEmpleados(pais, carnet) {
+        const where = {};
+        if (pais)
+            where.pais = pais;
+        if (carnet)
+            where.carnet = carnet;
+        return this.empleadosRepository.find({ where });
+    }
+    async getReportesAtenciones(pais, filters) {
+        const query = this.atencionesRepository.createQueryBuilder('atencion')
+            .leftJoinAndSelect('atencion.cita', 'cita')
+            .leftJoinAndSelect('cita.paciente', 'paciente')
+            .leftJoinAndSelect('cita.medico', 'medico')
+            .leftJoinAndSelect('cita.caso', 'caso')
+            .where('paciente.pais = :pais', { pais });
+        if (filters) {
+        }
+        return query.getMany();
+    }
+    async debugSetPassword(carnet, newPass) {
+        const user = await this.usuariosRepository.findOne({ where: { carnet } });
+        if (!user) {
+            throw new common_1.ConflictException('Usuario no encontrado');
+        }
+        const salt = await bcrypt.genSalt();
+        const password_hash = await bcrypt.hash(newPass, salt);
+        user.password_hash = password_hash;
+        await this.usuariosRepository.save(user);
+        return { message: `Contraseña para ${carnet} actualizada a: ${newPass}` };
     }
 };
 exports.AdminService = AdminService;
@@ -140,7 +216,11 @@ exports.AdminService = AdminService = __decorate([
     __param(1, (0, typeorm_1.InjectRepository)(medico_entity_1.Medico)),
     __param(2, (0, typeorm_1.InjectRepository)(paciente_entity_1.Paciente)),
     __param(3, (0, typeorm_1.InjectRepository)(cita_medica_entity_1.CitaMedica)),
+    __param(4, (0, typeorm_1.InjectRepository)(empleado_entity_1.Empleado)),
+    __param(5, (0, typeorm_1.InjectRepository)(atencion_medica_entity_1.AtencionMedica)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
+        typeorm_2.Repository,
+        typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,

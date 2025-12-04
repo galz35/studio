@@ -5,7 +5,7 @@ import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import * as api from '@/lib/services/api.mock';
+import { PacienteService } from '@/lib/services/paciente.service';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -42,11 +42,11 @@ export default function PacientePsicosocialPage() {
   });
 
   const onSubmit: SubmitHandler<PsicosocialFormValues> = async (data) => {
-    if (!userProfile?.id) return;
-    
+    if (!userProfile?.idPaciente) return;
+
     try {
-      await api.crearChequeo({
-        idPaciente: userProfile.id,
+      await PacienteService.crearChequeo({
+        idPaciente: userProfile.idPaciente,
         // New fields
         nivelEstres: data.nivelEstres,
         estadoAnimo: data.estadoAnimo,
@@ -85,7 +85,7 @@ export default function PacientePsicosocialPage() {
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <CardContent className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                 <FormField control={form.control} name="nivelEstres" render={({ field }) => (
+                <FormField control={form.control} name="nivelEstres" render={({ field }) => (
                   <FormItem>
                     <FormLabel>¿Cuál es tu nivel de estrés general últimamente?</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
@@ -115,35 +115,35 @@ export default function PacientePsicosocialPage() {
                   </FormItem>
                 )} />
               </div>
-              
+
               <div className="p-4 border rounded-md bg-muted/50">
-                 <h3 className="font-semibold mb-4">Contexto y Hábitos</h3>
-                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                     <FormField control={form.control} name="calidadSueno" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Calidad del sueño anoche</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione..." /></SelectTrigger></FormControl>
-                            <SelectContent><SelectItem value="Buena">Buena</SelectItem><SelectItem value="Regular">Regular</SelectItem><SelectItem value="Mala">Mala</SelectItem></SelectContent>
-                            </Select><FormMessage />
-                        </FormItem>
-                        )} />
-                    <FormField control={form.control} name="consumoAgua" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Consumo de agua ayer</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione..." /></SelectTrigger></FormControl>
-                            <SelectContent><SelectItem value="Más de 2 litros">Más de 2 litros</SelectItem><SelectItem value="Entre 1 y 2 litros">Entre 1 y 2 litros</SelectItem><SelectItem value="Menos de 1 litro">Menos de 1 litro</SelectItem></SelectContent>
-                            </Select><FormMessage />
-                        </FormItem>
-                    )} />
-                    <FormField control={form.control} name="modalidadTrabajo" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Modalidad de Trabajo</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione..." /></SelectTrigger></FormControl>
-                            <SelectContent><SelectItem value="Presencial">Presencial</SelectItem><SelectItem value="Remoto">Remoto</SelectItem><SelectItem value="Híbrido">Híbrido</SelectItem></SelectContent>
-                            </Select><FormMessage />
-                        </FormItem>
-                    )} />
-                 </div>
+                <h3 className="font-semibold mb-4">Contexto y Hábitos</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <FormField control={form.control} name="calidadSueno" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Calidad del sueño anoche</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione..." /></SelectTrigger></FormControl>
+                        <SelectContent><SelectItem value="Buena">Buena</SelectItem><SelectItem value="Regular">Regular</SelectItem><SelectItem value="Mala">Mala</SelectItem></SelectContent>
+                      </Select><FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="consumoAgua" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Consumo de agua ayer</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione..." /></SelectTrigger></FormControl>
+                        <SelectContent><SelectItem value="Más de 2 litros">Más de 2 litros</SelectItem><SelectItem value="Entre 1 y 2 litros">Entre 1 y 2 litros</SelectItem><SelectItem value="Menos de 1 litro">Menos de 1 litro</SelectItem></SelectContent>
+                      </Select><FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="modalidadTrabajo" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Modalidad de Trabajo</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione..." /></SelectTrigger></FormControl>
+                        <SelectContent><SelectItem value="Presencial">Presencial</SelectItem><SelectItem value="Remoto">Remoto</SelectItem><SelectItem value="Híbrido">Híbrido</SelectItem></SelectContent>
+                      </Select><FormMessage />
+                    </FormItem>
+                  )} />
+                </div>
               </div>
 
               <FormField control={form.control} name="comentarioGeneral" render={({ field }) => (

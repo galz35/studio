@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import * as api from '@/lib/services/api.mock';
+import { AdminService } from '@/lib/services/admin.service';
 import { UsuarioAplicacion, EmpleadoEmp2024, Rol } from '@/lib/types/domain';
 import { DataTable } from '@/components/shared/DataTable';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -33,13 +33,13 @@ const userSchema = z.object({
   correo: z.string().email({ message: "Correo inválido." }).optional(),
   rol: z.enum(["PACIENTE", "MEDICO", "ADMIN"], { required_error: "El rol es requerido." }),
 }).refine(data => {
-    if (data.userType === 'interno') return !!data.empleadoCarnet;
-    return true;
+  if (data.userType === 'interno') return !!data.empleadoCarnet;
+  return true;
 }, { message: "Debe seleccionar un empleado.", path: ["empleadoCarnet"] })
-.refine(data => {
+  .refine(data => {
     if (data.userType === 'externo') return !!data.nombreCompleto && !!data.carnet;
     return true;
-}, { message: "Nombre y Carnet son requeridos para usuarios externos.", path: ["nombreCompleto", "carnet"] });
+  }, { message: "Nombre y Carnet son requeridos para usuarios externos.", path: ["nombreCompleto", "carnet"] });
 
 
 type UserFormValues = z.infer<typeof userSchema>;
@@ -65,31 +65,31 @@ export default function GestionUsuariosPage() {
   const [usuarios, setUsuarios] = useState<UsuarioAplicacion[]>([]);
   const [empleados, setEmpleados] = useState<EmpleadoEmp2024[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  
-  const fetchData = async () => {
-      if (!pais) return;
-      setIsLoading(true);
-      try {
-        const [usuariosData, empleadosData] = await Promise.all([
-          api.getUsuarios(),
-          api.getEmpleados()
-        ]);
 
-        setUsuarios(usuariosData);
-        setEmpleados(empleadosData);
-      } catch (error) {
-        console.error(error);
-        toast({ variant: 'destructive', title: 'Error', description: 'No se pudieron cargar los datos iniciales.' });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
+  const fetchData = async () => {
+    if (!pais) return;
+    setIsLoading(true);
+    try {
+      const [usuariosData, empleadosData] = await Promise.all([
+        AdminService.getUsuarios(),
+        AdminService.getEmpleados()
+      ]);
+
+      setUsuarios(usuariosData);
+      setEmpleados(empleadosData);
+    } catch (error) {
+      console.error(error);
+      toast({ variant: 'destructive', title: 'Error', description: 'No se pudieron cargar los datos iniciales.' });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchData();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pais]);
-  
+
   const usuariosDelPais = useMemo(() => {
     if (!usuarios || !pais) return [];
     return usuarios.filter(u => u.pais === pais);
@@ -104,7 +104,7 @@ export default function GestionUsuariosPage() {
   const createForm = useForm<UserFormValues>({
     resolver: zodResolver(userSchema),
     defaultValues: {
-        userType: 'interno',
+      userType: 'interno',
     }
   });
 
@@ -113,7 +113,7 @@ export default function GestionUsuariosPage() {
   });
 
   const userType = createForm.watch('userType');
-  
+
   const handleEditClick = (user: UsuarioAplicacion) => {
     setSelectedUser(user);
     editForm.reset({
@@ -131,39 +131,39 @@ export default function GestionUsuariosPage() {
     let newUserData: Omit<UsuarioAplicacion, 'id' | 'idUsuario'>;
 
     if (data.userType === 'interno') {
-        const empleado = empleados?.find(e => e.carnet === data.empleadoCarnet)!;
-        newUserData = {
-          carnet: empleado.carnet,
-          rol: data.rol,
-          estado: 'A',
-          nombreCompleto: empleado.nombreCompleto,
-          correo: empleado.correo,
-          pais: pais,
-          ultimoAcceso: new Date().toISOString(),
-        };
+      const empleado = empleados?.find(e => e.carnet === data.empleadoCarnet)!;
+      newUserData = {
+        carnet: empleado.carnet,
+        rol: data.rol,
+        estado: 'A',
+        nombreCompleto: empleado.nombreCompleto,
+        correo: empleado.correo,
+        pais: pais,
+        ultimoAcceso: new Date().toISOString(),
+      };
     } else { // Externo
-        newUserData = {
-          carnet: data.carnet!,
-          rol: data.rol,
-          estado: 'A',
-          nombreCompleto: data.nombreCompleto!,
-          correo: data.correo,
-          pais: pais,
-          ultimoAcceso: new Date().toISOString(),
-        };
+      newUserData = {
+        carnet: data.carnet!,
+        rol: data.rol,
+        estado: 'A',
+        nombreCompleto: data.nombreCompleto!,
+        correo: data.correo,
+        pais: pais,
+        ultimoAcceso: new Date().toISOString(),
+      };
     }
-    
+
     try {
-        await api.crearUsuario(newUserData);
-        toast({ title: "Usuario Creado", description: `El usuario ${newUserData.nombreCompleto} ha sido añadido al sistema.`});
-        setCreateDialogOpen(false);
-        createForm.reset({ userType: 'interno', rol: undefined });
-        fetchData(); // Refresh data
-    } catch(e: any) {
-        console.error("Error creating user:", e);
-        toast({ variant: 'destructive', title: 'Error', description: e.message || 'No se pudo crear el usuario.'});
+      await AdminService.crearUsuario(newUserData);
+      toast({ title: "Usuario Creado", description: `El usuario ${newUserData.nombreCompleto} ha sido añadido al sistema.` });
+      setCreateDialogOpen(false);
+      createForm.reset({ userType: 'interno', rol: undefined });
+      fetchData(); // Refresh data
+    } catch (e: any) {
+      console.error("Error creating user:", e);
+      toast({ variant: 'destructive', title: 'Error', description: e.message || 'No se pudo crear el usuario.' });
     } finally {
-        setIsSubmitting(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -171,14 +171,14 @@ export default function GestionUsuariosPage() {
     if (!selectedUser) return;
     setIsSubmitting(true);
     try {
-      await api.updateUsuario(selectedUser.id!, data);
-      toast({ title: "Usuario Actualizado", description: `Los datos de ${selectedUser.nombreCompleto} se han actualizado.`});
+      await AdminService.updateUsuario(selectedUser.id!, data);
+      toast({ title: "Usuario Actualizado", description: `Los datos de ${selectedUser.nombreCompleto} se han actualizado.` });
       setEditDialogOpen(false);
       setSelectedUser(null);
       fetchData(); // Refresh data
     } catch (e: any) {
       console.error("Error updating user:", e);
-      toast({ variant: 'destructive', title: 'Error', description: e.message || 'No se pudo actualizar el usuario.'});
+      toast({ variant: 'destructive', title: 'Error', description: e.message || 'No se pudo actualizar el usuario.' });
     } finally {
       setIsSubmitting(false);
     }
@@ -209,24 +209,24 @@ export default function GestionUsuariosPage() {
   ];
 
   if (isLoading) return (
-       <div className="space-y-6">
-        <div className="flex justify-between items-center">
-            <Skeleton className="h-9 w-64" />
-            <Skeleton className="h-10 w-32" />
-        </div>
-        <Card>
-            <CardHeader>
-                <Skeleton className="h-6 w-52" />
-            </CardHeader>
-            <CardContent>
-                <div className="space-y-2">
-                    <Skeleton className="h-10 w-full" />
-                    <Skeleton className="h-12 w-full" />
-                    <Skeleton className="h-12 w-full" />
-                    <Skeleton className="h-12 w-full" />
-                </div>
-            </CardContent>
-        </Card>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <Skeleton className="h-9 w-64" />
+        <Skeleton className="h-10 w-32" />
+      </div>
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-6 w-52" />
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-12 w-full" />
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 
@@ -252,34 +252,34 @@ export default function GestionUsuariosPage() {
                     </FormControl><FormMessage />
                   </FormItem>)}
                 />
-                
+
                 {userType === 'interno' ? (
-                    <FormField control={createForm.control} name="empleadoCarnet" render={({ field }) => (
-                      <FormItem><FormLabel>Empleado</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un empleado" /></SelectTrigger></FormControl>
-                          <SelectContent>
-                            {empleadosDisponibles.length > 0 ? (
-                                empleadosDisponibles.map(e => <SelectItem key={e.carnet} value={e.carnet}>{e.nombreCompleto} ({e.carnet})</SelectItem>)
-                            ) : (
-                                <SelectItem value="none" disabled>No hay empleados para crear usuarios</SelectItem>
-                            )}
-                          </SelectContent>
-                        </Select><FormMessage />
-                      </FormItem>)} />
+                  <FormField control={createForm.control} name="empleadoCarnet" render={({ field }) => (
+                    <FormItem><FormLabel>Empleado</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un empleado" /></SelectTrigger></FormControl>
+                        <SelectContent>
+                          {empleadosDisponibles.length > 0 ? (
+                            empleadosDisponibles.map(e => <SelectItem key={e.carnet} value={e.carnet}>{e.nombreCompleto} ({e.carnet})</SelectItem>)
+                          ) : (
+                            <SelectItem value="none" disabled>No hay empleados para crear usuarios</SelectItem>
+                          )}
+                        </SelectContent>
+                      </Select><FormMessage />
+                    </FormItem>)} />
                 ) : (
-                    <div className='grid grid-cols-2 gap-4 border p-4 rounded-md bg-muted/20'>
-                         <FormField control={createForm.control} name="nombreCompleto" render={({ field }) => (
-                            <FormItem><FormLabel>Nombre Completo</FormLabel><FormControl><Input placeholder="Nombre del usuario" {...field} /></FormControl><FormMessage /></FormItem>
-                         )} />
-                         <FormField control={createForm.control} name="carnet" render={({ field }) => (
-                            <FormItem><FormLabel>Carnet / ID</FormLabel><FormControl><Input placeholder="Identificador único" {...field} /></FormControl><FormMessage /></FormItem>
-                         )} />
-                         <FormField control={createForm.control} name="correo" render={({ field }) => (
-                            <FormItem className="col-span-2"><FormLabel>Correo</FormLabel><FormControl><Input placeholder="correo@externo.com" {...field} /></FormControl><FormMessage /></FormItem>
-                         )} />
-                    </div>
+                  <div className='grid grid-cols-2 gap-4 border p-4 rounded-md bg-muted/20'>
+                    <FormField control={createForm.control} name="nombreCompleto" render={({ field }) => (
+                      <FormItem><FormLabel>Nombre Completo</FormLabel><FormControl><Input placeholder="Nombre del usuario" {...field} /></FormControl><FormMessage /></FormItem>
+                    )} />
+                    <FormField control={createForm.control} name="carnet" render={({ field }) => (
+                      <FormItem><FormLabel>Carnet / ID</FormLabel><FormControl><Input placeholder="Identificador único" {...field} /></FormControl><FormMessage /></FormItem>
+                    )} />
+                    <FormField control={createForm.control} name="correo" render={({ field }) => (
+                      <FormItem className="col-span-2"><FormLabel>Correo</FormLabel><FormControl><Input placeholder="correo@externo.com" {...field} /></FormControl><FormMessage /></FormItem>
+                    )} />
+                  </div>
                 )}
-                
+
                 <FormField control={createForm.control} name="rol" render={({ field }) => (
                   <FormItem><FormLabel>Asignar Rol</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un rol" /></SelectTrigger></FormControl>
@@ -296,7 +296,7 @@ export default function GestionUsuariosPage() {
         </Dialog>
       </div>
 
-       <Dialog open={isEditDialogOpen} onOpenChange={setEditDialogOpen}>
+      <Dialog open={isEditDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Editar Usuario: {selectedUser?.nombreCompleto}</DialogTitle>
@@ -331,7 +331,7 @@ export default function GestionUsuariosPage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Estado</FormLabel>
-                     <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Seleccione un estado" />
@@ -354,7 +354,7 @@ export default function GestionUsuariosPage() {
           </Form>
         </DialogContent>
       </Dialog>
-      
+
       <Card>
         <CardHeader><CardTitle>Listado de Usuarios del Sistema ({pais})</CardTitle></CardHeader>
         <CardContent>

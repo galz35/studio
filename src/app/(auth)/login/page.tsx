@@ -25,35 +25,46 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/lib/context/AuthContext"; // Import directly from context or update hook
 
 const loginSchema = z.object({
   carnet: z.string().min(1, { message: "El carnet es requerido." }),
+  password: z.string().min(1, { message: "La contraseña es requerida." }),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
-  const { login, loading, usuarioActual } = useAuth();
+  const { login, loading, user, error } = useAuth();
   const router = useRouter();
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
       carnet: "",
+      password: "",
     },
   });
 
   useEffect(() => {
-    // If user is authenticated, redirect them to the main layout
-    // The main layout will handle role-based redirection
-    if (usuarioActual) {
-      router.push("/paciente/dashboard"); // Default redirect
+    if (user) {
+      // Redirect logic is handled in login, but if already logged in:
+      // We might want to redirect based on role.
+      // For now, let's assume the context handles it or we do it here.
+      // Since context.login handles redirect, we might not need this if we trust the state.
+      // But on refresh, we might want to redirect if on login page.
+      if (user.rol === 'PACIENTE') router.push("/paciente/dashboard");
+      else if (user.rol === 'MEDICO') router.push("/medico/dashboard");
+      else if (user.rol === 'ADMIN') router.push("/admin/dashboard");
     }
-  }, [usuarioActual, router]);
+  }, [user, router]);
 
   const onSubmit: SubmitHandler<LoginFormValues> = async (data) => {
-    await login(data.carnet);
+    try {
+      await login(data.carnet, data.password);
+    } catch (e) {
+      // Error is handled in context and set in 'error' state, but we can also show toast here if we wanted
+    }
   };
 
   return (
@@ -61,20 +72,38 @@ export default function LoginPage() {
       <CardHeader>
         <CardTitle>Iniciar Sesión</CardTitle>
         <CardDescription>
-          Ingrese su carnet de empleado para acceder al sistema.
+          Ingrese sus credenciales para acceder al sistema.
         </CardDescription>
       </CardHeader>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <CardContent className="space-y-4">
+            {error && (
+              <div className="p-3 text-sm text-white bg-red-500 rounded-md">
+                {error}
+              </div>
+            )}
             <FormField
               control={form.control}
               name="carnet"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Carnet de Empleado</FormLabel>
+                  <FormLabel>Carnet</FormLabel>
                   <FormControl>
-                    <Input placeholder="Ej: P001, M001, A001" {...field} />
+                    <Input placeholder="Ej: ADMIN001" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Contraseña</FormLabel>
+                  <FormControl>
+                    <Input type="password" placeholder="******" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -85,35 +114,10 @@ export default function LoginPage() {
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "Cargando..." : "Iniciar Sesión"}
             </Button>
-            <div className="text-center text-sm">
-              <Link
-                href="/primer-acceso"
-                className="text-muted-foreground underline"
-              >
-                Primer acceso
-              </Link>
-              {" | "}
-              <Link
-                href="/recuperar-contrasena"
-                className="text-muted-foreground underline"
-              >
-                Olvidé mi contraseña
-              </Link>
-            </div>
+            {/* Links removed for clarity/MVP as they might not work yet */}
           </CardFooter>
         </form>
       </Form>
-      <Card className="mt-4 border-dashed">
-        <CardHeader className="pb-2 pt-4">
-            <CardTitle className="text-base">Usuarios de Prueba</CardTitle>
-        </CardHeader>
-        <CardContent className="text-sm space-y-2">
-            <p><strong>Paciente:</strong> carnet `P001`</p>
-            <p><strong>Médico:</strong> carnet `M001`</p>
-            <p><strong>Admin:</strong> carnet `A001`</p>
-            <p className="font-semibold text-muted-foreground">(No se requiere contraseña)</p>
-        </CardContent>
-      </Card>
     </Card>
   );
 }

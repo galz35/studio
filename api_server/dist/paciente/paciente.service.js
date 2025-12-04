@@ -20,13 +20,39 @@ const paciente_entity_1 = require("../entities/paciente.entity");
 const cita_medica_entity_1 = require("../entities/cita-medica.entity");
 const chequeo_bienestar_entity_1 = require("../entities/chequeo-bienestar.entity");
 const caso_clinico_entity_1 = require("../entities/caso-clinico.entity");
+const seguimiento_entity_1 = require("../entities/seguimiento.entity");
+const atencion_medica_entity_1 = require("../entities/atencion-medica.entity");
+const examen_medico_entity_1 = require("../entities/examen-medico.entity");
+const vacuna_aplicada_entity_1 = require("../entities/vacuna-aplicada.entity");
 let PacienteService = class PacienteService {
-    constructor(pacientesRepository, citasRepository, chequeosRepository, casosRepository, dataSource) {
+    constructor(pacientesRepository, citasRepository, chequeosRepository, casosRepository, seguimientosRepository, atencionesRepository, examenesRepository, vacunasRepository, dataSource) {
         this.pacientesRepository = pacientesRepository;
         this.citasRepository = citasRepository;
         this.chequeosRepository = chequeosRepository;
         this.casosRepository = casosRepository;
+        this.seguimientosRepository = seguimientosRepository;
+        this.atencionesRepository = atencionesRepository;
+        this.examenesRepository = examenesRepository;
+        this.vacunasRepository = vacunasRepository;
         this.dataSource = dataSource;
+    }
+    async getMisChequeos(idPaciente) {
+        return this.chequeosRepository.find({
+            where: { paciente: { id_paciente: idPaciente } },
+            order: { fecha_registro: 'DESC' }
+        });
+    }
+    async getMisExamenes(idPaciente) {
+        return this.examenesRepository.find({
+            where: { paciente: { id_paciente: idPaciente } },
+            order: { fecha_solicitud: 'DESC' }
+        });
+    }
+    async getMisVacunas(idPaciente) {
+        return this.vacunasRepository.find({
+            where: { paciente: { id_paciente: idPaciente } },
+            order: { fecha_aplicacion: 'DESC' }
+        });
     }
     async getDashboardStats(idPaciente) {
         const paciente = await this.pacientesRepository.findOne({ where: { id_paciente: idPaciente } });
@@ -38,9 +64,50 @@ let PacienteService = class PacienteService {
             order: { fecha_cita: 'ASC', hora_cita: 'ASC' },
             relations: ['medico']
         });
+        const ultimoChequeo = await this.chequeosRepository.findOne({
+            where: { paciente: { id_paciente: idPaciente } },
+            order: { fecha_registro: 'DESC' }
+        });
+        const seguimientosActivos = await this.seguimientosRepository.count({
+            where: [
+                { paciente: { id_paciente: idPaciente }, estado_seguimiento: 'PENDIENTE' },
+                { paciente: { id_paciente: idPaciente }, estado_seguimiento: 'EN_PROCESO' }
+            ]
+        });
+        const recentChequeos = await this.chequeosRepository.find({
+            where: { paciente: { id_paciente: idPaciente } },
+            order: { fecha_registro: 'DESC' },
+            take: 3
+        });
+        const recentAtenciones = await this.atencionesRepository.find({
+            where: {
+                cita: {
+                    paciente: { id_paciente: idPaciente }
+                }
+            },
+            relations: ['cita', 'cita.paciente'],
+            order: { fecha_atencion: 'DESC' },
+            take: 3
+        });
+        const timeline = [
+            ...recentChequeos.map(c => ({
+                title: 'Chequeo de Bienestar',
+                date: c.fecha_registro
+            })),
+            ...recentAtenciones.map(a => ({
+                title: `Atención: ${a.diagnostico_principal}`,
+                date: a.fecha_atencion
+            }))
+        ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5);
         return {
-            nivelSemaforo: paciente?.nivel_semaforo,
-            proximaCita,
+            kpis: {
+                estadoActual: paciente?.nivel_semaforo || 'V',
+                ultimoChequeo: ultimoChequeo ? ultimoChequeo.fecha_registro : null,
+                proximaCita: proximaCita ? `${proximaCita.fecha_cita} ${proximaCita.hora_cita}` : null,
+                seguimientosActivos
+            },
+            ultimoChequeoData: ultimoChequeo,
+            timeline
         };
     }
     async solicitarCita(idPaciente, solicitudDto) {
@@ -95,7 +162,15 @@ exports.PacienteService = PacienteService = __decorate([
     __param(1, (0, typeorm_1.InjectRepository)(cita_medica_entity_1.CitaMedica)),
     __param(2, (0, typeorm_1.InjectRepository)(chequeo_bienestar_entity_1.ChequeoBienestar)),
     __param(3, (0, typeorm_1.InjectRepository)(caso_clinico_entity_1.CasoClinico)),
+    __param(4, (0, typeorm_1.InjectRepository)(seguimiento_entity_1.Seguimiento)),
+    __param(5, (0, typeorm_1.InjectRepository)(atencion_medica_entity_1.AtencionMedica)),
+    __param(6, (0, typeorm_1.InjectRepository)(examen_medico_entity_1.ExamenMedico)),
+    __param(7, (0, typeorm_1.InjectRepository)(vacuna_aplicada_entity_1.VacunaAplicada)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
+        typeorm_2.Repository,
+        typeorm_2.Repository,
+        typeorm_2.Repository,
+        typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,

@@ -15,6 +15,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.SeguimientoController = void 0;
 const common_1 = require("@nestjs/common");
 const seguimiento_service_1 = require("./seguimiento.service");
+const jwt_auth_guard_1 = require("../auth/jwt-auth.guard");
+const roles_guard_1 = require("../auth/roles.guard");
+const swagger_1 = require("@nestjs/swagger");
 let SeguimientoController = class SeguimientoController {
     constructor(seguimientoService) {
         this.seguimientoService = seguimientoService;
@@ -72,6 +75,9 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], SeguimientoController.prototype, "remove", null);
 exports.SeguimientoController = SeguimientoController = __decorate([
+    (0, swagger_1.ApiTags)('seguimientos'),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
     (0, common_1.Controller)('seguimientos'),
     __metadata("design:paramtypes", [seguimiento_service_1.SeguimientoService])
 ], SeguimientoController);

@@ -6,7 +6,7 @@ import { StepHeaderWizard } from './StepHeaderWizard';
 import { Button } from '@/components/ui/button';
 import { AtencionMedica, CitaMedica, Paciente, EmpleadoEmp2024, EstadoClinico, VacunaAplicada, RegistroPsicosocial, SeguimientoGenerado, CasoClinico } from '@/lib/types/domain';
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import * as api from '@/lib/services/api.mock';
+import { MedicoService } from '@/lib/services/medico.service';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { useToast } from '@/hooks/use-toast';
 
@@ -21,12 +21,12 @@ import { Step5_Cierre } from './steps/Step5_Cierre';
 const TOTAL_STEPS = 5;
 
 interface AtencionCitaWizardProps {
-  citaData: {
-    cita: CitaMedica;
-    paciente: Paciente;
-    empleado: EmpleadoEmp2024;
-    caso: CasoClinico;
-  };
+    citaData: {
+        cita: CitaMedica;
+        paciente: Paciente;
+        empleado: EmpleadoEmp2024;
+        caso: CasoClinico;
+    };
 }
 
 export function AtencionCitaWizard({ citaData }: AtencionCitaWizardProps) {
@@ -62,25 +62,29 @@ export function AtencionCitaWizard({ citaData }: AtencionCitaWizardProps) {
 
     const handleNext = () => setStep(prev => Math.min(prev + 1, TOTAL_STEPS));
     const handlePrev = () => setStep(prev => Math.max(prev - 1, 1));
-    
+
     const handleChangeAtencion = (field: keyof AtencionMedica, value: any) => {
         setAtencion(prev => ({ ...prev, [field]: value }));
     };
 
     const handleUpdatePsico = (field: keyof RegistroPsicosocial, value: any) => {
-        setPsico(prev => ({...prev, [field]: value}));
+        setPsico(prev => ({ ...prev, [field]: value }));
     };
 
     const handleSave = async () => {
         setIsSaving(true);
         const payload = {
-            atencion,
-            vacunas,
-            psico: psico.nivelEstres || (psico.sintomasPsico && psico.sintomasPsico.length > 0) || psico.notasPsico ? psico : null,
-            seguimientos
+            idCita: atencion.idCita,
+            idMedico: atencion.idMedico,
+            diagnosticoPrincipal: atencion.diagnosticoPrincipal,
+            planTratamiento: atencion.planTratamiento,
+            recomendaciones: atencion.recomendaciones,
+            requiereSeguimiento: atencion.requiereSeguimiento,
+            fechaSiguienteCita: atencion.fechaSiguienteCita,
+            // Add other fields as needed by CrearAtencionDto
         };
         try {
-            await api.guardarAtencion(payload);
+            await MedicoService.crearAtencion(payload);
             setShowSummaryModal(true);
         } catch (error: any) {
             console.error("Error guardando la atención", error);
@@ -120,7 +124,7 @@ export function AtencionCitaWizard({ citaData }: AtencionCitaWizardProps) {
                 {step === 3 && <Step3_Diagnostico atencion={atencion} handleChange={handleChangeAtencion} />}
                 {step === 4 && <Step4_Seguimiento atencion={atencion} handleChange={handleChangeAtencion} setSeguimientos={setSeguimientos} idPaciente={citaData.paciente.id!} />}
                 {step === 5 && <Step5_Cierre atencion={atencion} vacunas={vacunas} setVacunas={setVacunas} psico={psico} setPsico={handleUpdatePsico} idPaciente={citaData.paciente.id!} />}
-                
+
                 <div className="mt-8 flex justify-between">
                     <Button variant="outline" onClick={handlePrev} disabled={step === 1 || isSaving}>
                         ← Anterior

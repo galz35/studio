@@ -5,6 +5,10 @@ import { Paciente } from '../entities/paciente.entity';
 import { CitaMedica } from '../entities/cita-medica.entity';
 import { ChequeoBienestar } from '../entities/chequeo-bienestar.entity';
 import { CasoClinico } from '../entities/caso-clinico.entity';
+import { Seguimiento } from '../entities/seguimiento.entity';
+import { AtencionMedica } from '../entities/atencion-medica.entity';
+import { ExamenMedico } from '../entities/examen-medico.entity';
+import { VacunaAplicada } from '../entities/vacuna-aplicada.entity';
 import { SolicitudCitaDto } from './dto/solicitud-cita.dto';
 
 @Injectable()
@@ -18,24 +22,107 @@ export class PacienteService {
         private chequeosRepository: Repository<ChequeoBienestar>,
         @InjectRepository(CasoClinico)
         private casosRepository: Repository<CasoClinico>,
+        @InjectRepository(Seguimiento)
+        private seguimientosRepository: Repository<Seguimiento>,
+        @InjectRepository(AtencionMedica)
+        private atencionesRepository: Repository<AtencionMedica>,
+        @InjectRepository(ExamenMedico)
+        private examenesRepository: Repository<ExamenMedico>,
+        @InjectRepository(VacunaAplicada)
+        private vacunasRepository: Repository<VacunaAplicada>,
         private dataSource: DataSource,
     ) { }
+
+    async getMisChequeos(idPaciente: number) {
+        return this.chequeosRepository.find({
+            where: { paciente: { id_paciente: idPaciente } },
+            order: { fecha_registro: 'DESC' }
+        });
+    }
+
+    async getMisExamenes(idPaciente: number) {
+        return this.examenesRepository.find({
+            where: { paciente: { id_paciente: idPaciente } },
+            order: { fecha_solicitud: 'DESC' }
+        });
+    }
+
+    async getMisVacunas(idPaciente: number) {
+        return this.vacunasRepository.find({
+            where: { paciente: { id_paciente: idPaciente } },
+            order: { fecha_aplicacion: 'DESC' }
+        });
+    }
 
     async getDashboardStats(idPaciente: number) {
         const paciente = await this.pacientesRepository.findOne({ where: { id_paciente: idPaciente } });
 
+        // 1. Próxima Cita
         const proximaCita = await this.citasRepository.findOne({
             where: {
                 paciente: { id_paciente: idPaciente },
-                estado_cita: 'PROGRAMADA' // or 'CONFIRMADA'
+                estado_cita: 'PROGRAMADA'
             },
             order: { fecha_cita: 'ASC', hora_cita: 'ASC' },
             relations: ['medico']
         });
 
+        // 2. Último Chequeo
+        const ultimoChequeo = await this.chequeosRepository.findOne({
+            where: { paciente: { id_paciente: idPaciente } },
+            order: { fecha_registro: 'DESC' }
+        });
+
+        // 3. Seguimientos Activos
+        const seguimientosActivos = await this.seguimientosRepository.count({
+            where: [
+                { paciente: { id_paciente: idPaciente }, estado_seguimiento: 'PENDIENTE' },
+                { paciente: { id_paciente: idPaciente }, estado_seguimiento: 'EN_PROCESO' }
+            ]
+        });
+
+        // 4. Timeline (Chequeos + Atenciones)
+        // Fetch recent checkups
+        const recentChequeos = await this.chequeosRepository.find({
+            where: { paciente: { id_paciente: idPaciente } },
+            order: { fecha_registro: 'DESC' },
+            take: 3
+        });
+
+        // Fetch recent attentions (via Cita -> Paciente)
+        // This is a bit complex with TypeORM relations, let's try a query builder or simple relation load
+        const recentAtenciones = await this.atencionesRepository.find({
+            where: {
+                cita: {
+                    paciente: { id_paciente: idPaciente }
+                }
+            },
+            relations: ['cita', 'cita.paciente'],
+            order: { fecha_atencion: 'DESC' },
+            take: 3
+        });
+
+        const timeline = [
+            ...recentChequeos.map(c => ({
+                title: 'Chequeo de Bienestar',
+                date: c.fecha_registro
+            })),
+            ...recentAtenciones.map(a => ({
+                title: `Atención: ${a.diagnostico_principal}`,
+                date: a.fecha_atencion
+            }))
+        ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5);
+
+
         return {
-            nivelSemaforo: paciente?.nivel_semaforo,
-            proximaCita,
+            kpis: {
+                estadoActual: paciente?.nivel_semaforo || 'V',
+                ultimoChequeo: ultimoChequeo ? ultimoChequeo.fecha_registro : null,
+                proximaCita: proximaCita ? `${proximaCita.fecha_cita} ${proximaCita.hora_cita}` : null,
+                seguimientosActivos
+            },
+            ultimoChequeoData: ultimoChequeo,
+            timeline
         };
     }
 

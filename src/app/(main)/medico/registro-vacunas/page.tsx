@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import * as api from '@/lib/services/api.mock';
+import { MedicoService } from '@/lib/services/medico.service';
 import type { Paciente } from '@/lib/types/domain';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -45,9 +45,13 @@ export default function RegistroVacunasPage() {
 
     useEffect(() => {
         if (pais) {
-            api.getPacientes({ pais })
+            MedicoService.getPacientes(pais)
                 .then(data => {
                     setPacientes(data);
+                    setLoading(false);
+                })
+                .catch(err => {
+                    console.error("Error loading patients", err);
                     setLoading(false);
                 });
         }
@@ -55,13 +59,13 @@ export default function RegistroVacunasPage() {
 
     const onSubmit = async (data: VacunaFormValues) => {
         if (!userProfile?.idMedico) return;
-        
+
         try {
-            // await api.registrarVacuna({
-            //     ...data,
-            //     idMedico: userProfile.idMedico,
-            //     fechaAplicacion: data.fechaAplicacion.toISOString().split('T')[0],
-            // });
+            await MedicoService.registrarVacuna({
+                ...data,
+                idMedico: userProfile.idMedico,
+                fechaAplicacion: data.fechaAplicacion.toISOString().split('T')[0],
+            });
 
             const paciente = pacientes.find(p => p.id === data.idPaciente);
             toast({
@@ -103,15 +107,15 @@ export default function RegistroVacunasPage() {
                                                 </SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
-                                                {loading ? <SelectItem value="loading" disabled>Cargando...</SelectItem> : 
-                                                pacientes.map(p => <SelectItem key={p.id} value={String(p.id)}>{p.nombreCompleto}</SelectItem>)}
+                                                {loading ? <SelectItem value="loading" disabled>Cargando...</SelectItem> :
+                                                    pacientes.map(p => <SelectItem key={p.id} value={String(p.id)}>{p.nombreCompleto}</SelectItem>)}
                                             </SelectContent>
                                         </Select>
                                         <FormMessage />
                                     </FormItem>
                                 )}
                             />
-                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <FormField
                                     control={form.control}
                                     name="tipoVacuna"
@@ -144,7 +148,7 @@ export default function RegistroVacunasPage() {
                                     )}
                                 />
                             </div>
-                             <FormField
+                            <FormField
                                 control={form.control}
                                 name="fechaAplicacion"
                                 render={({ field }) => (

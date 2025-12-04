@@ -1,7 +1,13 @@
-import { Controller, Get, Post, Body, Param, Put, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Put, Delete, UseGuards } from '@nestjs/common';
 import { SeguimientoService } from 'src/seguimiento/seguimiento.service';
 import { Seguimiento } from '../entities/seguimiento.entity';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../auth/roles.guard';
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 
+@ApiTags('seguimientos')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('seguimientos')
 export class SeguimientoController {
     constructor(private readonly seguimientoService: SeguimientoService) { }

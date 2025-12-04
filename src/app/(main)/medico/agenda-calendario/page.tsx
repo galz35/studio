@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import * as api from '@/lib/services/api.mock';
+import { MedicoService } from '@/lib/services/medico.service';
 import { CitaMedica, SeguimientoPaciente } from '@/lib/types/domain';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -24,12 +24,12 @@ interface CalendarEvent {
 }
 
 const EventBadge = ({ event }: { event: CalendarEvent }) => {
-    const typeClasses: Record<CalendarEventType, string> = {
-      cita: 'bg-blue-100 text-blue-800 border-blue-200',
-      seguimiento: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-      atencion: 'bg-gray-100 text-gray-600 border-gray-200',
-    };
-    return <Badge className={cn("mb-1 block truncate p-1 text-xs font-normal", typeClasses[event.type])}>{event.title}</Badge>;
+  const typeClasses: Record<CalendarEventType, string> = {
+    cita: 'bg-blue-100 text-blue-800 border-blue-200',
+    seguimiento: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+    atencion: 'bg-gray-100 text-gray-600 border-gray-200',
+  };
+  return <Badge className={cn("mb-1 block truncate p-1 text-xs font-normal", typeClasses[event.type])}>{event.title}</Badge>;
 };
 
 export default function AgendaCalendarioPage() {
@@ -41,11 +41,11 @@ export default function AgendaCalendarioPage() {
   useEffect(() => {
     if (userProfile?.idMedico) {
       Promise.all([
-        api.getCitasPorMedico(userProfile.idMedico, { pais }),
-        api.getSeguimientos({ pais })
+        MedicoService.getCitasPorMedico(userProfile.idMedico, { pais }),
+        MedicoService.getSeguimientos({ pais })
       ]).then(([citasRes, seguimientosRes]) => {
-        
-        const citasEvents = citasRes.map((cita): CalendarEvent => ({
+
+        const citasEvents = citasRes.map((cita: CitaMedica): CalendarEvent => ({
           id: `cita-${cita.idCita}`,
           date: new Date(cita.fechaCita),
           type: cita.estadoCita === 'FINALIZADA' ? 'atencion' : 'cita',
@@ -55,28 +55,28 @@ export default function AgendaCalendarioPage() {
         }));
 
         const seguimientosEvents = seguimientosRes
-          .filter(s => s.estadoSeguimiento === 'PENDIENTE' && s.usuarioResponsable.includes(userProfile.nombreCompleto))
-          .map((seg): CalendarEvent => ({
+          .filter((s: SeguimientoPaciente) => s.estadoSeguimiento === 'PENDIENTE' && s.usuarioResponsable.includes(userProfile.nombreCompleto))
+          .map((seg: SeguimientoPaciente): CalendarEvent => ({
             id: `seg-${seg.idSeguimiento}`,
             date: new Date(seg.fechaProgramada),
             type: 'seguimiento',
             title: `Seguimiento: ${seg.paciente.nombreCompleto}`,
             description: seg.notasSeguimiento,
             data: seg
-        }));
+          }));
 
         const allEvents = [...citasEvents, ...seguimientosEvents];
-        allEvents.sort((a,b) => {
-            const dateA = new Date(a.date);
-            const dateB = new Date(b.date);
-            if (dateA.getTime() !== dateB.getTime()) {
-                return dateA.getTime() - dateB.getTime();
-            }
-            // If dates are same, sort by time (from title)
-            const timeA = (a.title.match(/(\d{2}:\d{2})/) || [])[0];
-            const timeB = (b.title.match(/(\d{2}:\d{2})/) || [])[0];
-            if (timeA && timeB) return timeA.localeCompare(timeB);
-            return 0;
+        allEvents.sort((a, b) => {
+          const dateA = new Date(a.date);
+          const dateB = new Date(b.date);
+          if (dateA.getTime() !== dateB.getTime()) {
+            return dateA.getTime() - dateB.getTime();
+          }
+          // If dates are same, sort by time (from title)
+          const timeA = (a.title.match(/(\d{2}:\d{2})/) || [])[0];
+          const timeB = (b.title.match(/(\d{2}:\d{2})/) || [])[0];
+          if (timeA && timeB) return timeA.localeCompare(timeB);
+          return 0;
         });
 
         setEvents(allEvents);
@@ -86,20 +86,20 @@ export default function AgendaCalendarioPage() {
         setLoading(false);
       });
     } else {
-        setLoading(false);
+      setLoading(false);
     }
   }, [userProfile, pais]);
 
   const eventDays = useMemo(() => events.map(e => e.date), [events]);
-  
+
   const eventsByDay = useMemo(() => {
     return events.reduce((acc, event) => {
-        const day = event.date.toISOString().split('T')[0];
-        if (!acc[day]) {
-            acc[day] = [];
-        }
-        acc[day].push(event);
-        return acc;
+      const day = event.date.toISOString().split('T')[0];
+      if (!acc[day]) {
+        acc[day] = [];
+      }
+      acc[day].push(event);
+      return acc;
     }, {} as Record<string, CalendarEvent[]>);
   }, [events]);
 
@@ -109,9 +109,9 @@ export default function AgendaCalendarioPage() {
     const isOutside = date.getMonth() !== displayMonth.getMonth();
 
     if (isOutside) {
-        return <div className="p-1 h-24 text-muted-foreground/30">{date.getDate()}</div>;
+      return <div className="p-1 h-24 text-muted-foreground/30">{date.getDate()}</div>;
     }
-    
+
     if (dayEvents.length === 0) {
       return <div className="p-1 h-24">{date.getDate()}</div>;
     }
@@ -122,22 +122,22 @@ export default function AgendaCalendarioPage() {
           <div className="relative flex h-24 w-full flex-col p-1">
             <div>{date.getDate()}</div>
             <div className="flex-1 overflow-y-auto">
-              {dayEvents.slice(0,2).map((event) => (
+              {dayEvents.slice(0, 2).map((event) => (
                 <EventBadge key={event.id} event={event} />
               ))}
-              {dayEvents.length > 2 && <Badge variant="outline" className="text-xs w-full">+ {dayEvents.length-2} más</Badge>}
+              {dayEvents.length > 2 && <Badge variant="outline" className="text-xs w-full">+ {dayEvents.length - 2} más</Badge>}
             </div>
           </div>
         </PopoverTrigger>
         <PopoverContent className="w-80">
           <h4 className="font-medium leading-none mb-2">Eventos para {date.toLocaleDateString('es-ES')}</h4>
           <div className='max-h-60 overflow-y-auto space-y-2'>
-          {dayEvents.map(event => (
+            {dayEvents.map(event => (
               <div key={event.id} className='p-2 rounded-md bg-muted/50'>
-                  <EventBadge event={event}/>
-                  <p className='text-xs text-muted-foreground mt-1'>{event.description}</p>
+                <EventBadge event={event} />
+                <p className='text-xs text-muted-foreground mt-1'>{event.description}</p>
               </div>
-          ))}
+            ))}
           </div>
         </PopoverContent>
       </Popover>
@@ -160,7 +160,7 @@ export default function AgendaCalendarioPage() {
       <Card>
         <CardContent className="p-0">
           {/* Desktop Calendar */}
-         <DayPicker
+          <DayPicker
             month={currentMonth}
             onMonthChange={setCurrentMonth}
             className="w-full hidden sm:block"
@@ -177,7 +177,7 @@ export default function AgendaCalendarioPage() {
             modifiersClassNames={{ events: 'font-bold' }}
           />
           {/* Mobile Calendar */}
-           <DayPicker
+          <DayPicker
             mode="single"
             month={currentMonth}
             onMonthChange={setCurrentMonth}

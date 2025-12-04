@@ -1,6 +1,7 @@
-import { Controller, Get, Post, Body, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, UseGuards, Request, Param, Query } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { CrearUsuarioDto, Rol } from './dto/crear-usuario.dto';
+import { DebugSetPasswordDto } from './dto/debug-set-password.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -32,9 +33,39 @@ export class AdminController {
         return this.adminService.getUsuarios(req.user.pais);
     }
 
+    @Patch('usuarios/:id')
+    @ApiOperation({ summary: 'Actualizar usuario' })
+    updateUsuario(@Param('id') id: string, @Body() data: any) {
+        return this.adminService.updateUsuario(+id, data);
+    }
+
     @Get('medicos')
     @ApiOperation({ summary: 'Listar médicos del país' })
     getMedicos(@Request() req) {
         return this.adminService.getMedicos(req.user.pais);
+    }
+
+    @Post('medicos')
+    @ApiOperation({ summary: 'Crear un nuevo médico' })
+    crearMedico(@Body() data: any) {
+        return this.adminService.crearMedico(data);
+    }
+
+    @Get('empleados')
+    @ApiOperation({ summary: 'Listar empleados' })
+    getEmpleados(@Request() req, @Query('carnet') carnet?: string) {
+        return this.adminService.getEmpleados(req.user.pais, carnet);
+    }
+
+    @Get('reportes/atenciones')
+    @ApiOperation({ summary: 'Obtener reporte de atenciones' })
+    getReportesAtenciones(@Request() req, @Query() filters: any) {
+        return this.adminService.getReportesAtenciones(req.user.pais, filters);
+    }
+
+    @Post('debug/set-password')
+    @ApiOperation({ summary: 'DEBUG: Resetear contraseña de usuario' })
+    debugSetPassword(@Body() body: DebugSetPasswordDto) {
+        return this.adminService.debugSetPassword(body.carnet, body.newPass);
     }
 }

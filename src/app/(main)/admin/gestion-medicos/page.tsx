@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import * as api from '@/lib/services/api.mock';
+import { AdminService } from '@/lib/services/admin.service';
 import { Medico, EmpleadoEmp2024 } from '@/lib/types/domain';
 import { DataTable } from '@/components/shared/DataTable';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -34,13 +34,13 @@ const medicoSchema = z.object({
   telefono: z.string().optional(),
   carnet: z.string().optional(),
 }).refine(data => {
-    if (data.userType === 'interno') return !!data.empleadoCarnet;
-    return true;
+  if (data.userType === 'interno') return !!data.empleadoCarnet;
+  return true;
 }, { message: "Debe seleccionar un empleado.", path: ["empleadoCarnet"] })
-.refine(data => {
+  .refine(data => {
     if (data.userType === 'externo') return !!data.nombreCompleto;
     return true;
-}, { message: "El nombre es requerido para médicos externos.", path: ["nombreCompleto"] });
+  }, { message: "El nombre es requerido para médicos externos.", path: ["nombreCompleto"] });
 
 
 type MedicoFormValues = z.infer<typeof medicoSchema>;
@@ -48,47 +48,47 @@ type MedicoFormValues = z.infer<typeof medicoSchema>;
 export default function GestionMedicosPage() {
   const { pais } = useUserProfile();
   const { toast } = useToast();
-  
+
   const [isDialogOpen, setDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [medicos, setMedicos] = useState<Medico[]>([]);
   const [empleados, setEmpleados] = useState<EmpleadoEmp2024[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  
+
   const fetchData = async () => {
-      if (!pais) return;
-      setIsLoading(true);
-      try {
-        const [medicosData, empleadosData] = await Promise.all([
-          api.getMedicos(),
-          api.getEmpleados()
-        ]);
-        setMedicos(medicosData);
-        setEmpleados(empleadosData);
-      } catch (error) {
-        console.error(error);
-        toast({ variant: 'destructive', title: 'Error', description: 'No se pudieron cargar los datos.'});
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    if (!pais) return;
+    setIsLoading(true);
+    try {
+      const [medicosData, empleadosData] = await Promise.all([
+        AdminService.getMedicos(),
+        AdminService.getEmpleados()
+      ]);
+      setMedicos(medicosData);
+      setEmpleados(empleadosData);
+    } catch (error) {
+      console.error(error);
+      toast({ variant: 'destructive', title: 'Error', description: 'No se pudieron cargar los datos.' });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchData();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pais]);
-  
+
   const medicosDelPais = useMemo(() => {
     if (!medicos || !empleados || !pais) return [];
-    
+
     // Get all external doctors
     const medicosExternos = medicos.filter(m => m.tipoMedico === 'EXTERNO');
 
     // Get internal doctors from the selected country
     const empleadosDelPaisCarnets = new Set(empleados.filter(e => e.pais === pais).map(e => e.carnet));
     const medicosInternosDelPais = medicos.filter(m => {
-        return m.tipoMedico === 'INTERNO' && m.carnet && empleadosDelPaisCarnets.has(m.carnet);
+      return m.tipoMedico === 'INTERNO' && m.carnet && empleadosDelPaisCarnets.has(m.carnet);
     });
 
     return [...medicosInternosDelPais, ...medicosExternos];
@@ -105,7 +105,7 @@ export default function GestionMedicosPage() {
   const form = useForm<MedicoFormValues>({
     resolver: zodResolver(medicoSchema),
     defaultValues: {
-        userType: 'interno',
+      userType: 'interno',
     }
   });
 
@@ -113,43 +113,43 @@ export default function GestionMedicosPage() {
 
   const onSubmit = async (data: MedicoFormValues) => {
     setIsSubmitting(true);
-    
+
     let newMedicoData: Omit<Medico, 'idMedico' | 'id'>;
 
     if (data.userType === 'interno') {
-        const empleado = empleados?.find(e => e.carnet === data.empleadoCarnet)!;
-        newMedicoData = {
-          carnet: empleado.carnet,
-          nombreCompleto: empleado.nombreCompleto,
-          especialidad: data.especialidad,
-          tipoMedico: 'INTERNO',
-          correo: empleado.correo,
-          telefono: empleado.telefono,
-          estadoMedico: 'A',
-        };
+      const empleado = empleados?.find(e => e.carnet === data.empleadoCarnet)!;
+      newMedicoData = {
+        carnet: empleado.carnet,
+        nombreCompleto: empleado.nombreCompleto,
+        especialidad: data.especialidad,
+        tipoMedico: 'INTERNO',
+        correo: empleado.correo,
+        telefono: empleado.telefono,
+        estadoMedico: 'A',
+      };
     } else { // Externo
-        newMedicoData = {
-          nombreCompleto: data.nombreCompleto!,
-          carnet: data.carnet,
-          especialidad: data.especialidad,
-          tipoMedico: 'EXTERNO',
-          correo: data.correo,
-          telefono: data.telefono,
-          estadoMedico: 'A',
-        };
+      newMedicoData = {
+        nombreCompleto: data.nombreCompleto!,
+        carnet: data.carnet,
+        especialidad: data.especialidad,
+        tipoMedico: 'EXTERNO',
+        correo: data.correo,
+        telefono: data.telefono,
+        estadoMedico: 'A',
+      };
     }
-    
+
     try {
-        await api.crearMedico(newMedicoData);
-        toast({ title: "Médico Creado", description: `El Dr./Dra. ${newMedicoData.nombreCompleto} ha sido añadido al sistema.`});
-        setDialogOpen(false);
-        form.reset({ userType: 'interno' });
-        fetchData(); // Refresh data
+      await AdminService.crearMedico(newMedicoData);
+      toast({ title: "Médico Creado", description: `El Dr./Dra. ${newMedicoData.nombreCompleto} ha sido añadido al sistema.` });
+      setDialogOpen(false);
+      form.reset({ userType: 'interno' });
+      fetchData(); // Refresh data
     } catch (error) {
-        console.error("Error creating medico:", error);
-        toast({ variant: 'destructive', title: 'Error', description: 'No se pudo crear el médico.'})
+      console.error("Error creating medico:", error);
+      toast({ variant: 'destructive', title: 'Error', description: 'No se pudo crear el médico.' })
     } finally {
-        setIsSubmitting(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -179,24 +179,24 @@ export default function GestionMedicosPage() {
   ];
 
   if (isLoading) return (
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-            <Skeleton className="h-9 w-64" />
-            <Skeleton className="h-10 w-32" />
-        </div>
-        <Card>
-            <CardHeader>
-                <Skeleton className="h-6 w-52" />
-            </CardHeader>
-            <CardContent>
-                <div className="space-y-2">
-                    <Skeleton className="h-10 w-full" />
-                    <Skeleton className="h-12 w-full" />
-                    <Skeleton className="h-12 w-full" />
-                    <Skeleton className="h-12 w-full" />
-                </div>
-            </CardContent>
-        </Card>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <Skeleton className="h-9 w-64" />
+        <Skeleton className="h-10 w-32" />
+      </div>
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-6 w-52" />
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-12 w-full" />
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 
@@ -222,37 +222,37 @@ export default function GestionMedicosPage() {
                     </FormControl><FormMessage />
                   </FormItem>)}
                 />
-                
+
                 {userType === 'interno' ? (
-                    <FormField control={form.control} name="empleadoCarnet" render={({ field }) => (
-                      <FormItem><FormLabel>Empleado</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un empleado" /></SelectTrigger></FormControl>
-                          <SelectContent>
-                            {empleadosDisponibles.length > 0 ? (
-                                empleadosDisponibles.map(e => <SelectItem key={e.carnet} value={e.carnet}>{e.nombreCompleto} ({e.carnet})</SelectItem>)
-                            ) : (
-                                <SelectItem value="none" disabled>No hay empleados disponibles</SelectItem>
-                            )}
-                          </SelectContent>
-                        </Select><FormMessage />
-                      </FormItem>)} />
+                  <FormField control={form.control} name="empleadoCarnet" render={({ field }) => (
+                    <FormItem><FormLabel>Empleado</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un empleado" /></SelectTrigger></FormControl>
+                        <SelectContent>
+                          {empleadosDisponibles.length > 0 ? (
+                            empleadosDisponibles.map(e => <SelectItem key={e.carnet} value={e.carnet}>{e.nombreCompleto} ({e.carnet})</SelectItem>)
+                          ) : (
+                            <SelectItem value="none" disabled>No hay empleados disponibles</SelectItem>
+                          )}
+                        </SelectContent>
+                      </Select><FormMessage />
+                    </FormItem>)} />
                 ) : (
-                    <div className='grid grid-cols-2 gap-4 border p-4 rounded-md bg-muted/20'>
-                         <FormField control={form.control} name="nombreCompleto" render={({ field }) => (
-                            <FormItem className="col-span-2"><FormLabel>Nombre Completo</FormLabel><FormControl><Input placeholder="Nombre del médico" {...field} /></FormControl><FormMessage /></FormItem>
-                         )} />
-                         <FormField control={form.control} name="correo" render={({ field }) => (
-                            <FormItem><FormLabel>Correo</FormLabel><FormControl><Input placeholder="correo@externo.com" {...field} /></FormControl><FormMessage /></FormItem>
-                         )} />
-                         <FormField control={form.control} name="telefono" render={({ field }) => (
-                            <FormItem><FormLabel>Teléfono</FormLabel><FormControl><Input placeholder="8888-8888" {...field} /></FormControl><FormMessage /></FormItem>
-                         )} />
-                         <FormField control={form.control} name="carnet" render={({ field }) => (
-                            <FormItem className="col-span-2"><FormLabel>Carnet / ID (Opcional)</FormLabel><FormControl><Input placeholder="Identificador único" {...field} /></FormControl><FormMessage /></FormItem>
-                         )} />
-                    </div>
+                  <div className='grid grid-cols-2 gap-4 border p-4 rounded-md bg-muted/20'>
+                    <FormField control={form.control} name="nombreCompleto" render={({ field }) => (
+                      <FormItem className="col-span-2"><FormLabel>Nombre Completo</FormLabel><FormControl><Input placeholder="Nombre del médico" {...field} /></FormControl><FormMessage /></FormItem>
+                    )} />
+                    <FormField control={form.control} name="correo" render={({ field }) => (
+                      <FormItem><FormLabel>Correo</FormLabel><FormControl><Input placeholder="correo@externo.com" {...field} /></FormControl><FormMessage /></FormItem>
+                    )} />
+                    <FormField control={form.control} name="telefono" render={({ field }) => (
+                      <FormItem><FormLabel>Teléfono</FormLabel><FormControl><Input placeholder="8888-8888" {...field} /></FormControl><FormMessage /></FormItem>
+                    )} />
+                    <FormField control={form.control} name="carnet" render={({ field }) => (
+                      <FormItem className="col-span-2"><FormLabel>Carnet / ID (Opcional)</FormLabel><FormControl><Input placeholder="Identificador único" {...field} /></FormControl><FormMessage /></FormItem>
+                    )} />
+                  </div>
                 )}
-                
+
                 <FormField control={form.control} name="especialidad" render={({ field }) => (
                   <FormItem><FormLabel>Especialidad</FormLabel>
                     <FormControl><Input placeholder="Ej: Medicina General, Cardiología..." {...field} /></FormControl>
@@ -260,8 +260,8 @@ export default function GestionMedicosPage() {
                   </FormItem>)} />
 
                 <Button type="submit" disabled={isSubmitting} className="w-full">
-                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Crear Médico
+                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Crear Médico
                 </Button>
               </form>
             </Form>

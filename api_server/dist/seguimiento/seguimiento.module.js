@@ -16,6 +16,7 @@ const caso_clinico_entity_1 = require("../entities/caso-clinico.entity");
 const paciente_entity_1 = require("../entities/paciente.entity");
 const atencion_medica_entity_1 = require("../entities/atencion-medica.entity");
 const usuario_entity_1 = require("../entities/usuario.entity");
+const auth_module_1 = require("../auth/auth.module");
 let SeguimientoModule = class SeguimientoModule {
 };
 exports.SeguimientoModule = SeguimientoModule;
@@ -23,6 +24,7 @@ exports.SeguimientoModule = SeguimientoModule = __decorate([
     (0, common_1.Module)({
         imports: [
             typeorm_1.TypeOrmModule.forFeature([seguimiento_entity_1.Seguimiento, caso_clinico_entity_1.CasoClinico, paciente_entity_1.Paciente, atencion_medica_entity_1.AtencionMedica, usuario_entity_1.Usuario]),
+            auth_module_1.AuthModule,
         ],
         controllers: [seguimiento_controller_1.SeguimientoController],
         providers: [seguimiento_service_1.SeguimientoService],

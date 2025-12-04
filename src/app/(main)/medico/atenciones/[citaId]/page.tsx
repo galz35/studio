@@ -5,9 +5,8 @@ import { useParams, useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import * as api from '@/lib/services/api.mock';
+import { MedicoService, AtencionPageData } from '@/lib/services/medico.service';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import type { CitaMedica, Paciente, CasoClinico } from '@/lib/types/domain';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -39,10 +38,6 @@ const atencionSchema = z.object({
 
 type AtencionFormValues = z.infer<typeof atencionSchema>;
 
-type AtencionData = {
-  cita: CitaMedica & { paciente: Paciente, caso: CasoClinico }
-};
-
 export default function AtencionMedicaPage() {
   const params = useParams();
   const router = useRouter();
@@ -50,7 +45,7 @@ export default function AtencionMedicaPage() {
   const { userProfile } = useUserProfile();
   const citaId = params.citaId as string;
 
-  const [data, setData] = useState<AtencionData | null>(null);
+  const [data, setData] = useState<AtencionPageData | null>(null);
   const [loading, setLoading] = useState(true);
 
   const form = useForm<AtencionFormValues>({
@@ -65,9 +60,12 @@ export default function AtencionMedicaPage() {
 
   useEffect(() => {
     if (citaId) {
-      api.getAtencionMedicaData(citaId).then(res => {
+      MedicoService.getAtencionMedicaData(citaId).then(res => {
         setData(res);
         if (res) form.setValue('nivelSemaforo', res.cita.caso.nivelSemaforo);
+        setLoading(false);
+      }).catch(err => {
+        console.error("Error loading attention data", err);
         setLoading(false);
       });
     }
@@ -76,7 +74,7 @@ export default function AtencionMedicaPage() {
   const onSubmit = async (formData: AtencionFormValues) => {
     if (!data || !userProfile?.idMedico) return;
     try {
-      await api.guardarAtencion({
+      await MedicoService.crearAtencion({
         ...formData,
         fechaSugeridaSeguimiento: formData.fechaSugeridaSeguimiento?.toISOString().split('T')[0],
         idCita: citaId,
@@ -119,7 +117,7 @@ export default function AtencionMedicaPage() {
               <FormField name="temperaturaC" control={form.control} render={({ field }) => <FormItem><FormLabel>Temp (°C)</FormLabel><FormControl><Input type="number" step="0.1" {...field} /></FormControl><FormMessage /></FormItem>} />
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader><CardTitle>Diagnóstico y Plan</CardTitle></CardHeader>
             <CardContent className="space-y-4">
@@ -160,8 +158,8 @@ export default function AtencionMedicaPage() {
                         <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                       </Button></FormControl>
                     </PopoverTrigger><PopoverContent className="w-auto p-0" align="start">
-                      <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
-                    </PopoverContent></Popover><FormMessage />
+                        <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
+                      </PopoverContent></Popover><FormMessage />
                   </FormItem>
                 )} />
               )}
