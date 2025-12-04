@@ -39,4 +39,5 @@ export declare class PacienteService {
         message: string;
     }>;
     getMisCitas(idPaciente: number): Promise<CitaMedica[]>;
+    crearChequeo(idPaciente: number, data: any): Promise<ChequeoBienestar>;
 }

@@ -47,7 +47,14 @@ export default function PacientePsicosocialPage() {
   });
 
   const onSubmit: SubmitHandler<PsicosocialFormValues> = async (data) => {
-    if (!userProfile?.idPaciente) return;
+    if (!userProfile?.idPaciente) {
+      toast({
+        title: "Error de perfil",
+        description: "No se encontró un perfil de paciente asociado. Por favor, contacta al soporte o intenta iniciar sesión nuevamente.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     try {
       // 1. Call AI Analysis

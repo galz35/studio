@@ -177,4 +177,17 @@ export class PacienteService {
             relations: ['medico']
         });
     }
+
+    async crearChequeo(idPaciente: number, data: any) {
+        const paciente = await this.pacientesRepository.findOne({ where: { id_paciente: idPaciente } });
+        if (!paciente) throw new Error('Paciente no encontrado');
+
+        const nuevoChequeo = this.chequeosRepository.create({
+            paciente: paciente,
+            nivel_semaforo: data.nivelRiesgo === 'Alto' ? 'R' : data.nivelRiesgo === 'Medio' ? 'A' : 'V',
+            datos_completos: data,
+        });
+
+        return this.chequeosRepository.save(nuevoChequeo);
+    }
 }

@@ -49,4 +49,10 @@ export class PacienteController {
     getMisVacunas(@Request() req) {
         return this.pacienteService.getMisVacunas(req.user.idPaciente);
     }
+
+    @Post('chequeo')
+    @ApiOperation({ summary: 'Registrar un nuevo chequeo de bienestar' })
+    crearChequeo(@Request() req, @Body() data: any) {
+        return this.pacienteService.crearChequeo(req.user.idPaciente, data);
+    }
 }

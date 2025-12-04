@@ -42,6 +42,9 @@ let PacienteController = class PacienteController {
     getMisVacunas(req) {
         return this.pacienteService.getMisVacunas(req.user.idPaciente);
     }
+    crearChequeo(req, data) {
+        return this.pacienteService.crearChequeo(req.user.idPaciente, data);
+    }
 };
 exports.PacienteController = PacienteController;
 __decorate([
@@ -93,6 +96,15 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], PacienteController.prototype, "getMisVacunas", null);
+__decorate([
+    (0, common_1.Post)('chequeo'),
+    (0, swagger_1.ApiOperation)({ summary: 'Registrar un nuevo chequeo de bienestar' }),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", void 0)
+], PacienteController.prototype, "crearChequeo", null);
 exports.PacienteController = PacienteController = __decorate([
     (0, swagger_1.ApiTags)('paciente'),
     (0, swagger_1.ApiBearerAuth)(),

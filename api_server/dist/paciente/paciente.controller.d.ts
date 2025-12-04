@@ -23,4 +23,5 @@ export declare class PacienteController {
     getMisChequeos(req: any): Promise<import("../entities/chequeo-bienestar.entity").ChequeoBienestar[]>;
     getMisExamenes(req: any): Promise<import("../entities/examen-medico.entity").ExamenMedico[]>;
     getMisVacunas(req: any): Promise<import("../entities/vacuna-aplicada.entity").VacunaAplicada[]>;
+    crearChequeo(req: any, data: any): Promise<import("../entities/chequeo-bienestar.entity").ChequeoBienestar>;
 }
