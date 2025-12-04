@@ -107,6 +107,17 @@ let AuthService = class AuthService {
         await this.usuariosRepository.save(admin);
         return { message: 'Usuario ADMIN001 creado exitosamente. Contraseña: admin123' };
     }
+    async getProfile(userId) {
+        const user = await this.usuariosRepository.findOne({
+            where: { id_usuario: userId },
+            relations: ['paciente', 'medico']
+        });
+        if (!user) {
+            throw new common_1.UnauthorizedException('Usuario no encontrado o inactivo');
+        }
+        const { password_hash, ...result } = user;
+        return result;
+    }
 };
 exports.AuthService = AuthService;
 exports.AuthService = AuthService = __decorate([

@@ -10,10 +10,11 @@ import { Medico } from '../entities/medico.entity';
 import { ExamenMedico } from '../entities/examen-medico.entity';
 import { VacunaAplicada } from '../entities/vacuna-aplicada.entity';
 import { ChequeoBienestar } from '../entities/chequeo-bienestar.entity';
+import { Seguimiento } from '../entities/seguimiento.entity';
 
 @Module({
     imports: [
-        TypeOrmModule.forFeature([CitaMedica, CasoClinico, AtencionMedica, Paciente, Medico, ExamenMedico, VacunaAplicada, ChequeoBienestar]),
+        TypeOrmModule.forFeature([CitaMedica, CasoClinico, AtencionMedica, Paciente, Medico, ExamenMedico, VacunaAplicada, ChequeoBienestar, Seguimiento]),
     ],
     controllers: [MedicoController],
     providers: [MedicoService],

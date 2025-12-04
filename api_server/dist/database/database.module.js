@@ -19,16 +19,21 @@ exports.DatabaseModule = DatabaseModule = __decorate([
             typeorm_1.TypeOrmModule.forRootAsync({
                 imports: [config_1.ConfigModule],
                 inject: [config_1.ConfigService],
-                useFactory: (configService) => ({
-                    type: 'postgres',
-                    host: configService.get('DB_HOST'),
-                    port: configService.get('DB_PORT'),
-                    username: configService.get('DB_USERNAME'),
-                    password: configService.get('DB_PASSWORD'),
-                    database: configService.get('DB_NAME'),
-                    entities: [__dirname + '/../**/*.entity{.ts,.js}'],
-                    synchronize: true,
-                }),
+                useFactory: (configService) => {
+                    const config = {
+                        type: 'postgres',
+                        host: configService.get('DB_HOST'),
+                        port: configService.get('DB_PORT'),
+                        username: configService.get('DB_USERNAME'),
+                        password: configService.get('DB_PASSWORD'),
+                        database: configService.get('DB_NAME'),
+                        entities: [__dirname + '/../**/*.entity{.ts,.js}'],
+                        synchronize: true,
+                        ssl: { rejectUnauthorized: false },
+                    };
+                    console.log('DB Config:', { ...config, password: '***' });
+                    return config;
+                },
             }),
         ],
     })

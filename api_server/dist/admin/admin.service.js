@@ -153,7 +153,7 @@ let AdminService = class AdminService {
         return this.usuariosRepository.find({ where: { pais } });
     }
     async updateUsuario(id, data) {
-        const usuario = await this.usuariosRepository.findOne({ where: { id } });
+        const usuario = await this.usuariosRepository.findOne({ where: { id_usuario: id } });
         if (!usuario)
             throw new common_1.NotFoundException('Usuario no encontrado');
         Object.assign(usuario, data);

@@ -46,7 +46,7 @@ let MedicoService = class MedicoService {
     async getChequeosPorPaciente(idPaciente) {
         return this.chequeosRepository.find({
             where: { paciente: { id_paciente: idPaciente } },
-            order: { fecha_chequeo: 'DESC' }
+            order: { fecha_registro: 'DESC' }
         });
     }
     async getCitasPorPaciente(idPaciente) {

@@ -17,6 +17,7 @@ const common_1 = require("@nestjs/common");
 const auth_service_1 = require("./auth.service");
 const login_dto_1 = require("./dto/login.dto");
 const swagger_1 = require("@nestjs/swagger");
+const jwt_auth_guard_1 = require("./jwt-auth.guard");
 let AuthController = class AuthController {
     constructor(authService) {
         this.authService = authService;
@@ -26,6 +27,9 @@ let AuthController = class AuthController {
     }
     createInitialAdmin() {
         return this.authService.createInitialAdmin();
+    }
+    getProfile(req) {
+        return this.authService.getProfile(req.user.idUsuario);
     }
 };
 exports.AuthController = AuthController;
@@ -47,6 +51,18 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
 ], AuthController.prototype, "createInitialAdmin", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Get)('profile'),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Obtener perfil del usuario autenticado' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Perfil del usuario.' }),
+    (0, swagger_1.ApiResponse)({ status: 401, description: 'No autorizado.' }),
+    __param(0, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], AuthController.prototype, "getProfile", null);
 exports.AuthController = AuthController = __decorate([
     (0, swagger_1.ApiTags)('auth'),
     (0, common_1.Controller)('auth'),

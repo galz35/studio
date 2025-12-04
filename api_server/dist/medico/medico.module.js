@@ -19,13 +19,14 @@ const medico_entity_1 = require("../entities/medico.entity");
 const examen_medico_entity_1 = require("../entities/examen-medico.entity");
 const vacuna_aplicada_entity_1 = require("../entities/vacuna-aplicada.entity");
 const chequeo_bienestar_entity_1 = require("../entities/chequeo-bienestar.entity");
+const seguimiento_entity_1 = require("../entities/seguimiento.entity");
 let MedicoModule = class MedicoModule {
 };
 exports.MedicoModule = MedicoModule;
 exports.MedicoModule = MedicoModule = __decorate([
     (0, common_1.Module)({
         imports: [
-            typeorm_1.TypeOrmModule.forFeature([cita_medica_entity_1.CitaMedica, caso_clinico_entity_1.CasoClinico, atencion_medica_entity_1.AtencionMedica, paciente_entity_1.Paciente, medico_entity_1.Medico, examen_medico_entity_1.ExamenMedico, vacuna_aplicada_entity_1.VacunaAplicada, chequeo_bienestar_entity_1.ChequeoBienestar]),
+            typeorm_1.TypeOrmModule.forFeature([cita_medica_entity_1.CitaMedica, caso_clinico_entity_1.CasoClinico, atencion_medica_entity_1.AtencionMedica, paciente_entity_1.Paciente, medico_entity_1.Medico, examen_medico_entity_1.ExamenMedico, vacuna_aplicada_entity_1.VacunaAplicada, chequeo_bienestar_entity_1.ChequeoBienestar, seguimiento_entity_1.Seguimiento]),
         ],
         controllers: [medico_controller_1.MedicoController],
         providers: [medico_service_1.MedicoService],

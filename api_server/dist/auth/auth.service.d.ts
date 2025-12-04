@@ -15,4 +15,18 @@ export declare class AuthService {
     createInitialAdmin(): Promise<{
         message: string;
     }>;
+    getProfile(userId: number): Promise<{
+        id_usuario: number;
+        carnet: string;
+        nombre_completo: string;
+        correo: string;
+        rol: string;
+        pais: string;
+        estado: string;
+        ultimo_acceso: Date;
+        paciente: import("../entities/paciente.entity").Paciente;
+        medico: import("../entities/medico.entity").Medico;
+        seguimientos: import("../entities/seguimiento.entity").Seguimiento[];
+        fecha_creacion: Date;
+    }>;
 }
