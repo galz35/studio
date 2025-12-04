@@ -42,34 +42,34 @@ const NavItem = ({ href, icon: Icon, label, isCollapsed }: NavItemProps) => {
   const isActive = pathname.startsWith(href);
 
   const linkContent = (
-      <div
-        className={cn(
-          "flex items-center w-full h-12 justify-start text-white/80 rounded-md hover:bg-white/10 hover:text-white transition-colors",
-          isCollapsed ? "px-3.5" : "px-4",
-          isActive && "bg-white/20 text-white"
-        )}
-      >
-        <Icon className="h-5 w-5 flex-shrink-0" />
-        {!isCollapsed && <span className="ml-3 font-medium">{label}</span>}
-      </div>
+    <div
+      className={cn(
+        "flex items-center w-full h-12 justify-start text-white/80 rounded-md hover:bg-white/10 hover:text-white transition-colors",
+        isCollapsed ? "px-3.5" : "px-4",
+        isActive && "bg-white/20 text-white"
+      )}
+    >
+      <Icon className="h-5 w-5 flex-shrink-0" />
+      {!isCollapsed && <span className="ml-3 font-medium">{label}</span>}
+    </div>
   );
 
   return (
     <li>
-        {isCollapsed ? (
-            <TooltipProvider delayDuration={0}>
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                         <Link href={href}>{linkContent}</Link>
-                    </TooltipTrigger>
-                    <TooltipContent side="right">
-                        <p>{label}</p>
-                    </TooltipContent>
-                </Tooltip>
-            </TooltipProvider>
-        ) : (
-             <Link href={href}>{linkContent}</Link>
-        )}
+      {isCollapsed ? (
+        <TooltipProvider delayDuration={0}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Link href={href}>{linkContent}</Link>
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              <p>{label}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      ) : (
+        <Link href={href}>{linkContent}</Link>
+      )}
     </li>
   );
 };
@@ -94,6 +94,7 @@ const medicoMenu = [
   { href: "/medico/examenes", icon: FlaskConical, label: "Exámenes" },
   { href: "/medico/seguimientos", icon: Repeat, label: "Seguimientos" },
   { href: "/medico/registro-vacunas", icon: Syringe, label: "Registro de Vacunas" },
+  { href: "/medico/analisis-ia", icon: BrainCircuit, label: "Análisis IA" },
   { href: "/medico/reportes", icon: BarChart3, label: "Reportes" },
 ];
 
@@ -108,7 +109,7 @@ const adminMenu = [
 ];
 
 const commonMenu = [
-    { href: "/tutorial", icon: BookOpen, label: "Ayuda / Tutorial" },
+  { href: "/tutorial", icon: BookOpen, label: "Ayuda / Tutorial" },
 ];
 
 
@@ -139,20 +140,20 @@ export function Sidebar({ isCollapsed, toggleSidebar }: { isCollapsed: boolean, 
       )}
     >
       <div className={cn("flex h-16 items-center border-b border-white/10", isCollapsed && !isMobile ? 'justify-center' : 'px-4 justify-between')}>
-         <Link href="/" className="flex items-center gap-1.5">
-            {(!isCollapsed || isMobile) ? (
-              <div className="flex items-center font-cursive text-2xl text-white">
-                <span>Clar</span>
-                <HeartPulse className="relative -bottom-1 mx-[-1px] h-6 w-6 text-white"/>
-                <span className="font-bold">Mi Salud</span>
-              </div>
-            ) : (
-               <HeartPulse className="h-7 w-7 text-white" />
-            )}
+        <Link href="/" className="flex items-center gap-1.5">
+          {(!isCollapsed || isMobile) ? (
+            <div className="flex items-center font-cursive text-2xl text-white">
+              <span>Clar</span>
+              <HeartPulse className="relative -bottom-1 mx-[-1px] h-6 w-6 text-white" />
+              <span className="font-bold">Mi Salud</span>
+            </div>
+          ) : (
+            <HeartPulse className="h-7 w-7 text-white" />
+          )}
         </Link>
         {isMobile && (
           <Button variant="ghost" size="icon" onClick={toggleSidebar} className="text-white hover:bg-white/10">
-            <X className="h-6 w-6"/>
+            <X className="h-6 w-6" />
           </Button>
         )}
       </div>
@@ -163,7 +164,7 @@ export function Sidebar({ isCollapsed, toggleSidebar }: { isCollapsed: boolean, 
           ))}
         </ul>
         <hr className="my-4 border-white/10" />
-         <ul className="space-y-1">
+        <ul className="space-y-1">
           {commonMenu.map((item) => (
             <NavItem key={item.href} {...item} isCollapsed={isCollapsed && !isMobile} />
           ))}

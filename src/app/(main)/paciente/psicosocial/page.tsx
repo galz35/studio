@@ -25,9 +25,14 @@ const psicosocialSchema = z.object({
 
 type PsicosocialFormValues = z.infer<typeof psicosocialSchema>;
 
+import { analyzePsychosocial } from '@/actions/analyze-psychosocial';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { CheckCircle2, BrainCircuit } from 'lucide-react';
+
 export default function PacientePsicosocialPage() {
   const { userProfile } = useUserProfile();
   const { toast } = useToast();
+  const [aiResult, setAiResult] = React.useState<any>(null);
 
   const form = useForm<PsicosocialFormValues>({
     resolver: zodResolver(psicosocialSchema),
@@ -45,25 +50,35 @@ export default function PacientePsicosocialPage() {
     if (!userProfile?.idPaciente) return;
 
     try {
+      // 1. Call AI Analysis
+      const aiResponse = await analyzePsychosocial(data);
+      let aiData = null;
+
+      if (aiResponse.success) {
+        aiData = aiResponse.data;
+        setAiResult(aiData);
+      }
+
+      // 2. Save to Database
       await PacienteService.crearChequeo({
         idPaciente: userProfile.idPaciente,
-        // New fields
         nivelEstres: data.nivelEstres,
         estadoAnimo: data.estadoAnimo,
         calidadSueno: data.calidadSueno,
         consumoAgua: data.consumoAgua,
         modalidadTrabajo: data.modalidadTrabajo,
         comentarioGeneral: data.comentarioGeneral,
-        // Mocking other required fields for ChequeoBienestar
         ruta: "Psicosocial",
-        nivelSemaforo: data.nivelEstres === 'Alto' || data.calidadSueno === 'Mala' ? 'A' : 'V',
+        nivelSemaforo: aiData ? (aiData.nivelRiesgo === 'Alto' ? 'R' : aiData.nivelRiesgo === 'Medio' ? 'A' : 'V') : (data.nivelEstres === 'Alto' ? 'A' : 'V'),
         estadoChequeo: 'Completado',
+        datos_completos: aiData || {}, // Save AI result in JSONB
       });
+
       toast({
         title: "Registro Enviado",
-        description: "Gracias por compartir cómo te sientes. Tu bienestar es importante.",
+        description: "Gracias por compartir cómo te sientes.",
       });
-      form.reset();
+      // Don't reset form immediately so user can see AI result
     } catch (error) {
       toast({
         title: "Error al enviar",
@@ -73,13 +88,62 @@ export default function PacientePsicosocialPage() {
     }
   };
 
+  if (aiResult) {
+    return (
+      <div className="space-y-6 max-w-3xl mx-auto">
+        <h1 className="text-3xl font-bold">Resultados de tu Análisis</h1>
+
+        <Alert className="bg-green-50 border-green-200">
+          <CheckCircle2 className="h-4 w-4 text-green-600" />
+          <AlertTitle className="text-green-800">¡Registro Completado!</AlertTitle>
+          <AlertDescription className="text-green-700">
+            Hemos analizado tus respuestas con nuestra IA. Aquí tienes un resumen personalizado.
+          </AlertDescription>
+        </Alert>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BrainCircuit className="h-5 w-5 text-primary" />
+              Análisis de Bienestar
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="p-4 bg-muted rounded-lg">
+              <p className="italic text-lg text-center">"{aiResult.mensajePaciente}"</p>
+            </div>
+
+            <div>
+              <h3 className="font-semibold mb-2">Análisis Detallado:</h3>
+              <p className="text-muted-foreground">{aiResult.analisis}</p>
+            </div>
+
+            <div>
+              <h3 className="font-semibold mb-2">Recomendaciones para ti:</h3>
+              <ul className="list-disc pl-5 space-y-1">
+                {aiResult.recomendaciones.map((rec: string, i: number) => (
+                  <li key={i}>{rec}</li>
+                ))}
+              </ul>
+            </div>
+          </CardContent>
+          <CardFooter>
+            <Button onClick={() => { setAiResult(null); form.reset(); }} className="w-full">
+              Realizar otro chequeo
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold">Bienestar Psicosocial</h1>
       <Card className="max-w-3xl mx-auto">
         <CardHeader>
           <CardTitle>Auto-Chequeo Emocional</CardTitle>
-          <CardDescription>Este es un espacio confidencial para que registres cómo te sientes. Esta información ayuda al equipo de salud a apoyarte mejor.</CardDescription>
+          <CardDescription>Este es un espacio confidencial para que registres cómo te sientes. Nuestra IA analizará tus respuestas para brindarte apoyo inmediato.</CardDescription>
         </CardHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -163,7 +227,7 @@ export default function PacientePsicosocialPage() {
             <CardFooter>
               <Button type="submit" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Enviar Registro
+                {form.formState.isSubmitting ? 'Analizando con IA...' : 'Enviar y Analizar'}
               </Button>
             </CardFooter>
           </form>

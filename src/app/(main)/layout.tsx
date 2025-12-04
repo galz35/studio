@@ -54,7 +54,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   }
 
   return (
-    <div className="flex min-h-screen w-full bg-background">
+    <div className="flex h-screen w-full bg-background overflow-hidden">
       {/* Mobile Sidebar Overlay */}
       {isMobile && isSidebarOpen && (
         <div className="fixed inset-0 z-40 bg-black/60" onClick={toggleSidebar} />
@@ -63,7 +63,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       {/* Sidebar Container */}
       <div
         className={cn(
-          "fixed inset-y-0 left-0 z-50 h-full bg-primary text-primary-foreground flex-col border-r border-primary-foreground/10 transition-transform duration-300 ease-in-out md:relative md:translate-x-0",
+          "fixed inset-y-0 left-0 z-50 h-full bg-primary text-primary-foreground flex-col border-r border-primary-foreground/10 transition-all duration-300 ease-in-out md:relative md:translate-x-0",
           // Mobile state
           isMobile && (isSidebarOpen ? "translate-x-0" : "-translate-x-full"),
           // Desktop state
