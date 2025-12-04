@@ -1,4 +1,5 @@
 import { NestFactory } from '@nestjs/core';
+import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
@@ -15,6 +16,7 @@ async function bootstrap() {
   SwaggerModule.setup('api', app, document);
 
   app.enableCors();
+  app.useGlobalPipes(new ValidationPipe());
   const port = process.env.PORT ?? process.env.API_PORT ?? 3001;
   await app.listen(port);
   console.log(`Application is running on: ${await app.getUrl()}`);

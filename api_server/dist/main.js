@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const core_1 = require("@nestjs/core");
+const common_1 = require("@nestjs/common");
 const swagger_1 = require("@nestjs/swagger");
 const app_module_1 = require("./app.module");
 async function bootstrap() {
@@ -14,6 +15,7 @@ async function bootstrap() {
     const document = swagger_1.SwaggerModule.createDocument(app, config);
     swagger_1.SwaggerModule.setup('api', app, document);
     app.enableCors();
+    app.useGlobalPipes(new common_1.ValidationPipe());
     const port = process.env.PORT ?? process.env.API_PORT ?? 3001;
     await app.listen(port);
     console.log(`Application is running on: ${await app.getUrl()}`);
