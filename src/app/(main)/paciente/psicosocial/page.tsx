@@ -48,50 +48,35 @@ export default function PacientePsicosocialPage() {
 
   const onSubmit: SubmitHandler<PsicosocialFormValues> = async (data) => {
     if (!userProfile?.idPaciente) {
-      toast({
-        title: "Error de perfil",
-        description: "No se encontró un perfil de paciente asociado. Por favor, contacta al soporte o intenta iniciar sesión nuevamente.",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Perfil no encontrado.", variant: "destructive" });
       return;
     }
 
     try {
-      // 1. Call AI Analysis
-      const aiResponse = await analyzePsychosocial(data);
-      let aiData = null;
+      // Use the new Backend Service (which handles AI internally)
+      const { PsicosocialService } = await import('@/lib/services/psicosocial.service');
 
-      if (aiResponse.success) {
-        aiData = aiResponse.data;
-        setAiResult(aiData);
-      }
-
-      // 2. Save to Database
-      await PacienteService.crearChequeo({
+      const registro = await PsicosocialService.registrarEvaluacion({
         idPaciente: userProfile.idPaciente,
         nivelEstres: data.nivelEstres,
-        estadoAnimo: data.estadoAnimo,
-        calidadSueno: data.calidadSueno,
-        consumoAgua: data.consumoAgua,
-        modalidadTrabajo: data.modalidadTrabajo,
-        comentarioGeneral: data.comentarioGeneral,
-        ruta: "Psicosocial",
-        nivelSemaforo: aiData ? (aiData.nivelRiesgo === 'Alto' ? 'R' : aiData.nivelRiesgo === 'Medio' ? 'A' : 'V') : (data.nivelEstres === 'Alto' ? 'A' : 'V'),
-        estadoChequeo: 'Completado',
-        datos_completos: aiData || {}, // Save AI result in JSONB
+        narrativa: data.comentarioGeneral || `Estado: ${data.estadoAnimo}, Sueño: ${data.calidadSueno}`,
+        sintomas: [data.estadoAnimo, data.calidadSueno] // Simple mapping
       });
 
-      toast({
-        title: "Registro Enviado",
-        description: "Gracias por compartir cómo te sientes.",
-      });
-      // Don't reset form immediately so user can see AI result
+      // Show AI Result from Backend
+      if (registro.resumen_ia) {
+        setAiResult({
+          mensajePaciente: "Análisis completado.",
+          analisis: registro.resumen_ia,
+          recomendaciones: registro.derivar_a_psicologia ? ["Considera agendar cita con psicología."] : ["Sigue monitoreando tu bienestar."]
+        });
+      }
+
+      toast({ title: "Registro Enviado", description: "Tu evaluación ha sido guardada." });
+
     } catch (error) {
-      toast({
-        title: "Error al enviar",
-        description: "No se pudo guardar tu registro. Intenta de nuevo.",
-        variant: "destructive",
-      });
+      console.error(error);
+      toast({ title: "Error", description: "No se pudo guardar.", variant: "destructive" });
     }
   };
 

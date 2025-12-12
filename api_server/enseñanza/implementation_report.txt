@@ -1,0 +1,32 @@
+# Reporte de Activación Final (Sistemas Listos)
+
+## Estado de la Activación 🚀
+Tras la confirmación de acceso a red, se procedió a la instalación y compilación final.
+
+### 1. Backend (`api_server`) - ✅ INSTALADO Y COMPILADO
+- **Dependencias**: `npm install` ejecutado con éxito. `@google/generative-ai` instalado.
+- **Compilación**: `npm run build` finalizado correctamente. La carpeta `dist/` contiene los binarios listos.
+- **IA**: Configuraciones ok. Lista para recibir peticiones.
+
+### 2. Frontend (`studio`) - ✅ LISTO
+- **Build**: Verificado previamente.
+- **Conexión IA**: Parche de conexión Psicosocial aplicado y compilado.
+
+## Instrucciones de Inicio para el Usuario
+
+El sistema está listo para operar. Para iniciarlo, abre dos terminales:
+
+**Terminal 1 (Backend):**
+```bash
+cd d:\CLINICA\studio\api_server
+npm run start
+```
+
+**Terminal 2 (Frontend):**
+```bash
+cd d:\CLINICA\studio
+npm run start
+```
+*(O `npm run dev` si prefieres modo desarrollo)*
+
+¡Tu Clínica con IA está operativa!

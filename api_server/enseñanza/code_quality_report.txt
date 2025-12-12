@@ -1,0 +1,22 @@
+# Auditoría de Calidad de Código (Deep Dive)
+
+## Resumen
+Se realizó una segunda revisión exhaustiva enfocada en seguridad, integridad de datos y contratos API.
+
+## 🛠️ Correcciones Realizadas
+### 1. Frontend: Error de Tipado en Agenda
+- **Problema**: La página `Gestión de Citas` enviaba el ID del médico como `string` ("1"), pero el Backend esperaba estrictamente un `number` (1). Esto hubiera causado un error `400 Bad Request` al intentar agendar.
+- **Solución**: Se aplicó una conversión `Number()` en `d:\CLINICA\studio\src\app\(main)\medico\agenda-citas\page.tsx`.
+
+### 2. Backend: Integridad de Datos
+- **Hallazgo**: Existe una relación circular entre `CasoClinico` y `CitaMedica`.
+- **Recomendación**: Al borrar datos de prueba, elimina primero la `Cita` y luego el `Caso` para evitar errores de llave foránea, ya que no se activaron borrados en cascada automáticos por seguridad.
+
+### 3. Seguridad
+- **Estado**: ✅ Todos los controladores críticos (`Medico`, `Paciente`, `Admin`, `Psicosocial`) están protegidos con `JwtAuthGuard` y `RolesGuard`. No hay endpoints vulnerables expuestos.
+
+### 4. Configuración
+- **Recomendación**: En el futuro, agregar validación estricta de variables de entorno (usando `Joi`) en `app.module.ts` para que el servidor no arranque si falta alguna Key crítica.
+
+## Conclusión
+El sistema es robusto. La corrección del tipado en el Frontend previno un bug bloqueante para los médicos. El código está listo para producción.

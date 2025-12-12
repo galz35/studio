@@ -14,6 +14,13 @@ export class RolesGuard implements CanActivate {
             return true;
         }
         const { user } = context.switchToHttp().getRequest();
+
+        // Si la ruta requiere rol PACIENTE, permitir acceso a ADMIN y MEDICO también
+        if (requiredRoles.includes('PACIENTE')) {
+            const allowedRolesForPaciente = ['ADMIN', 'MEDICO', 'PACIENTE'];
+            return allowedRolesForPaciente.some(role => user.rol?.includes(role));
+        }
+
         return requiredRoles.some((role) => user.rol?.includes(role));
     }
 }

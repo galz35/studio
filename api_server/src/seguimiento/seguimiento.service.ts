@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Seguimiento } from '../entities/seguimiento.entity';
+import { CreateSeguimientoDto } from './dto/create-seguimiento.dto';
 
 @Injectable()
 export class SeguimientoService {
@@ -10,10 +11,18 @@ export class SeguimientoService {
         private seguimientoRepository: Repository<Seguimiento>,
     ) { }
 
-    create(createSeguimientoDto: any) {
-        // TODO: Implement proper DTO and validation
-        const seguimiento = this.seguimientoRepository.create(createSeguimientoDto);
-        return this.seguimientoRepository.save(seguimiento);
+    async create(createSeguimientoDto: CreateSeguimientoDto) {
+        const nuevoSeguimiento = this.seguimientoRepository.create({
+            caso_clinico: { id_caso: createSeguimientoDto.idCaso },
+            paciente: { id_paciente: createSeguimientoDto.idPaciente },
+            usuario_responsable: { id_usuario: createSeguimientoDto.idUsuarioResponsable },
+            atencion_origen: createSeguimientoDto.idAtencionOrigen ? { id_atencion: createSeguimientoDto.idAtencionOrigen } : undefined,
+            fecha_programada: new Date(createSeguimientoDto.fechaProgramada),
+            tipo_seguimiento: createSeguimientoDto.tipoSeguimiento,
+            notas_seguimiento: createSeguimientoDto.notasObjetivo,
+            estado_seguimiento: createSeguimientoDto.estadoSeguimiento || 'PENDIENTE',
+        });
+        return this.seguimientoRepository.save(nuevoSeguimiento);
     }
 
     findAll() {

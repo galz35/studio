@@ -12,7 +12,7 @@ if (!API_KEY) {
 }
 
 async function testApi() {
-    console.log(`API Key length: ${API_KEY.length}`);
+    console.log(`API Key length: ${API_KEY!.length}`);
     const models = ['gemini-1.5-flash', 'gemini-1.5-flash-latest', 'gemini-pro'];
 
     for (const model of models) {

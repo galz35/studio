@@ -38,4 +38,7 @@ export class RegistroPsicosocial {
 
     @Column({ type: 'text', nullable: true, comment: 'Notas confidenciales del profesional de la salud.' })
     notas_profesional: string;
+
+    @Column({ type: 'text', nullable: true, comment: 'Resumen y recomendaciones generadas por Gemini AI.' })
+    resumen_ia: string;
 }

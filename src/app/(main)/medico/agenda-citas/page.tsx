@@ -77,7 +77,7 @@ export default function GestionCitasPage() {
     const body = {
       idCaso: selectedCaso.id!,
       idPaciente: selectedCaso.idPaciente,
-      idMedico: formData.idMedico,
+      idMedico: Number(formData.idMedico),
       fechaCita: formData.fechaCita,
       horaCita: formData.horaCita,
     };
@@ -136,14 +136,17 @@ export default function GestionCitasPage() {
       accessor: (row: CasoConPaciente) => row.paciente?.nombreCompleto || 'Cargando...',
       header: 'Paciente',
     },
-    { accessor: 'motivoConsulta', header: 'Motivo' },
     {
-      accessor: 'nivelSemaforo',
+      accessor: (row: CasoConPaciente) => row.motivoConsulta,
+      header: 'Motivo'
+    },
+    {
+      accessor: (row: CasoConPaciente) => row.nivelSemaforo,
       header: 'Semáforo',
       cell: (row: CasoConPaciente) => <SemaforoBadge nivel={row.nivelSemaforo} />,
     },
     {
-      accessor: 'triajeIA',
+      accessor: (row: CasoConPaciente) => row.triajeIA ? 'IA Ready' : 'Pending', // Virtual accessor for cleaner type
       header: 'Análisis IA',
       cell: (row: CasoConPaciente) => {
         if (row.triajeIA) {
@@ -156,7 +159,7 @@ export default function GestionCitasPage() {
       }
     },
     {
-      accessor: 'actions',
+      accessor: 'actions' as any, // Cast specific virtual column to satisfy type check
       header: 'Acciones',
       cell: (row: CasoConPaciente) => (
         <div className="flex flex-col sm:flex-row gap-2">

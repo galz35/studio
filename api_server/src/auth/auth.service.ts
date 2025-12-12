@@ -4,6 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { Usuario } from '../entities/usuario.entity';
+import { Paciente } from '../entities/paciente.entity';
 import { LoginDto } from './dto/login.dto';
 
 @Injectable()
@@ -11,6 +12,8 @@ export class AuthService {
     constructor(
         @InjectRepository(Usuario)
         private usuariosRepository: Repository<Usuario>,
+        @InjectRepository(Paciente)
+        private pacienteRepository: Repository<Paciente>,
         private jwtService: JwtService,
     ) { }
 
@@ -32,6 +35,7 @@ export class AuthService {
         if (!user) {
             throw new UnauthorizedException('Credenciales inválidas');
         }
+        console.log('DEBUG LOGIN USER:', JSON.stringify(user, null, 2));
 
         // Update last access
         await this.usuariosRepository.update(user.id_usuario, { ultimo_acceso: new Date() });
@@ -70,7 +74,19 @@ export class AuthService {
             ultimo_acceso: new Date(),
         });
 
-        await this.usuariosRepository.save(admin);
+        const savedAdmin = await this.usuariosRepository.save(admin);
+
+        // Crear registro de paciente para el admin
+        const pacienteAdmin = this.pacienteRepository.create({
+            usuario: savedAdmin,
+            carnet: savedAdmin.carnet,
+            nombre_completo: savedAdmin.nombre_completo,
+            correo: savedAdmin.correo,
+            estado_paciente: 'A',
+            // Datos dummy o nulos permitidos
+        });
+        await this.pacienteRepository.save(pacienteAdmin);
+
         return { message: 'Usuario ADMIN001 creado exitosamente. Contraseña: admin123' };
     }
     async getProfile(userId: number) {

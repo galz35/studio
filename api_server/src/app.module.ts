@@ -8,16 +8,21 @@ import { AdminModule } from './admin/admin.module';
 import { MedicoModule } from './medico/medico.module';
 import { PacienteModule } from './paciente/paciente.module';
 import { SeguimientoModule } from './seguimiento/seguimiento.module';
+import { PsicosocialModule } from './psicosocial/psicosocial.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: '.env', // Make sure it reads from root
+    }),
     DatabaseModule,
     AuthModule,
     AdminModule,
     MedicoModule,
     PacienteModule,
     SeguimientoModule,
+    PsicosocialModule,
   ],
   controllers: [AppController],
   providers: [AppService],
